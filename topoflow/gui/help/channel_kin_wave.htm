@@ -1,0 +1,406 @@
+<!-- Copyright (c) 2007, Scott Peckham. All rights reserved. -->
+<html>
+<head>
+<title>TopoFlow 1.5 Help - Channel Flow - Kinematic Wave</title>
+<link rel=stylesheet type="text/css" href="help_sys.css">
+</head>
+
+<body bgcolor="#ffffff" link="#0000ff" vlink="#800080">
+
+<table border=1 cellpadding=0 cellspacing=0>
+<tr valign=center>
+   <td CLASS=banner0 align=right>
+      <!--
+      <font size=1><sup>
+      <a target=_top href="top.html">top</a></sup></font>
+      <a href="prev_help.html">
+      <img CLASS=arrow src="left_arrow.jpg"></a>
+      <a href="next_help.html">
+      <img CLASS=arrow src="right_arrow.jpg"></a>&nbsp;
+      -->
+   </td>
+</tr>
+</table>
+ 
+<table border=0 cellspacing=0 cellpadding=10>
+<tr> <td> 
+ 
+<h2>Channel Flow &rarr; Kinematic Wave Method</h2>
+
+<p>The input variables used for the Kinematic Wave method of
+routing flow in channels are defined as follows:</p>
+
+<center> <table>
+<tr>
+<td> flow_codes </td>
+<td> = D8 flow codes (Jenson convention) </td>
+</tr>
+<tr>
+<td> </td>
+<td>  &nbsp;&nbsp;&nbsp;
+      [NE,E,SE,S,SW,W,NW,N] &rarr; [1,2,4,8,16,32,64,128] </td>
+</tr>
+<tr>
+<td> bed_slope </td>
+<td> = slope of the channel bed or hillslope [m / m] </td>
+</tr>
+<tr>
+<td> Manning_n </td>
+<td> = Manning roughness parameter [s / m<sup>1/3</sup>] </td>
+</tr>
+<tr>
+<td> bed_width </td>
+<td> = bed width for trapezoidal cross-section [m] </td>
+</tr>
+<tr>
+<td> bank_angle </td>
+<td> = bank angle for trapezoid [deg] (from vertical) </td>
+</tr>
+<tr>
+<td> sinuosity </td>
+<td> = channel sinuosity [unitless] (along-channel / straight length) </td>
+</tr>
+<tr>
+<td> init_depth </td>
+<td> = initial water depth [m] (See Notes below) </td>
+</tr>
+</table> </center>
+
+<p>For each variable, you may choose from the droplist of data
+types.  For the "Scalar" data type, enter a numeric value with
+the units indicated in the dialog.  For the other data types,
+enter a filename.  Values in files must also use the indicated
+units. </p>
+
+<p><b>Note:</b> The input variables for the kinematic wave method
+should usually be specified as grids, except in special cases.
+</p>
+
+<p>Single grids and grid sequences are assumed to be stored as
+<b><i> <a href="RTG_format.htm">RTG </a> </i></b> and
+<b><i> <a href="RTS_format.htm">RTS</a> </i></b> files, respectively.
+Time series are assumed to be stored as text files, with one value
+per line. For a time series or grid sequence, the time between
+values must coincide with the timestep provided. </p>
+
+<p>Flow directions are determined by a grid of D8 flow codes,
+and flow codes are assumed to follow the Jenson (1984)
+convention (see above) that is also used for RiverTools D8
+flow grids. Flow grids and slope grids can be created by
+RiverTools or a similar program and the other grids can be
+created using tools in the TopoFlow Create menu. </p>
+
+<p>Bed slope, S, can be computed from a DEM by using the
+<a href="smooth_DEM.htm">
+<i><b>Create &rarr; Profile-smoothed DEM</b></i> </a> dialog or
+by using hydrologic GIS software such as RiverTools.
+<b>Important Note:</b> In the current version of TopoFlow (1.5 beta),
+pixels in flat areas where the slope is zero are arbitrarily
+assigned a positive value equal to the smallest positive slope that
+occurs in the DEM.  If they were not assigned a positive value, then
+flow would accumulate at these pixels, leading to unrealistic spikes
+in the grid of flow depths. However, this work-around could lead to
+unrealistically large velocities at these locations. </p>
+
+<p>The current version assumes that all channels have <i><b>trapezoidal
+cross-sections</b></i> (see Notes below) but allows bottom-width and
+bank angle to vary spatially as grids.
+TopoFlow has pre-processing tools in the <b>Create</b> menu
+for creating grids of bed width, bank angle and bed roughness.  
+The <a href="channel_grids_area.htm"> <b><i>Create &rarr; Channel
+Geometry Grids &rarr; With Area Grid</i></b> </a> tool allows
+you to parameterize these variables as power-law functions of
+contributing area.
+The <a href="channel_grids_order.htm"> <b><i>Create &rarr;
+Channel Geometry Grids &rarr; With HS Order Grid</i></b> </a>
+tool allows you to assign values based on Horton-Strahler order.
+</p>
+
+<p>Each pixel is classified as either a hillslope pixel (overland
+flow) or a channel pixel (channelized flow) and appropriate
+parameters must be used for each.  For overland flow, w >> d,
+R<sub>h</sub> &rarr; d, and bank angle drops out.  Overland flow can then be
+modeled with a large value of Manning's <i>n</i>, such as 0.3.
+For channelized flow, the variation of <i>n</i> with bed grain
+size can be modeled with Strickler's equation (see Notes below).
+RiverTools users can use the Grid Calculator as a convenient way
+to create new grids as functions of existing grids. </p>
+
+<p>If a sinuosity greater than 1 is specified, then bed slopes
+are reduced by dividing them by this value.  As with the other
+variables, it is most appropriate to specify a grid in this case.
+</p>
+
+<p><b>Important Note</b>:  It is physically unrealistic to specify
+a spatially uniform initial flow depth by entering a scalar value
+greater than zero for <i>init_depth</i>.  This will result in a
+very large peak in the hydrograph and may cause TopoFlow to crash.
+The <a href="init_depth.htm"> <b><i>Create &rarr; RTG File for
+Initial Depth</i></b> </a>  tool can be used to create a grid of
+initial flow depths that varies spatially and is in steady-state
+equilibrium with a specified baseflow recharge rate. </p>
+
+<hr>
+<h3>Equations Used by the Kinematic Wave Method</h3>
+<table>
+<tr>
+<td> &Delta;V(i,t) </td>
+<td> = &nbsp; &Delta;t * [ R(i,t) &Delta;x &Delta;y - Q(i,t) + &Sigma;<sub>k</sub> Q(k,t) ] </td>
+<td> = change in water volume [m<sup>3</sup>], &nbsp; mass conservation </td>
+</tr>
+
+<tr>
+<td> d </td>
+<td> = &nbsp; {[ w<sup>2</sup> + 4 tan(&theta;) V / L]<sup>1/2</sup> - w }
+      / [2 tan(&theta;)] &nbsp; </td>
+<td> = mean water depth in channel segment [m] &nbsp; (if &theta; > 0) </td>
+</tr>
+
+<tr>
+<td> d </td>
+<td> = &nbsp; V / [w * L] </td>
+<td> = mean water depth in channel segment [m] &nbsp; (if &theta; = 0) </td>
+</tr>
+
+<tr>
+<td> Q </td>
+<td> = &nbsp; v * A<sub>w</sub> </td>
+<td> = discharge of water [m<sup>3</sup> / s] </td>
+</tr>
+
+<tr>
+<td> v </td>
+<td width=150> = &nbsp; n<sup>-1</sup> * R<sub>h</sub><sup>2/3</sup> * S<sup>1/2</sup> </td>
+<td> = section-averaged velocity [m / s], Manning's formula </td>
+</tr>
+
+<tr>
+<td> v </td>
+<td width=150> = &nbsp; ( g * R<sub>h</sub> * S)<sup>1/2</sup>
+                            * LN( a * d / z<sub>0</sub>) / &kappa; </td>
+<td> = section-averaged velocity [m / s], Law of the Wall </td>
+</tr>
+
+<tr>
+<td> R<sub>h</sub> </td>
+<td> = &nbsp; A<sub>w</sub> / P<sub>w</sub> </td>
+<td> = hydraulic radius [m] </td>
+</tr>
+
+<tr>
+<td> A<sub>w</sub> </td>
+<td> = &nbsp; d * [w + (d * tan(&theta;))] </td>
+<td> = wetted cross-sectional area of a trapezoid [m<sup>2</sup>] </td>
+</tr>
+
+<tr>
+<td> P<sub>w</sub> </td>
+<td> = &nbsp; w + [2 * d / cos(&theta;)] </td>
+<td> = wetted perimeter of a trapezoid [m] </td>
+</tr>
+
+<tr>
+<td> V<sub>w</sub> </td>
+<td> = &nbsp; d<sup>2</sup> * [ L * tan(&theta;) ] + d * [L * w] </td>
+<td> = wetted volume of a trapezoidal channel [m] </td>
+</tr>
+</table>
+
+<hr>
+<h3>Notes on the Equations</h3>
+
+<p><b>Conservation of mass</b>, in integral form, is represented by the first
+three equations above.  The quantity, R, that appears in the first equation is
+known as the <b><i>effective rainrate</i></b> or <b><i>excess rainrate</i></b>
+and represents the sum of all vertical contributions to a grid cell's mass
+balance.  R is computed as R = (P + M + G) - (I + E), where P = precipitation,
+M = snowmelt, G = seepage from subsurface, I = infiltration and E = evapotranspiration.
+(Note that R is technically <b>not</b> the same as the <b><i>runoff</i></b>, since
+runoff includes horizontal fluxes.)  The summation sign in the first equation
+adds up all horizontal inflows to a grid cell from its neighbor grid cells.
+Mean channel flow depth, d, is then computed from channel geometry and the
+water volume that is computed for the corresponding grid cell.  Note that channel
+length depends on distance between grid cell centers and sinuosity, while
+cross-sections are trapezoidal.  When the bank angle, &theta; is greater than
+zero, the flow depth required to accomodate the water volume is computed by
+solving the last equation (a quadratic) for d to get the second equation. </p>
+
+<p>The <b>kinematic wave</b> method (Lighthill and Whitham, 1955) is the
+simplest method for modeling flow in open channels.
+This method combines mass conservation with the
+simplest possible treatment of momentum conservation, namely that all
+terms in the general momentum equation (pressure gradient, local acceleration
+and convective acceleration) are neglible except the friction and gravity
+terms.  A flow in which gravitational acceleration is exactly balanced by
+friction is referred to as <i><b>steady, uniform flow</b></i>.  For these flows
+the water surface slope, energy slope and bed slope are all equal.
+For a thin channel section of length &Delta;s in the downstream direction,
+the total weight of water (resolved parallel to the channel bed) is given by:
+<br> <br>
+<center>
+F<sub>grav</sub> = &rho; * g * S * A<sub>w</sub> * &Delta;s,
+</center> <br>
+where &rho; is the density of water, g is the gravitational constant,
+A<sub>w</sub> is the wetted cross-sectional area of the channel and
+S is the bed slope (rise over run).
+According to our best theoretical understanding of turbulent boundary
+layers (Schlicting, 1960), the <i><b>shear stress</b></i> near the
+channel bed can be computed as:
+<br> <br>
+<center>
+&tau;<sub>b</sub> = f * &rho; * v<sup>2</sup>
+</center> <br>
+where v is an appropriate flow velocity (e.g. depth-averaged for a wide, trapezoidal
+channel) and f is a dimensionless <i><b>friction factor</b></i> given by
+<br> <br>
+<center>
+f = [ &kappa; / LN ( a * d / z<sub>0</sub>) ]<sup>2</sup>.
+</center> <br>
+Here, d is an appropriate flow depth (i.e. distance along a ray to the surface),
+z<sub>0</sub> is the <i><b>roughness height</b></i> (units of length),
+a is an integration constant (given by 0.368 or 0.476, depending on the formulation),
+and &kappa; = 0.408 is <b><i>von Karman's constant</i></b>.  It follows that for a
+thin channel section of length &Delta;s in the downstream direction, the total
+frictional force can be written as:
+<br> <br>
+<center>
+F<sub>fric</sub> = &Tau;<sub>b</sub> * P<sub>w</sub> * &Delta;s
+</center> <br>
+where P<sub>w</sub> is the <b><i>wetted perimeter</i></b> of the channel cross section
+and &Tau;<sub>b</sub> is the average of &tau<sub>b</sub> over the wetted perimeter.
+As a first approximation (based on our expression for &tau;<sub>b</sub>), we can take
+<br> <br>
+<center>
+&Tau;<sub>b</sub> = f * &rho; * v<sup>2</sup>,
+</center> <br>
+where v is the section-averaged velocity.  Combining the above equations,
+setting F<sub>grav</sub> equal to F<sub>fric</sub> and solving for v we find that:
+<br> <br>
+<center>
+v = ( g * R<sub>h</sub> * S / f )<sup>1/2</sup>
+</center> </p>
+where R<sub>h</sub> = (A<sub>w</sub> / P<sub>w</sub>)
+is known as the <i><b>hydraulic radius</b></i>.  When we substitute the friction
+factor, f, from above (but perhaps with d replaced by R<sub>h</sub>), the resulting
+expression is known as the <b>law of the wall</b>.  </p>
+
+<p>Note that the law of the wall is a general result for turbulent flows
+and is also used by the snowmelt energy-balance
+models for modeling air flow in the atmospheric boundary layer. However, in the setting
+of open-channel flow, an alternative known as <i><b>Manning's formula</b></i> is more
+often used.  Manning's formula, which was determined by fitting a power-law to data
+gives the section-averaged velocity as:
+<br> <br>
+<center>
+v = R<sub>h</sub><sup>2/3</sup> * S<sup>1/2</sup> / n.
+</center> <br>
+Here n is an empirical roughness parameter with the units of [s/m<sup>1/3</sup>] required to
+make the equation dimensionally consistent.  Due to the empirical nature of this equation,
+the gravitational constant does not appear explicitly and the balance between friction
+and gravity is not readily apparent.  The variation of n with channel bed grain
+size is often modeled with Strickler's equation:
+<br> <br>
+<center>
+n = D<sub>50</sub><sup>1/6</sup> / 21.2
+</center> <br>
+where D<sub>50</sub> is the median grain size in meters.  This approximation can actually
+be deduced by requiring Manning's formula to agree with the law of the wall and by
+assuming that z<sub>0</sub> is proportional to D<sub>50</sub>. 
+It turns out that Manning's formula agrees very well with
+the law of the wall as long as the relative roughness, (z<sub>0</sub> / d) is between
+about 10<sup>-2</sup> and 10<sup>-4</sup>.  This is the range that is encountered in
+most open-channel flow problems.  Smaller relative roughnesses are typically encountered
+in the case where wind blows over terrain and vegetation.</p>
+
+<p>For a channel with a <i><b>trapezoidal cross-section</b></i> that has  bottom-width,
+w and bank-angle, &theta;, we have:
+<center> <table>
+<tr>
+<td> A<sub>w</sub> </td>
+<td> = d * [w + (d * tan(&theta;))] </td>
+</tr>
+<tr>
+<td> P<sub>w</sub> </td>
+<td> = w + [2 * d / cos(&theta;)] </td>
+</tr>
+</table> </center> <br>
+These last two equations can be used to show that
+R<sub>h</sub> = (A<sub>w</sub> / P<sub>w</sub>)
+is closely approximated by the flow depth, d, when (w / d) has
+a value greater than about 10.  Notice that when &theta;=0, the
+channel has a rectangular cross-section, and when w=0, it has a
+triangular cross-section.</p>
+
+<hr>
+<h3>Units of Physical Quantities: &nbsp; A Review of SI Units</h3>
+
+<table>
+<tr>
+<td> density </td>
+<td> = &nbsp; ( mass / volume ) </td>
+<td> = &nbsp; kg / m<sup>3</sup> </td>
+</tr>
+
+<tr>
+<td> acceleration </td>
+<td> = &nbsp; ( velocity / time ) </td>
+<td> = &nbsp; m / s<sup>2</sup> </td>
+</tr>
+
+<tr>
+<td> momentum </td>
+<td> = &nbsp; ( mass * velocity ) </td>
+<td> = &nbsp; kg * m / s </td>
+</tr>
+
+<tr>
+<td> force </td>
+<td> = &nbsp; ( mass * acceleration ) </td>
+<td> = &nbsp; kg * m / s<sup>2</sup>  &nbsp; [Newtons] </td>
+</tr>
+
+<tr>
+<td> stress </td>
+<td> = &nbsp; ( force / area ) </td>
+<td> = &nbsp; kg / ( m * s<sup>2</sup>) </td>
+</tr>
+
+<tr>
+<td> energy or work </td>
+<td> = &nbsp; ( force * distance ) </td>
+<td> = &nbsp; kg * (m / s)<sup>2</sup> &nbsp; [Joules] </td>
+</tr>
+
+<tr>
+<td> power </td>
+<td> = &nbsp; ( energy / time ) </td>
+<td> = &nbsp; kg * m<sup>2</sup> / s<sup>3</sup>  &nbsp; [Watts] </td>
+</tr>
+</table>
+
+<p><b>Note:</b> The <b><i>shear stress</i></b> near the channel bed can
+can be understood as a momentum loss per unit time and per unit area
+(momentum / (area * time)) that results from frictional effects. </p>
+
+<hr>
+<h3>References</h3>
+
+<p>Lighthill, M.J. and G.B. Whitham (1955) On kinematic waves: I. Flood movement
+in long rivers, <i>Proc. Royal Soc. A</i>, <b>229</b>, 281-316. </p>
+
+<p>Peckham, S.D. and J.D. Smith (2008) Manning's equation and the best power-law
+approximation to the logarithmic law of the wall, in preparation. </p>
+
+<p>Schlicting, H. (1960) <i>Boundary Layer Theory</i>, 4th ed., McGraw-Hill,
+New York, 647 pp.</p>
+
+
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+
+</td> </tr> </table>
+
+</body>
+</html>
+

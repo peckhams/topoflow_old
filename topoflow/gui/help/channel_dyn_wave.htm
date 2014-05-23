@@ -1,0 +1,340 @@
+<!-- Copyright (c) 2007, Scott Peckham. All rights reserved. -->
+<html>
+<head>
+<title>TopoFlow 1.5 Help - Channel Flow - Dynamic Wave</title>
+<link rel=stylesheet type="text/css" href="help_sys.css">
+</head>
+
+<body bgcolor="#ffffff" link="#0000ff" vlink="#800080">
+
+<table border=1 cellpadding=0 cellspacing=0>
+<tr valign=center>
+   <td CLASS=banner0 align=right>
+      <!--
+      <font size=1><sup>
+      <a target=_top href="top.html">top</a></sup></font>
+      <a href="prev_help.html">
+      <img CLASS=arrow src="left_arrow.jpg"></a>
+      <a href="next_help.html">
+      <img CLASS=arrow src="right_arrow.jpg"></a>&nbsp;
+      -->
+   </td>
+</tr>
+</table>
+ 
+<table border=0 cellspacing=0 cellpadding=10>
+<tr> <td> 
+ 
+<h2>Channel Flow &rarr; Dynamic Wave Method</h2>
+
+<p>The input variables used for the Dynamic Wave method of
+routing flow in channels are defined as follows:</p>
+
+<center> <table>
+<tr>
+<td> flow_codes </td>
+<td> = D8 flow codes (Jenson convention) </td>
+</tr>
+<tr>
+<td> </td>
+<td>  &nbsp;&nbsp;&nbsp;
+      [NE,E,SE,S,SW,W,NW,N] &rarr; [1,2,4,8,16,32,64,128] </td>
+</tr>
+<tr>
+<td> bed_slope </td>
+<td> = slope of the channel bed or hillslope [m / m] </td>
+</tr>
+<tr>
+<td> Manning_n </td>
+<td> = Manning roughness parameter [s / m<sup>1/3</sup>] </td>
+</tr>
+<tr>
+<td> bed_width </td>
+<td> = bed width for trapezoidal cross-section [m] </td>
+</tr>
+<tr>
+<td> bank_angle </td>
+<td> = bank angle for trapezoid [deg] (from vertical) </td>
+</tr>
+<tr>
+<td> sinuosity </td>
+<td> = channel sinuosity [unitless] (along-channel / straight length) </td>
+</tr>
+<tr>
+<td> init_depth </td>
+<td> = initial water depth [m] (See Notes below) </td>
+</tr>
+</table> </center>
+
+<p>For each variable, you may choose from the droplist of data
+types.  For the "Scalar" data type, enter a numeric value with
+the units indicated in the dialog.  For the other data types,
+enter a filename.  Values in files must also use the indicated
+units. </p>
+
+<p><b>Note:</b> The input variables for the dynamic wave method
+should usually be specified as grids, except in special cases.
+</p>
+
+<p>Single grids and grid sequences are assumed to be stored as
+<b><i> <a href="RTG_format.htm">RTG </a> </i></b> and
+<b><i> <a href="RTS_format.htm">RTS</a> </i></b> files, respectively.
+Time series are assumed to be stored as text files, with one value
+per line. For a time series or grid sequence, the time between
+values must coincide with the timestep provided. </p>
+
+<p>Flow directions are determined by a grid of D8 flow codes.
+All grids are assumed to be stored as RTG (RiverTools Grid)
+files and flow codes are assumed to follow the Jenson (1984)
+convention (see above) that is also used for RiverTools D8
+flow grids. Flow grids and slope grids can be created by
+RiverTools or a similar program and the other grids can be
+created using tools in the TopoFlow Create menu. </p>
+
+<p>Bed slope, S, can be computed from a DEM by using the
+<a href="smooth_DEM.htm">
+<i><b>Create &rarr; Profile-smoothed DEM</b></i> </a> dialog or
+by using hydrologic GIS software.
+The current version assumes that all channels have <i><b>trapezoidal
+cross-sections</b></i> (see Notes below) but allows bottom-width and
+bank angle to vary spatially as grids.
+TopoFlow has pre-processing tools in the <b>Create</b> menu
+for creating grids of bed width, bank angle and bed roughness.  
+The <a href="channel_grids_area.htm"> <b><i>Create &rarr; Channel
+Geometry Grids &rarr; With Area Grid</i></b> </a> tool allows
+you to parameterize these variables as power-law functions of
+contributing area.
+The <a href="channel_grids_order.htm"> <b><i>Create &rarr;
+Channel Geometry Grids &rarr; With HS Order Grid</i></b> </a>
+tool allows you to assign values based on Horton-Strahler order.
+</p>
+
+<p>Each pixel is classified as either a hillslope pixel (overland
+flow) or a channel pixel (channelized flow) and appropriate
+parameters must be used for each.  For overland flow, w >> d,
+R<sub>h</sub> &rarr; d, and bank angle drops out.  Overland flow
+can then be
+modeled with a large value of Manning's <i>n</i>, such as 0.3.
+For channelized flow, the variation of <i>n</i> with bed grain
+size can be modeled with Strickler's equation as explained in
+the Notes below. </p>
+
+<p>If a sinuosity greater than 1 is specified, then bed slopes
+are reduced by dividing them by this value.  As with the other
+variables, it is most appropriate to specify a grid in this case.
+</p>
+
+<p><b>Important Note</b>:  It is physically unrealistic to specify
+a spatially uniform initial flow depth by entering a scalar value
+greater than zero for <i>init_depth</i>.  This will result in a
+very large peak in the hydrograph and may cause TopoFlow to crash.
+The <a href="init_depth.htm"> <b><i>Create &rarr; RTG File for
+Initial Depth</i></b> </a>  tool can be used to create a grid of
+initial flow depths that varies spatially and is in steady-state
+equilibrium with a specified baseflow recharge rate. </p>
+
+<hr>
+<h3>Equations Used by the Dynamic Wave Method</h3>
+<table>
+<tr>
+<td> &Delta;V(i,t) </td>
+<td> = &nbsp; &Delta;t * [ R(i,t) &Delta;x &Delta;y - Q(i,t) + &Sigma;<sub>k</sub> Q(k,t) ] </td>
+<td> = change in water volume [m<sup>3</sup>] &nbsp; (mass cons.) </td>
+</tr>
+
+<tr>
+<td> d </td>
+<td> = &nbsp; {[ w<sup>2</sup> + 4 tan(&theta;) V / L]<sup>1/2</sup> - w }
+      / [2 tan(&theta;)] &nbsp; </td>
+<td> = mean water depth in channel segment [m] &nbsp; (if &theta; > 0) </td>
+</tr>
+
+<tr>
+<td> d </td>
+<td> = &nbsp; V / [w * L] </td>
+<td> = mean water depth in channel segment [m] &nbsp; (if &theta; = 0) </td>
+</tr>
+
+<tr>
+<td> &Delta;v(i,t) </td>
+<td> = &nbsp; &Delta;t * (T<sub>1</sub> + T<sub>2</sub> + T<sub>3</sub> + T<sub>4</sub> + T<sub>5</sub>)
+       / [ d(i,t) * A<sub>w</sub> ]  &nbsp; </td>
+<td> = change in mean velocity [m / s] &nbsp; (mom. cons.) </td>
+</tr>
+
+<tr>
+<td> T<sub>1</sub> </td>
+<td> = &nbsp; v(i,t) * Q(i,t) * (C - 1) </td>
+<td> = efflux term in equation for &Delta;v </td>
+</tr>
+
+<tr>
+<td> T<sub>2</sub> </td>
+<td> = &nbsp; &Sigma;<sub>k</sub> [v(k,t) - v(i,t) * C] * Q(k,t) </td>
+<td> = influx term in equation for &Delta;v </td>
+</tr>
+
+<tr>
+<td> T<sub>3</sub> </td>
+<td> = &nbsp; -v(i,t) * C * R(i,t) * &Delta;x * &Delta;y </td>
+<td> = "new mass" momentum term in equation for &Delta;v </td>
+</tr>
+
+<tr>
+<td> T<sub>4</sub> </td>
+<td> = &nbsp; A<sub>w</sub> * [g * d(i,t) * S(i,t)] </td>
+<td> = gravity term in equation for &Delta;v </td>
+</tr>
+
+<tr>
+<td> T<sub>5</sub> </td>
+<td> = &nbsp; -A<sub>w</sub> * [f(i,t) * v(i,t)<sup>2</sup>] </td>
+<td> = friction term in equation for &Delta;v </td>
+</tr>
+
+<tr>
+<td> Q </td>
+<td> = &nbsp; v * A<sub>w</sub> </td>
+<td> = discharge of water [m<sup>3</sup> / s] </td>
+</tr>
+
+<tr>
+<td> f(i,t) </td>
+<td> = &nbsp; [ &kappa; / LN ( a * d(i,t) / z<sub>0</sub>) ]<sup>2</sup> </td>
+<td> = friction factor [unitless] &nbsp; (for law of the wall) </td>
+</tr>
+
+<tr>
+<td> f(i,t) </td>
+<td> = &nbsp; g * n<sup>2</sup> / R<sub>h</sub>(i,t)<sup>1/3</sup> </td>
+<td> = friction factor [unitless] &nbsp; (for Manning's equation) </td>
+</tr>
+
+<tr>
+<td> C </td>
+<td> = &nbsp; A<sub>w</sub> / A<sub>t</sub> </td>
+<td> = area ratio appearing in equation for &Delta;v </td>
+</tr>
+
+<tr>
+<td> A<sub>t</sub> </td>
+<td> = &nbsp; w<sub>t</sub> * L </td>
+<td> = top surface area of a channel segment [m<sup>2</sup>] &nbsp; (L = length) </td>
+</tr>
+
+<tr>
+<td> w<sub>t</sub> </td>
+<td> = &nbsp; w + [ 2 * d * tan(&theta;) ] </td>
+<td> = top width of a wetted trapezoidal cross-section [m] </td>
+</tr>
+
+<tr>
+<td> R<sub>h</sub> </td>
+<td> = &nbsp; A<sub>w</sub> / P<sub>w</sub> </td>
+<td> = hydraulic radius [m] </td>
+</tr>
+
+<tr>
+<td> A<sub>w</sub> </td>
+<td> = &nbsp; d * [w + (d * tan(&theta;))] </td>
+<td> = wetted cross-sectional area of a trapezoid [m<sup>2</sup>] </td>
+</tr>
+
+<tr>
+<td> P<sub>w</sub> </td>
+<td> = &nbsp; w + [2 * d / cos(&theta;)] </td>
+<td> = wetted perimeter of a trapezoid [m] </td>
+</tr>
+
+<tr>
+<td> V<sub>w</sub> </td>
+<td> = &nbsp; d<sup>2</sup> * [ L * tan(&theta;) ] + d * [L * w] </td>
+<td> = wetted volume of a trapezoidal channel [m] </td>
+</tr>
+</table>
+
+<hr>
+<h3>Notes on the Equations</h3>
+
+<p>The <b>dynamic wave</b> method is the most complete and complex method for
+modeling flow in open channels.  This method retains all of the terms in the
+full, 1D momentum equation, including the gravity, friction and pressure gradient
+terms (as used by the <b><i><a href="chan_diff_wave.htm">diffusive wave</a></i></b>
+method) as well as local and convective acceleration (or momentum flux) terms.
+This full equation is known as the <b><i>St. Venant equation</i></b>.  In the current
+version of TopoFlow it is assumed that the flow directions are static and given
+by a D8 flow grid.  In this case, integral vs. differential forms of the
+conservation equations for mass and momentum can be used. </p>
+
+<p><b>Conservation of mass</b>, in integral form, is represented by the first
+three equations above.  The quantity, R, that appears in the first equation is
+known as the <b><i>effective rainrate</i></b> or <b><i>excess rainrate</i></b>
+and represents the sum of all vertical contributions to a grid cell's mass
+balance.  R is computed as R = (P + M + G) - (I + E), where P = precipitation,
+M = snowmelt, G = seepage from subsurface, I = infiltration and E = evapotranspiration.
+(Note that R is technically <b>not</b> the same as the <b><i>runoff</i></b>, since
+runoff includes horizontal fluxes.)  The summation sign in the first equation
+adds up all horizontal inflows to a grid cell from its neighbor grid cells.
+Mean channel flow depth, d, is then computed from channel geometry and the
+water volume that is computed for the corresponding grid cell.  Note that channel
+length depends on distance between grid cell centers and sinuosity, while
+cross-sections are trapezoidal.  When the bank angle, &theta; is greater than
+zero, the flow depth required to accomodate the water volume is computed by
+solving the last equation (a quadratic) for d to get the second equation.  </p>
+
+<p><b>Conservation of momentum</b>, in integral form, is represented by the
+remaining equations above.  The term T<sub>3</sub> results from using the
+equation for mass conservation to simplify the one for momentum conservation.
+It represents the change in a grid cell's momentum balance due to the addition
+or subtraction of mass within the cell from vertical fluxes.  Recall that
+momentum represents a product of mass and velocity, so changes in momentum
+can result from changes in mass or changes in velocity (chain rule). </p> 
+
+<p>Notice that boundary-layer theory (which leads to the law of the wall)
+allows us to compute the loss of momentum due to friction directly as a 
+<b><i>separate process</i></b> and isn't really restricted to the special case
+of <b><i>steady, uniform flow</i></b>.  By contrast, Manning's equation is
+empirical and was found by studying steady, uniform flows.  It does not allow
+us to cleanly separate the effects of friction and gravity;  it assumes
+that they are in balance.
+However, if we use the fact that Manning's equation is really just a power-law
+approximation to the law of the wall, we can back-calculate a Manning's-equation
+version of the friction term (and friction factor) which has been freed from
+the assumption of steady, uniform flow.  </p>
+
+<p>For more information, including definitions for undefined variables,
+see the help pages for the simpler
+<i><b><a href="channel_kin_wave.htm">kinematic wave</a></b></i> and
+<i><b><a href="channel_diff_wave.htm">diffusive wave</a></b></i> methods. 
+</p> 
+
+<p><b>Note:</b>  In the current version of TopoFlow (1.5 beta), water-surface
+slopes are set to zero if they ever become negative (implying upstream flow).
+</p>
+
+<p>It has also been assumed here that the water is incompressible; this allows
+us to take the density of water, &rho;, to be a constant. </p>
+
+
+<hr>
+<h3>References</h3>
+
+<p>Peckham, S.D. (2008) Geomorphometry and spatial hydrologic modeling,
+In: <i>Geomorphometry</i>, chapter 25, Elsevier, New York, in press. </p>
+
+<p>Peckham, S.D. and J.D. Smith (2008) Manning's equation and the best power-law
+approximation to the logarithmic law of the wall, in preparation. </p>
+
+<p>Schlicting, H. (1960) <i>Boundary Layer Theory</i>, 4th ed., McGraw-Hill,
+New York, 647 pp.</p>
+
+
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+
+</td> </tr> </table>
+
+</body>
+</html>
+

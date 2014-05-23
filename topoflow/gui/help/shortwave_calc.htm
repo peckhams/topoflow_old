@@ -1,0 +1,173 @@
+<!-- Copyright (c) 2007, Scott Peckham. All rights reserved. -->
+<html>
+<head>
+<title>TopoFlow 1.5 Help - Qnet Shortwave Flux</title>
+<link rel=stylesheet type="text/css" href="help_sys.css">
+</head>
+
+<body bgcolor="#ffffff" link="#0000ff" vlink="#800080">
+
+<table border=1 cellpadding=0 cellspacing=0>
+<tr valign=center>
+   <td CLASS=banner0 align=right>
+      <!--
+      <font size=1><sup>
+      <a target=_top href="top.html">top</a></sup></font>
+      <a href="prev_help.html">
+      <img CLASS=arrow src="left_arrow.jpg"></a>
+      <a href="next_help.html">
+      <img CLASS=arrow src="right_arrow.jpg"></a>&nbsp;
+      -->
+   </td>
+</tr>
+</table>
+ 
+<table border=0 cellspacing=0 cellpadding=10>
+<tr> <td> 
+ 
+<h2>Create &rarr; RTS File for Qnet Shortwave Flux</h2>
+
+<p>The input variables for modeling the net flux of shortwave
+radiation are defined as follows:<br>
+<center> <table>
+<tr>
+<td> T<sub>air</sub> </td>
+<td> = air temperature [deg C] </td>
+</tr>
+<tr>
+<td> RH </td>
+<td> = relative humidity [unitless]   (in [0,1]) </td>
+</tr>
+<tr>
+<td> albedo </td>
+<td> = surface albedo [unitless]   (in [0,1]) </td>
+</tr>
+<tr>
+<td> dust att. </td>
+<td> = dust attenuation factor [unitless]   (in [0,1]) </td>
+</tr>
+<tr>
+<td> factor </td>
+<td> = cloud or canopy cover factor [unitless]   (in [0,1]) </td>
+</tr>
+<tr>
+<td> slope </td>
+<td> = topographic slope [unitless, m/m]   (in [0,Infinity]) </td>
+</tr>
+<tr>
+<td> aspect </td>
+<td> = aspect angle [radians]   (in [0,1]) </td>
+</tr>
+</table> </center>
+</p>
+
+<p>For each variable, you may choose from the droplist of data
+types.  For the "Scalar" data type, enter a numeric value with
+the units indicated in the dialog.  For the other data types,
+enter a filename.  Values in files must also use the indicated
+units. </p>
+
+<p>Single grids and grid sequences are assumed to be stored as
+<b><i> <a href="RTG_format.htm">RTG </a> </i></b> and
+<b><i> <a href="RTS_format.htm">RTS</a> </i></b> files, respectively.
+Time series are assumed to be stored as text files, with one value
+per line. For a time series or grid sequence, the time between
+values must coincide with the timestep provided. </p>
+
+<p>For DEMs with pixel geometry and bounding box given in terms of
+Geographic coordinates, the latitude and longitude of each pixel is
+used in the calculations.  For DEMs with a "fixed-length" pixel geometry
+(e.g. UTM coordinates), which tend to span smaller areas, the dialog
+prompts for a single lat/lon pair to be used in the calculations. </p>
+
+<p><b>timestep:</b> &nbsp;&nbsp;
+The timestep between frames in the new grid sequence (RTS file)
+should typically be about one hour and should match the timestep
+that will be used to model the Snowmelt or Evaporation processes.
+The number of frames in the RTS file will depend on the start and
+stop times, as well as the timestep.  The start time, stop time
+and timestep should match those used to create the new longwave
+radiation file with extension "*.Qn-LW". </p>
+
+<p><b>time zone:</b> &nbsp;&nbsp;
+The boundaries of time zones can be very irregular and a time zone
+map should be consulted if you are unsure.  The time zone is not
+simply a function of the longitude.  You can select an adjacent
+time zone to include the effect of Daylight Savings Time.  Time
+zones with non-integer offsets from GMT are not yet supported. </p>
+
+<p><b>factor:</b> &nbsp;&nbsp;
+This number can be used to account for cloud or
+canopy cover.  It is simply multiplied by the "clear sky" value
+of Q<sub>SW</sub>.  There are many different methods of computing this
+factor from the fraction of the sky covered by clouds, C, and the
+fraction covered by forest canopy, F. </p>
+
+<p><b>slope:</b> &nbsp;&nbsp;
+Topographic slopes (not slope angles) are specified as dimensionless
+numbers [m/m].  A RiverTools grid (RTG file) with extension
+"_slope.rtg", "_mf-slope.rtg" or "_dinf-slope.rtg" can be used. </p>
+
+<p><b>aspect:</b> &nbsp;&nbsp;
+Aspect is specified as an angle measured in radians counter-clockwise
+from due east (the standard convention).
+A RiverTools grid (RTG file) with extension "_mf-angle.rtg" or
+"_dinf-angle.rtg" can be used for the (continuous-angle) aspect grid.
+</p>
+
+<hr>
+<h3>Equations Used to Compute Shortwave Radiation</h3>
+
+<p> See References below. </p>
+
+<hr>
+<h3>Notes on the Equations</h3>
+
+<p>This routine creates a grid sequence (RTS file format) of
+clear-sky solar radiation flux, Q<sub>SW</sub>,
+(shortwave radiation) that is used for the energy-balance
+methods of Snowmelt and Evaporation.  Direct, diffuse and back-
+scattered radiation fluxes are all modeled.  Properties of the
+atmosphere such as air temperature, relative humidity and dust
+attenuation are used as well as surface/topographic properties such
+as slope angle, aspect angle and surface albedo.  The approach
+followed here closely follows the one outlined in Appendix E of
+Dingman (2002).  However, instantaneous vs. day-integrated
+radiation fluxes are used and the optical air mass is modeled using
+the widely used method of Kasten and Young (1989). </p>
+
+<p>Q<sub>SW</sub> is set to zero between the times of local sunset and
+local sunrise, so frames in the RTS file that correspond to nighttime
+hours will contain only zeros. </p>
+
+<p>For additional information, see the help page for the 
+<b><a href="longwave_calc.htm">longwave radiation calculator</a></b>.
+</p>
+
+<hr>
+<h3>References</h3>
+
+<p>Dingman, S.L (2002) <i>Physical Hydrology</i>, 2nd ed., Prentice Hall,
+New Jersey. (see Appendix E) </p>
+
+<p>Kasten and Young (1989) (for the optical air mass equation) </p> 
+
+<p>Liston, G. ******* </p>
+
+<p>Marks and Dozier (1992) ******* <i>Water Resources Research</i>.
+</p>
+
+<p>Whitman, A.M. (2003) A simple expression for the equation of time,
+online document,
+http://www.sunspot.noao.edu/sunspot/pr/answerbook/expl-5.html
+</p>
+
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+
+</td> </tr> </table>
+
+</body>
+</html>
+

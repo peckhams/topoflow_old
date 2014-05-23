@@ -1,0 +1,8 @@
+[ 'Season 1' ]
+Duration (y):                             1y
+Bedload (kg/s):                           ${BedLoadFlux}
+Suspended load concentration (kg/m^3):    ${SuspendedLoadConc}, ${SuspendedLoadConc}, ${SuspendedLoadConc}, ${SuspendedLoadConc}
+Velocity (m/s):                           2.
+Width (m):                                125.0
+Depth (m):                                2.0
+

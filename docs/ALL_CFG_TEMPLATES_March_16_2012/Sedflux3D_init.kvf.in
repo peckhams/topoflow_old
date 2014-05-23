@@ -1,0 +1,16 @@
+# This is a comment
+
+[global]
+margin name:            Small
+vertical resolution:    ${ZResolution}
+x resolution:           ${XResolution}
+y resolution:           ${YResolution}
+bathymetry file:        ${BathyFile}
+sediment file:          ${SedimentFile}
+
+[epoch]
+number:           1
+duration:         ${RunDuration}y
+time step:        .25y
+process file:     ${ProcessFile}
+

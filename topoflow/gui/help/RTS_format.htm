@@ -1,0 +1,86 @@
+<!-- Copyright (c) 2007, Scott Peckham. All rights reserved. -->
+<html>
+<head>
+<title>TopoFlow 1.5 Help - Profile-smoothed DEM</title>
+<link rel=stylesheet type="text/css" href="help_sys.css">
+</head>
+
+<body bgcolor="#ffffff" link="#0000ff" vlink="#800080">
+
+<table border=1 cellpadding=0 cellspacing=0>
+<tr valign=center>
+   <td CLASS=banner0 align=right>
+      <!--
+      <font size=1><sup>
+      <a target=_top href="top.html">top</a></sup></font>
+      <a href="prev_help.html">
+      <img CLASS=arrow src="left_arrow.jpg"></a>
+      <a href="next_help.html">
+      <img CLASS=arrow src="right_arrow.jpg"></a>&nbsp;
+      -->
+   </td>
+</tr>
+</table>
+ 
+<table border=0 cellspacing=0 cellpadding=10>
+<tr> <td>
+
+<h2>RTS File Format (RiverTools Sequence)</h2>
+
+<p>RiverTools Sequence (RTS) files are a simple extension
+of the <b><a href="RTG_format.htm">RTG file format</a></b>
+that allow a sequence of RTG files
+to be stored in a single file.  That is, an RTS file is
+a simple concatenation of RTG files that each have the
+same data type.  The main purpose of this format is to
+provide support for <b>landscape evolution models</b> and
+<b>spatially-distributed hydrologic models</b> in the
+RiverTools environment.  For example, a landscape
+evolution model produces a sequence of DEMs, each of
+which represents the topography of the landscape at a
+particular time in its evolution.  Similarly, a
+spatially-distributed hydrologic model may produce a
+sequence of grids, each of which shows how water depths
+or discharges are distributed spatially at a particular
+time during a storm.</p>
+
+<p>The various RTG files contained within an RTS file are
+referred to as <b>frames</b>, and all of the frames are
+assumed to have the same data type.  In version 3.0, only
+the 4-byte floating point or <b>FLOAT</b> data type is
+supported.  In TopoFlow, the frames in an RTS file can be
+shown as an animation using <b>Plot &rarr; RTS File</b>.
+Alternately, the <b>Display
+&rarr; Grid Sequence</b> dialog in RiverTools 3.0 can
+be used to create animations, save them in AVI file format,
+or interact with them in various ways.  Note that an RTG
+file with a data type of FLOAT is identical to an RTS file
+with a single frame.</p>
+
+<p>Unlike the file formats used for movies, no data
+compression is used in RTS files because that would
+result in a loss of information and each pixel of each
+frame is assumed to represent valuable data.  As a result,
+however, RTS files can be quite large and must therefore
+be managed appropriately.  Typically, the number of rows
+and columns for any given frame in an RTS file will be
+numbers less than 500.  The filesize of an RTS file can
+be computed as</p>
+
+<center> <p>
+filesize = (ncols x nrows x BPE x nframes)
+</p> </center>
+
+<p>where BPE is the number of bytes per element or pixel.
+BPE is equal to 4 for the <b>FLOAT</b> data type and 8
+for the <b>DOUBLE</b> data type.</p>
+
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+
+</td> </tr> </table>
+
+</body>
+</html>
+

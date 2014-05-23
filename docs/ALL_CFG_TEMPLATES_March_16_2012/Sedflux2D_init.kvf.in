@@ -1,0 +1,14 @@
+[ global ]
+margin name:            Adriatic
+vertical resolution:    ${ZResolution}
+x resolution:           ${XResolution}
+y resolution:           ${YResolution}
+bathymetry file:        ${BathyFile}
+sediment file:          ${SedimentFile}
+
+[ epoch ]
+number:           1
+duration:         ${RunDuration}y
+time step:        1y
+process file:     ${ProcessFile}
+

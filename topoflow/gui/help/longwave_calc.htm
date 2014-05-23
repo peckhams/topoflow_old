@@ -1,0 +1,227 @@
+<!-- Copyright (c) 2007, Scott Peckham. All rights reserved. -->
+<html>
+<head>
+<title>TopoFlow 1.5 Help - Qnet Longwave Flux</title>
+<link rel=stylesheet type="text/css" href="help_sys.css">
+</head>
+
+<body bgcolor="#ffffff" link="#0000ff" vlink="#800080">
+
+<table border=1 cellpadding=0 cellspacing=0>
+<tr valign=center>
+   <td CLASS=banner0 align=right>
+      <!--
+      <font size=1><sup>
+      <a target=_top href="top.html">top</a></sup></font>
+      <a href="prev_help.html">
+      <img CLASS=arrow src="left_arrow.jpg"></a>
+      <a href="next_help.html">
+      <img CLASS=arrow src="right_arrow.jpg"></a>&nbsp;
+      -->
+   </td>
+</tr>
+</table>
+ 
+<table border=0 cellspacing=0 cellpadding=10>
+<tr> <td> 
+ 
+<h2>Create &rarr; RTS File for Qnet Longwave Flux</h2>
+
+<p>The input variables for modeling the net flux of longwave
+radiation are defined as follows:<br>
+<center> <table>
+<tr>
+<td> T<sub>air</sub> </td>
+<td> = air temperature [deg C] </td>
+</tr>
+<tr>
+<td> RH </td>
+<td> = relative humidity [unitless]   (in [0,1]) </td>
+</tr>
+<tr>
+<td> albedo </td>
+<td> = surface albedo [unitless]   (in [0,1]) </td>
+</tr>
+<tr>
+<td> cloud fraction </td>
+<td> = fraction of sky covered by clouds [unitless]   (in [0,1]) </td>
+</tr>
+<tr>
+<td> canopy fraction </td>
+<td> = fraction of sky covered by canopy [unitless]   (in [0,1]) </td>
+</tr>
+<tr>
+<td> T<sub>surf</sub> </td>
+<td> = surface temperature [deg C] </td>
+</tr>
+<tr>
+<td> em<sub>surf</sub> </td>
+<td> = surface emissivity [unitless]   (in [0,1]) </td>
+</tr>
+<tr>
+<td> e<sub>air</sub> </td>
+<td> = vapor pressure of air [mbar, not kPa] </td>
+</tr>
+</table> </center>
+</p>
+
+<p>For each variable, you may choose from the droplist of data
+types.  For the "Scalar" data type, enter a numeric value with
+the units indicated in the dialog.  For the other data types,
+enter a filename.  Values in files must also use the indicated
+units. </p>
+
+<p>Single grids and grid sequences are assumed to be stored as
+<b><i> <a href="RTG_format.htm">RTG </a> </i></b> and
+<b><i> <a href="RTS_format.htm">RTS</a> </i></b> files, respectively.
+Time series are assumed to be stored as text files, with one value
+per line. For a time series or grid sequence, the time between
+values must coincide with the timestep provided. </p>
+
+<p>The timestep between frames in the new grid sequence (RTS file)
+should typically be about one hour and should match the timestep
+that will be used to model the Snowmelt or Evaporation processes.
+The number of frames in the RTS file will depend on the start and
+stop times, as well as the timestep.  The start time, stop time
+and timestep should match those used to create the new shortwave
+radiation file with extension "*.Qn-SW". </p>
+
+<hr>
+<h3>Equations Used to Compute Longwave Radiation</h3>
+<table>
+<tr>
+<td> Q<sub>LW</sub> </td>
+<td> = (LW<sub>in</sub> - LW<sub>out</sub>) </td>
+<td> = net longwave radiation [W / m<sup>2</sup>] </td>
+</tr>
+
+<tr>
+<td> LW<sub>in</sub> </td>
+<td> = em<sub>air</sub>  * &sigma; * (T<sub>air</sub> + 273.15)<sup>4</sup> </td>
+<td> = incoming longwave radiation </td>
+</tr>
+
+<tr>
+<td> LW<sub>out</sub> </td>
+<td> = em<sub>surf</sub> * &sigma; * (T<sub>surf</sub> + 273.15)<sup>4</sup>
+     &nbsp;  + </td>
+<td>  </td>
+</tr>
+<tr>
+<td>  </td>
+<td> &nbsp;&nbsp;&nbsp;&nbsp;
+     (1 - em<sub>surf</sub>) * LW<sub>in</sub> </td>
+<td> = outgoing longwave radiation </td>
+</tr>
+
+<tr>
+<td> e<sub>sat</sub> </td>
+<td> = 6.11 * exp[(17.3 * T) / (T + 237.3)] </td>
+<td> = saturation vapor pressure [mbar, not KPa] </td>
+</tr>
+
+<tr>
+<td> e<sub>air</sub> </td>
+<td> = e<sub>sat</sub>(T<sub>air</sub>) * RH </td>
+<td> = vapor pressure of air [mbar] </td>
+</tr>
+
+<tr>
+<td> em<sub>air</sub> </td>
+<td> = [(1 - F) * 1.72 * [e<sub>air</sub> / 
+         (T<sub>air</sub> + 273.15)]<sup>1/7</sup> &nbsp; * </td>
+<td>  </td>
+</tr>
+<tr>
+<td>  </td>
+<td> &nbsp;&nbsp;&nbsp;&nbsp;
+     (1 + 0.22 * C<sup>2</sup>)] + F </td>
+<td> = emissivity of air [unitless] </td>
+</tr>
+</table>
+
+<hr>
+<h3>Notes on the Equations</h3>
+
+<p>This routine creates a grid sequence (RTS file format) of net
+longwave radiation flux, Q<sub>LW</sub>,
+that is used for the energy-balance methods of Snowmelt
+and Evaporation.  The incoming and outgoing longwave radiation
+are computed using the Stefan-Boltzman law as follows:
+<br> <br>
+<center> <table>
+<tr>
+<td> LW<sub>in</sub> </td>
+<td> = em<sub>air</sub>  * &sigma; * (T<sub>air</sub> + 273.15)<sup>4</sup> </td>
+</tr>
+<tr>
+<td> LW<sub>out</sub> </td>
+<td> = em<sub>surf</sub> * &sigma; * 
+       (T<sub>surf</sub> + 273.15)<sup>4</sup>  +
+       (1 - em<sub>surf</sub>) * LW<sub>in</sub> </td>
+</tr>
+</table> </center>      
+<br>
+where em<sub>air</sub> is the emissivity of air,
+em<sub>surf</sub> is the emissivity of the surface (e.g. snow),
+and &sigma; = 5.67e-8 [W/(m<sup>2</sup> K<sup>4</sup>)] is the
+<i><b>Stefan-Boltzman constant</b></i>.
+T<sub>air</sub> and T<sub>surf</sub> are the temperatures
+of the air and the surface (e.g. snow) in degrees Celsius.
+</p>
+
+<p>The emissivity of air can be computed from the relative humidity,
+RH, the air temperature, T<sub>air</sub>, the fraction of sky covered
+by clouds, C, and the fraction of sky covered by the forest canopy, F.
+First, the vapor pressure (in millibars, not kPa) is computed using
+the Brutsaert (1975) method as:
+<br> <br>
+<center> <table>
+<tr>
+<td> e<sub>sat</sub> = 
+     6.11 * exp[(17.3 * T) / (T + 237.3)] </td>
+<td> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+     Brutsaert (1975) </td>
+</tr>
+
+<tr>
+<td> e<sub>air</sub> = 
+     e<sub>sat</sub>(T<sub>air</sub>) * RH </td>
+<td>  </td>
+</tr>
+</table> </center>
+<br>
+[Note that the value 237.3 in Brutsaert's equation is not a misprint.]
+Then, em<sub>air</sub> is computed as:
+<br> <br>
+<center>
+em<sub>air</sub> = [(1 - F) * 1.72 * [e<sub>air</sub> / 
+                    (T<sub>air</sub> + 273.15)]<sup>1/7</sup> *
+                    (1 + 0.22 * C<sup>2</sup>)] + F.
+</center> <br>
+</p>
+
+<p>For additional information, see the help page for the 
+<b><a href="shortwave_calc.htm">shortwave radiation calculator</a></b>.
+</p>
+
+<hr>
+<h3>References</h3>
+
+<p>Brutsaert, W. (1975) On a derivable formula for long-wave radiation
+from clear skies, <i>Water Resources Research</i>, <b>11</b>, 742-744.
+</p>
+
+<p>Dingman, S.L (2002) <i>Physical Hydrology</i>, 2nd ed., Prentice Hall,
+New Jersey. (see Chapter 7, pp. 285-299) </p>
+
+
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+
+</td> </tr> </table>
+
+</body>
+</html>
+

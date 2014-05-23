@@ -1,0 +1,38 @@
+#===============================================================================
+# TopoFlow Config File for: Infil_Green_Ampt
+#===============================================================================
+# Input
+comp_status         | ${comp_status}      | string    | component status {Enabled; Disabled}
+in_directory        | ${in_directory}     | string    | input directory
+out_directory       | ${out_directory}    | string    | output directory
+site_prefix         | ${site_prefix}      | string    | file prefix for the study site
+case_prefix         | ${case_prefix}      | string    | file prefix for the model scenario
+n_steps             | ${n_steps}          | long      | number of time steps
+n_layers            | ${n_layers}         | int       | number of soil layers
+dt                  | ${dt}               | float     | timestep for infiltration process [sec]
+#===============================================================================
+# Layer 1
+Ks_type[0]          | ${Ks_type_0}        | string    | allowed input types {Scalar; Grid; Time_Series; Grid_Sequence}
+Ks[0]               | ${Ks_0}             | float     | sat. hydraulic conductivity [m/s]
+Ki_type[0]          | ${Ki_type_0}        | string    | allowed input types {Scalar; Grid; Time_Series; Grid_Sequence}
+Ki[0]               | ${Ki_0}             | float     | init. hydraulic conductivity [m/s] (< K_sat)
+qs_type[0]          | ${qs_type_0}        | string    | allowed input types {Scalar; Grid; Time_Series; Grid_Sequence}
+qs[0]               | ${qs_0}             | float     | sat. soil water content [none]
+qi_type[0]          | ${qi_type_0}        | string    | allowed input types {Scalar; Grid; Time_Series; Grid_Sequence}
+qi[0]               | ${qi_0}             | float     | init. soil water content [none] (< theta_sat)
+G_type[0]           | ${G_type_0}         | string    | allowed input types {Scalar; Grid; Time_Series; Grid_Sequence}
+G[0]                | ${G_0}              | float     | capillary length scale [m]
+soil_type[0]        | ${soil_type_0}      | string    | closest standard soil type {sand; loamy_sand; sandy_loam; silty_loam; loam; sandy_clay_loam; silty_clay_loam; clay_loam; sandy_clay; silty_clay; clay}
+#===============================================================================
+# Output
+save_grid_dt        | ${save_grid_dt}     | float     | time interval between saved grids [sec]
+SAVE_V0_GRIDS       | ${SAVE_V0_GRIDS}    | string    | option to save grids of infil. rate (at surf)  {Yes; No}
+v0_gs_file          | ${v0_gs_file}       | string    | filename for grid stack of v0 [m/s]
+SAVE_I_GRIDS        | ${SAVE_I_GRIDS}     | string    | option to save grids of cumul. infil. depth {Yes; No}
+I_gs_file           | ${I_gs_file}        | string    | filename for grid stack of I [m]
+save_pixels_dt      | ${save_pixels_dt}   | float     | time interval between time series values [sec]
+pixel_file          | ${pixel_file}       | string    | filename for monitored pixel info
+SAVE_V0_PIXELS      | ${SAVE_V0_PIXELS}   | string    | option to save time series of infil. rate (at surf) {Yes; No}
+v0_ts_file          | ${v0_ts_file}       | string    | filename for time series of v0 [m/s]
+SAVE_I_PIXELS       | ${SAVE_I_PIXELS}    | string    | option to save time series of cumul. infil. depth {Yes; No}
+I_ts_file           | ${I_ts_file}        | string    | filename for time series of I [m]

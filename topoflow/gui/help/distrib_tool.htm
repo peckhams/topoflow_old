@@ -1,0 +1,81 @@
+<!-- Copyright (c) 2007, Scott Peckham. All rights reserved. -->
+<html>
+<head>
+<title>TopoFlow 1.5 Help - Interpolate Station Data</title>
+<link rel=stylesheet type="text/css" href="help_sys.css">
+</head>
+
+<body bgcolor="#ffffff" link="#0000ff" vlink="#800080">
+
+<table border=1 cellpadding=0 cellspacing=0>
+<tr valign=center>
+   <td CLASS=banner0 align=right>
+      <!--
+      <font size=1><sup>
+      <a target=_top href="top.html">top</a></sup></font>
+      <a href="prev_help.html">
+      <img CLASS=arrow src="left_arrow.jpg"></a>
+      <a href="next_help.html">
+      <img CLASS=arrow src="right_arrow.jpg"></a>&nbsp;
+      -->
+   </td>
+</tr>
+</table>
+ 
+<table border=0 cellspacing=0 cellpadding=10>
+<tr> <td> 
+ 
+<h2>Create &rarr; RTS File from Station Data</h2>
+
+<p>This preprocessing tool reads any type of data that was measured
+over time at discrete locations, here called "stations", from a
+multi-column text file and then uses the <b><i>Inverse Distance
+Method</i></b> (IDM) to create a corresponding sequence of spatial
+grids with the same georeferencing as the DEM. </p>
+
+<p>The format of the multi-column text must be as follows.  There can be
+any number of header lines, but typically there will be one with the
+column headers Time, Station_1, Station_2 and so on followed by a
+second line that consists of hyphens.  After the line of hyphens, the
+next two lines must begin with "X" and "Y" and give the X and Y
+coordinates of the stations (UTM/meters or Geographic/decimal degrees).
+That is, "X" and "Y" appear in the Time column of the first two rows.
+The values that were measured at each station over time are then listed
+in the subsequent rows, with each row containing the time followed by
+the values measured at each station at that time.  If no value is
+available at a given station for a given time, then a nodata value of
+-9999.0 must be provided;  it cannot be left blank or set to any
+other value.  Values in a row may be separated by blank space or by
+commas.  Here is an example:</p>
+<pre>
+Time	Station_1	Station_2	Station_3	Station_4
+--------------------------------------------------------------------
+X	50		2950		50		2950
+Y	2950		2950		50		50
+1.0	20.0		20.0		20.0		20.0
+2.0	10.0		15.0		5.0		6.0
+3.0	30.0		5.0		7.0		-9999.0
+</pre>
+
+<p>The number of header lines to be skipped in the station data file
+must be provided in the dialog, as well as the parameter "p" that is
+required by the Inverse Distance Method (IDM).  The equation for the
+IDM is: <br>
+<center>
+Z(x,y) = &Sigma;<sub>k=1,N</sub>
+          [Z<sub>k</sub> / d<sub>k</sub>(x,y)<sup>p</sup>] /
+         &Sigma;<sub>k=1,N</sub> [1 / d<sub>k</sub>(x,y)<sup>p</sup>],
+</center> <br>
+where N is the number of stations, d<sub>k</sub>(x,y) is the distance from the
+pixel at (x,y) to the kth station, and Z<sub>k</sub> is the value that was
+measured at the kth station at a given time. </p>
+
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+
+</td> </tr> </table>
+
+</body>
+</html>
+

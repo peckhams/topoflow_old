@@ -1,0 +1,124 @@
+<!-- Copyright (c) 2007, Scott Peckham. All rights reserved. -->
+<html>
+<head>
+<title>TopoFlow 1.5 Help - Diversions</title>
+<link rel=stylesheet type="text/css" href="help_sys.css">
+</head>
+
+<body bgcolor="#ffffff" link="#0000ff" vlink="#800080">
+
+<table border=1 cellpadding=0 cellspacing=0>
+<tr valign=center>
+   <td CLASS=banner0 align=right>
+      <!--
+      <font size=1><sup>
+      <a target=_top href="top.html">top</a></sup></font>
+      <a href="prev_help.html">
+      <img CLASS=arrow src="left_arrow.jpg"></a>
+      <a href="next_help.html">
+      <img CLASS=arrow src="right_arrow.jpg"></a>&nbsp;
+      -->
+   </td>
+</tr>
+</table>
+ 
+<table border=0 cellspacing=0 cellpadding=10>
+<tr> <td> 
+ 
+<h2>Diversions &rarr; Sources, Sinks or Canals</h2>
+
+<p>TopoFlow supports three different types of flow diversions:
+<i><b>sources</b></i>,
+<i><b>sinks</b></i> and
+<i><b>canals</b></i>.
+Sources are locations such as natural springs where water enters the
+watershed at a point by some process other than those that are
+modeled.  Similarly, sinks are locations where water leaves the watershed
+at a point.  Canals are generally man-made reaches such as tunnels or irrigation ditches that transport water from one point to another,
+typically without following the natural gradient of the terrain that is
+indicated by the DEM.  The upstream end is essentially a sink and the downstream end a source. </p>
+       
+<p>To use flow diversions, you must provide the required information in
+specially-formatted text files. Where required, vector-valued input
+variables such as durations are specified as a list of space-delimited
+numbers on one line (i.e. terminated by a single end-of-line character).
+The term <b><i>pixel ID</i></b> refers to the  integer value that is
+assigned to a given pixel (i.e. grid cell) when all pixels in
+the corresponding DEM are numbered sequentially in <b><i>calendar order
+</i></b>, that is, from top row to bottom row and from left to right
+within each row.  Pixel IDs start at zero and are read and processed
+as long (4-byte) integers. </p>
+
+<p>For <b>sources</b> and <b>sinks</b>, the following information must
+be provided, each on its own line: <br>
+<center> <table>       
+<tr>
+<td> ID </td>
+<td> &nbsp;&nbsp;&nbsp;
+(source pixel ID as long integer; calendar index) </td>
+</tr>
+<tr>
+<td> nd </td>
+<td> &nbsp;&nbsp;&nbsp;
+(number of durations and flow rates)</td>
+</tr>
+<tr>
+<td> durations </td>
+<td> &nbsp;&nbsp;&nbsp; 
+(vector of durations in minutes)</td>
+</tr>
+<tr>
+<td> flow rates </td>
+<td> &nbsp;&nbsp;&nbsp;
+(vector of discharges in m<sup>3</sup>/sec)</td>
+</tr>
+</table> </center>
+</p>
+    
+<p>For <b>canals</b>, the following information must be provided, again
+with each entry on a separate line in the text file: <br>
+<center> <table>
+<tr>
+<td> ID1 </td>
+<td> &nbsp;&nbsp;&nbsp;
+(start pixel ID as long integer; calendar index) </td>
+</tr>
+<tr>
+<td> ID2 </td>
+<td> &nbsp;&nbsp;&nbsp;
+(end pixel ID as long integer; calendar index) </td>
+</tr>
+<tr>
+<td> time </td>
+<td> &nbsp;&nbsp;&nbsp;
+(travel time between ID1 and ID2, in minutes) </td>
+</tr>
+<tr>
+<td> nd </td>
+<td> &nbsp;&nbsp;&nbsp;
+(number of durations and flow rates) </td>
+</tr>
+<tr>
+<td> durations </td>
+<td> &nbsp;&nbsp;&nbsp;
+(vector of durations in minutes) </td>
+</tr>
+<tr>
+<td> flow rates </td>
+<td> &nbsp;&nbsp;&nbsp;
+(vector of discharges in m<sup>3</sup>/sec) </td>
+</tr>
+</table> </center>
+   
+<p>Canals are currently assumed to be lossless, so that the flow rates
+at the two ends are identical, but lagged by the travel time. </p>
+       
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+
+</td> </tr> </table>
+
+</body>
+</html>
+

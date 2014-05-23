@@ -1,0 +1,149 @@
+<!-- Copyright (c) 2007, Scott Peckham. All rights reserved. -->
+<html>
+<head>
+<title>TopoFlow 1.5 Help - Initial Flow Depth</title>
+<link rel=stylesheet type="text/css" href="help_sys.css">
+</head>
+
+<body bgcolor="#ffffff" link="#0000ff" vlink="#800080">
+
+<table border=1 cellpadding=0 cellspacing=0>
+<tr valign=center>
+   <td CLASS=banner0 align=right>
+      <!--
+      <font size=1><sup>
+      <a target=_top href="top.html">top</a></sup></font>
+      <a href="prev_help.html">
+      <img CLASS=arrow src="left_arrow.jpg"></a>
+      <a href="next_help.html">
+      <img CLASS=arrow src="right_arrow.jpg"></a>&nbsp;
+      -->
+   </td>
+</tr>
+</table>
+ 
+<table border=0 cellspacing=0 cellpadding=10>
+<tr> <td> 
+ 
+<h2>Create &rarr; RTG File for Initial Depth</h2>
+
+<p>This routine computes a grid of flow depths for the baseflow case
+where there is steady-state flow with a given baseflow recharge rate
+at every grid cell.   The derivation begins with the following four
+equations: </p>
+<center> <table>
+<tr>
+<td> v = </td>
+<td> n<sup>-1</sup> R<sup>2/3</sup> S<sup>1/2</sup>  (Manning)</td>
+</tr>
+<tr>
+<td> R = </td>
+<td> Ac / P </td>
+</tr>
+<tr>
+<td> Q = </td>
+<td> v * Ac </td>
+</tr>
+<tr>
+<td> Q = </td>
+<td> Rb * A </td>
+</tr>
+</table> </center>
+
+<p>Trapezoidal channel cross-sections are then assumed, with
+bottom-width, w, and bank-angle, &theta;, specified as input
+grids.  For such channels we have: </p>
+
+<center> <table>
+<tr>
+<td> Ac </td>
+<td> = d * [w + (d * tan(&theta;))] </td>
+</tr>
+<tr>
+<td> P </td>
+<td> = w + [2 * d / cos(&theta;)] </td>
+</tr>
+</table> </center>
+
+<p>These last two equations can be used to show that R = (Ac/P)
+is closely approximated by the flow depth, d, when (w/d) has
+a value greater than about 10. </p>
+
+<p>All of these equations can be combined to eliminate <i>v</i>
+and get a single, nonlinear equation for flow depth, <i>d</i>.
+This equation is then solved iteratively by grid-based Newton-Raphson
+iteration;  that is, iterated until all grid cells have converged.
+</p>
+
+<p>Once the initial depth grid has been computed, the corresponding
+initial velocity grid is computed using the Manning formula. </p>
+
+<p>It is assumed that hillslope pixels have been assigned parameters
+that are consistent with Manning-type modeling of overland flow.
+This can be done with the
+<a href="channel_grids_area.htm">
+<i><b>Create &rarr; Channel Geometry Grids &rarr; With Area Grid</b></i> </a>
+dialog or the
+<a href="channel_grids_order.htm">
+<i><b>Create &rarr; Channel Geometry Grids &rarr; With HS Order Grid</b></i> </a>
+dialog. </p>
+
+<p>The variables in the above equations are defined as follows: </p>
+
+<center> <table>
+<tr>
+<td> Q </td>
+<td> = discharge [m<sup>3</sup>/s] </td>
+</tr>
+<tr>
+<td> A </td>
+<td> = basin area [km<sup>2</sup>] </td>
+</tr>
+<tr>
+<td> S </td>
+<td> = channel slope [none] </td>
+</tr>
+<tr>
+<td> v </td>
+<td> = flow velocity [m/s] </td>
+</tr>
+<tr>
+<td> w </td>
+<td> = bed width [m] </td>
+</tr>
+<tr>
+<td> n </td>
+<td> = Manning roughness parameter [s/m<sup>1/3</sup>] </td>
+</tr>
+<tr>
+<td> Ac </td>
+<td> = wetted channel cross-section area [m<sup>2</sup>] </td>
+</tr>
+<tr>
+<td> P </td>
+<td> = wetted channel cross-section permiter [m] </td>
+</tr>
+<tr>
+<td> R </td>
+<td> = hydraulic radius [m] = (Ac / P) </td>
+</tr>
+<tr>
+<td> Rb </td>
+<td> = baseflow recharge rate [mm/year] </td>
+</tr>
+<tr>
+<td> d </td>
+<td> = flow depth [m] </td>
+</tr>
+</table> </center>
+
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+
+</td> </tr> </table>
+
+</body>
+</html>
+
+

@@ -1,0 +1,83 @@
+<!-- Copyright (c) 2007, Scott Peckham. All rights reserved. -->
+<html>
+<head>
+<title>TopoFlow 1.5 Help - Cascade Rain</title>
+<link rel=stylesheet type="text/css" href="help_sys.css">
+</head>
+
+<body bgcolor="#ffffff" link="#0000ff" vlink="#800080">
+
+<table border=1 cellpadding=0 cellspacing=0>
+<tr valign=center>
+   <td CLASS=banner0 align=right>
+      <!--
+      <font size=1><sup>
+      <a target=_top href="top.html">top</a></sup></font>
+      <a href="prev_help.html">
+      <img CLASS=arrow src="left_arrow.jpg"></a>
+      <a href="next_help.html">
+      <img CLASS=arrow src="right_arrow.jpg"></a>&nbsp;
+      -->
+   </td>
+</tr>
+</table>
+ 
+<table border=0 cellspacing=0 cellpadding=10>
+<tr> <td> 
+ 
+<h2>Create &rarr; RTS File for Fractal Rain</h2>
+
+<p>This routine simulates convective, mesoscale rainfall in a manner that
+reproduces many of the scaling properties that have been observed
+in radar measurements.  Rainfall rates that vary in both space and
+time are modeled as the time evolution of a 2D random cascade
+(multifractal) with generator processes that are the product of
+two independent (stochastic) generator processes, i.e. <br>
+<br>
+W(t) = B(t) * Y(t),  where B(t) is a "space-time beta model" <br>
+B(t) = I(t) / P[I(t)>0],  where I(t) is a "birth-death process"
+       on the interval (0,1), and <br>
+Y(t) is a stationary stochastic process on positive support and
+       independent of B(t). <br>
+<br>
+In particular, this version assumes that <br>
+<center>
+Y(t) = b<sup>(-a<font size=1><sup>2</sup></font> * 
+              LN(b)/2 + a*X(t))</sup>
+</center> <br>
+where X(t) is an Ornstein-Uhlenbeck process with unit variance.
+In this version, the characteristic time of evolution of both
+component processes varies with scale according to: <br>
+<br> <center>
+	 k(level) = kmax * b<sup>(H*(nlevels-level)/2)</sup> <br>
+</center> <br>
+so that larger scale processes evolve more slowly and scaling in
+time is obtained.  Here, <i>b</i> is the branching number and H is a
+scaling exponent in the interval <i>[0,1]</i>. </p>
+
+<p>The final result is saved as a grid sequence (RTS file) along with
+a georeferencing (RTI file) that matches the area spanned by the DEM.
+Grid values are scaled so as to have the specified maximum rainrate.
+</p>
+
+<p>Note that the spatial scaling assumption for this model and the
+default parameters have only been checked for radar scales, i.e.
+2 to 256 km.  Moreover, this is a Lagrangian model in that it
+evolves in time but does not advect.  A more realistic space-time
+rainfall simulator with advection is planned for a future version
+of TopoFlow. </p>
+
+<p><b>Reference</b>:
+Over, T.M. (1995) <i>Modeling Space-Time Rainfall at the Mesoscale Using
+Random Cascades</i>, PhD Dissertaion, University of Colorado, Boulder.
+</p>
+
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+
+</td> </tr> </table>
+
+</body>
+</html>
+

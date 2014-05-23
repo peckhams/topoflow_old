@@ -1,0 +1,289 @@
+<!-- Copyright (c) 2007, Scott Peckham. All rights reserved. -->
+<html>
+<head>
+<title>TopoFlow 1.5 Help - Subsurface Flow - Darcy, Surface-parallel</title>
+<link rel=stylesheet type="text/css" href="help_sys.css">
+</head>
+
+<body bgcolor="#ffffff" link="#0000ff" vlink="#800080">
+
+<table border=1 cellpadding=0 cellspacing=0>
+<tr valign=center>
+   <td CLASS=banner0 align=right>
+      <!--
+      <font size=1><sup>
+      <a target=_top href="top.html">top</a></sup></font>
+      <a href="prev_help.html">
+      <img CLASS=arrow src="left_arrow.jpg"></a>
+      <a href="next_help.html">
+      <img CLASS=arrow src="right_arrow.jpg"></a>&nbsp;
+      -->
+   </td>
+</tr>
+</table>
+ 
+<table border=0 cellspacing=0 cellpadding=10>
+<tr> <td> 
+ 
+<h2>Subsurface Flow &rarr; Darcy, Surface-parallel Method</h2>
+
+<p>The input variables used for modeling horizontal subsurface flow
+in the <b><i>saturated zone</i></b> via Darcy's Law are defined as
+follows:
+
+<center> <table>
+<tr>
+<td> K<sub>s</sub> </td>
+<td> = saturated hydraulic conductivity [m / s] </td>
+</tr>
+
+<tr>
+<td> S<sub>y</sub> </td>
+<td> = specific yield or drainable porosity [unitless] </td>
+</tr>
+
+<tr>
+<td>  </td>
+<td> &nbsp;&nbsp; (less than or equal to the porosity, &phi;, see Notes) </td>
+</tr>
+
+<tr>
+<td> thickness </td>
+<td> = soil layer thickness [meters] </td>
+</tr>
+</table> </center>
+
+<p>For each variable, you may choose from the droplist of data
+types.  For the "Scalar" data type, enter a numeric value with
+the units indicated in the dialog.  For the other data types,
+enter a filename.  Values in files must also have the indicated
+units. </p>
+
+<p>Single grids and grid sequences are assumed to be stored as
+<b><i> <a href="RTG_format.htm">RTG </a> </i></b> and
+<b><i> <a href="RTS_format.htm">RTS</a> </i></b> files, respectively.
+Time series are assumed to be stored as text files, with one value
+per line. For a time series or grid sequence, the time between
+values must coincide with the timestep provided. </p>
+
+<p>It is possible to have six different soil layers, each with
+different parameter values.  The <b><i>soil layer number</i></b>
+is indicated at the top of the dialog and the <b>Next</b> and
+<b>Back</b> buttons in the top section can be used to select a
+layer.  In order to use fewer than six layers, a layer can be made
+<b><i>impermeable</i></b> by either setting K<sub>s</sub> = 0 or
+&theta;<sub>s</sub> = 0 for that layer.  All layers below an
+impermeable layer are then ignored. </p>
+
+<p>Note that the thickness of a layer can vary spatially;  this
+requires choosing "Grid" from the droplist that specifies the
+thickness "Type". </p>
+
+<p><b>Important Note:</b> The <b><i>Depth to bedrock</i></b> settings
+are not yet used in this beta version. </p>
+
+<hr>
+<h3>Equations Used by the Darcy, Surface-parallel Method</h3>
+
+<table>
+<tr>
+<td> Q(k) </td>
+<td> = v<sub>hor</sub>(k) * y(k) * b  &nbsp; </td>
+<td> = horizontal discharge out of grid cell in kth layer [m<sup>3</sup> / s] </td>
+</tr>
+
+<tr>
+<td> v<sub>hor</sub>(k) &nbsp; </td>
+<td> = K<sub>s</sub>(k) * S<sub>H</sub> </td>
+<td> = horizontal flow rate [m / s] &nbsp; (from Darcy's Law) </td>
+</tr>
+
+<tr>
+<td> S<sub>H</sub> </td>
+<td> = (H<sub>x</sub><sup>2</sup> + H<sub>y</sub><sup>2</sup>)<sup>1/2</sup> </td>
+<td> = local slope of the water table [unitless] (see Notes below) </td>
+</tr>
+
+<tr>
+<td> &Delta;H / &Delta;t </td>
+<td> = [ R - &Sigma; Q(k) / (&Delta;x &Delta;y) ] / S<sub>y</sub> </td>
+<td> = integral form of mass balance [m / s] (see Notes below) </td>
+</tr>
+</table>
+<p>In the first equation, y(k), is the <b><i>saturated thickness</i></b> of the kth
+layer and b is the <b><i>flow width</i></b> perpedicular to the direction of flow.
+Note that b is the same for all layers, by assumption, and depends on the D8 flow
+direction.  Both y(k) and b have units of meters. </p>
+
+<p>In the last equation, R is the <b><i>recharge rate</i></b>, or the vertical
+infiltration rate just above the water table, and &Delta;x and &Delta;y are th
+ DEM grid cell
+dimensions.  The notation &Sigma; Q(k) denotes the sum of all flows that are
+either into a grid cell from neighboring cells or out of the cell.  This
+corresponds to a boundary integral of the flow field around the grid cell
+boundary. </p>
+
+<hr>
+<h3>Notes on the Equations</h3>
+
+<p>This method makes a number of simplifying assumptions that are important
+to understand.  It is intended for modeling <b><i>unconfined aquifers
+</i></b>, which have a <b><i>water table</i></b>, H(x,y), as their upper
+boundary.  The <b><i>Dupuit assumptions</i></b> are often used for unconfined
+aquifers and are used here, namely:
+<ol>
+<li>flow lines are horizontal and equipotential lines are vertical and
+<li>the horizontal hydraulic gradient is equal to the slope of the free surface
+(the water table) and is invariant with depth.
+</ol>
+In addition, the saturated hydraulic conductivity is assumed to be
+<b><i>isotropic</i></b> throughout any given layer, so that a single value,
+K<sub>s</sub>, can be used in both the x and y coordinate directions.
+Note that this does not prevent K<sub>s</sub> from varying spatially as
+a function of x and y. </p>
+
+<p>Another key assumption of this method is that the subsurface flow
+direction is always the same as the surface flow direction to within an
+angle of 45 degrees; that is, the D8 flow direction found from Z(x,y)
+(provided as a DEM) is always used for the subsurface flow.  Put another
+way, the gradient vectors for H(x,y) and Z(x,y) are assumed to differ by
+less than 45 degrees.  (Notice, however, that S<sub>H</sub>, which is
+the <b><i>magnitude</i></b>
+of the gradient vector for H(x,y), is used in Darcy's Law.)  This
+assumption allows an integral vs. differential form of mass balance to
+be applied to the soil column that lies below any given DEM grid cell.
+That is, instead of numerically solving a second-order PDE known as the
+<b><i>Boussinesq equation</i></b> by the finite-difference method, the
+amounts flowing across the soil column's six faces and the amount stored
+within the soil column and the requirement of mass balance are used to
+compute changes to the height of the water table.
+Since the subsurface flow direction is always taken to be the same as
+the surface flow direction, this method does not allow subsurface flow to
+cross beneath a drainage divide. </p>
+
+<p>The <b><i>water table</i></b>, H(x,y), is a dynamic surface (a moving
+boundary), and may actually rise up to the land surface in some places.
+Both the land surface, Z(x,y), (given by a DEM) and the water table are
+represented as grids (or 2D arrays).  Wherever H(x,y) is greater than
+Z(x,y), mass balance is used to compute a <b><i>seepage rate</i></b>
+from the subsurface that contributes to the surface runoff. </p> 
+
+<p>Control volumes just above the water table have <b><i>horizontal flow
+</i></b> into or out of their 4 vertical faces as well as <b><i>vertical
+flow</i></b> into (or out of) their top face.  The top face has the
+dimensions of a DEM grid cell. 
+Horizontal flow rates (in the saturated layers below the water table)
+are determined by Darcy's Law, while the vertical flow rate (in the
+unsaturated zone just above the water table) is determined by the method
+that the user has selected for modeling the infiltration process.
+If the net flow into the control volume is positive, then the water content
+increases (up to a maximum of &theta;<sub>s</sub>), the saturated thickness
+increases (up to a maximum of the layer thickness) and the water table rises
+locally as required to conserve mass.  Similarly, if it is negative, the
+water table falls. </p>
+
+<p>The <b><i>specific yield</i></b> or <b><i>drainable porosity</i></b>
+refers to the water content, as a volumetric fraction, that can be made
+to flow out of a control volume in response to a water table gradient.
+Note that the <b><i>porosity</i></b>, &phi;, is a volumetric fraction that
+defines the amount of void space in a given porous medium that water could
+potentially occupy.  However, there are some air spaces that remain unfilled
+even when a porous medium is saturated, so the <b><i>saturated water content
+</i></b>, &theta;<sub>s</sub>, is always somewhat smaller than the porosity.
+Similary, it is generally not possible to remove all of the water in a
+given porous medium through the application of a head gradient;  there is
+generally some residual amount that remains within the pores, unless the
+soil is desicated by some other means.  This amount is known as the
+<b><i>residual water content</i></b>, &theta;<sub>r</sub>.  It follows
+that S<sub>y</sub> = (&theta;<sub>s</sub> - &theta;<sub>r</sub>). </p> 
+
+<p><b>Note:</b> In the current implementation of this method, discharges from
+all layers are summed in order to determine the net horizontal flow into
+soil columns (cylindrical control volumes) that extend up to the land surface.
+The water table height is then adjusted accordingly to conserve mass.  If the
+net flow into a deep, saturated layer is positive (perhaps due to convergent
+horizontal flow lines) then this approach causes the excess water to be
+transferred up to the water table in a single time step.  Depending on how 
+K<sub>s</sub> varies with distance below the ground surface, z, and how thick
+the layers are, this may not be physically realistic. </p>
+
+<p>The values of S<sub>y</sub>, &theta;<sub>s</sub> and
+&theta;<sub>r</sub> are all dimensionless and must be between 0 and 1.
+Freeze & Cherry (1979, Table 2.4) give the following table with typical
+values of &theta;<sub>s</sub> for various soil types.
+<center> <table>
+<tr>
+<td width=170> Gravel </td>
+<td> 0.25 - 0.40</td>
+</tr>
+
+<tr>
+<td width=170> Sand </td>
+<td> 0.25 - 0.50 </td>
+</tr>
+
+<tr>
+<td width=170> Silt </td>
+<td> 0.35 - 0.50</td>
+</tr>
+
+<tr>
+<td width=170> Clay </td>
+<td> 0.40 - 0.70 </td>
+</tr>
+
+<tr>
+<td width=170> Fractured basalt </td>
+<td> 0.05 - 0.50 </td>
+</tr>
+
+<tr>
+<td width=170> Karst limestone </td>
+<td> 0.05 - 0.50 </td>
+</tr>
+
+<tr>
+<td width=170> Sandstone </td>
+<td> 0.05 - 0.30 </td>
+</tr>
+
+<tr>
+<td width=170> Limestone, dolomite </td>
+<td> 0.00 - 0.20 </td>
+ </tr>
+
+<tr>
+<td width=170> Shale </td>
+<td> 0.00 - 0.10 </td>
+</tr>
+
+<tr>
+<td width=170> Fractured cryst. rock </td>
+<td> 0.00 - 0.10 </td>
+</tr>
+
+<tr>
+<td width=170> Dense crystalline rock </td>
+<td> 0.00 - 0.05 </td>
+</tr>
+</table> </center> </p>
+
+<hr>
+<h3>References</h3>
+
+<p>Anderson, M.P. and W.W. Woessner (2002) <i>Applied Groundwater
+Modeling:  Simulation of Flow and Advective Transport</i>, Academic
+Press, An Imprint of Elsevier, New York, 381 pp. (see chapter 2 and
+pages 15 and 42) </p>
+
+<p>Freeze, R.A. and J.A. Cherry (1979) <i>Groundwater</i>,
+Prentice-Hall, Englewood Cliffs, N.J., 604 pp. </p>
+
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+
+</td> </tr> </table>
+
+</body>
+</html>

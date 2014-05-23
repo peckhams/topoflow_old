@@ -1,0 +1,72 @@
+#===============================================================================
+# TopoFlow Config File for: Ice_GC2D
+#===============================================================================
+# Input 1
+comp_status         | ${comp_status}      | string    | component status {Enabled; Disabled}
+in_directory        | ${in_directory}     | string    | input directory
+out_directory       | ${out_directory}    | string    | output directory
+site_prefix         | ${site_prefix}      | string    | file prefix for the study site
+case_prefix         | ${case_prefix}      | string    | file prefix for the model scenario
+n_steps             | ${n_steps}          | int       | number of time steps for simulation
+dt                  | ${dt}               | float     | ice process timestep [years]
+dt_max              | ${dt_max}           | float     | max timestep [years]
+t_max               | ${t_max}            | float     | max time to simulate [years]
+#===============================================================================
+# Input 2
+DEM_file            | ${DEM_file}         | string    | binary file containing a DEM [m]
+H0_file             | ${H0_file}          | string    | binary file containing initial ice depth [m]
+min_glacier_thick   | ${min_glacier_thick}| float     | min glacier thickness
+glens_A             | ${glens_A}          | float     | Glen's Law exponent
+B                   | ${B}                | float     | [m / (Pa * yr)], see MacGregor (2000)
+char_sliding_vel    | ${char_sliding_vel} | float     | characteristic sliding velocity [*** units needed]
+char_tau_bed        | ${char_tau_bed}     | float     | characteristic shear stress at the bed [**** units needed]
+depth_to_water_table| ${depth_to_water_table}| float     | distance from ice surface to water table [meters]
+max_float_fraction  | ${max_float_fraction}| float     | limits the water level in ice [percent]
+Hp_eff              | ${Hp_eff}           | float     | effective pressure [meters] of water
+#===============================================================================
+# Input 3
+init_ELA            | ${init_ELA}         | float     | Equilibrium Line Altitude  [meters]
+ELA_step_size       | ${ELA_step_size}    | float     | ELA step size [meters]
+ELA_step_interval   | ${ELA_step_interval}| float     | ELA step interval  [meters]
+grad_Bz             | ${grad_Bz}          | float     | mass balance gradient in z [*** units needed]
+max_Bz              | ${max_Bz}           | float     | maximum allowed mass balance [*** units needed]
+spinup_time         | ${spinup_time}      | float     | spinup time [years]
+sea_level           | ${sea_level}        | float     | sea level [meters]
+Cp_ice              | ${Cp_ice}           | float     | specific heat capacity [J / (kg * K)]
+geothermal_heat_flux| ${geothermal_heat_flux}| float     | geothermal heat flux  [(J / year) / m^2]
+geothermal_gradient | ${geothermal_gradient}| float     | geothermal gradient  [*** deg_C / meter ??]
+#===============================================================================
+# For ice sheets vs. valley glaciers. (11/11/11)
+H_bound             | ${H_bound}          | float     | H_bound 
+Z0                  | {Z0}                | float     | Z0
+T0                  | {T0}                | float     | T0
+#===============================================================================
+# Toggles
+VARIABLE_DT_TOGGLE  | ${VARIABLE_DT_TOGGLE}| int       | use variable/adaptive timestep  (0 = no, 1 = yes)
+INIT_COND_TOGGLE    | ${INIT_COND_TOGGLE} | int       | 0 = ??, 1 = ??, 2 = ??
+GENERIC_ICE_TOGGLE  | ${GENERIC_ICE_TOGGLE}| int       | start w/ generic ice surface (0 = no, 1 = yes)
+ICEFLOW_TOGGLE      | ${ICEFLOW_TOGGLE}   | int       | ice motion by deformation (0 = no, 1 = yes)
+ICESLIDE_TOGGLE     | ${ICESLIDE_TOGGLE}  | int       | ice motion by sliding (0 = no, 1 = yes)
+FREEZE_ON_TOGGLE    | ${FREEZE_ON_TOGGLE} | int       | basal ice frozen to bed (0 = no, 1 = yes)
+MASS_BALANCE_TOGGLE | ${MASS_BALANCE_TOGGLE}| string    | climate scenario {ZERO_BALANCE; CONSTANT_ELA; ELA_LOWERING; ELA_TIME_SERIES; EXTERNAL_FUNC; ELA_LOWERING2; BALANCE_FILE; D18O_TIME_SERIES}
+WEST_BC_TOGGLE      | ${WEST_BC_TOGGLE}   | string    | boundary condition {ICE_FREE_BOUND; ZERO_FLUX_BOUND; CONST_FLUX_BOUND; SURF_ELEV_BOUND; SURF_SLOPE_BOUND}
+EAST_BC_TOGGLE      | ${EAST_BC_TOGGLE}   | string    | boundary condition {ICE_FREE_BOUND; ZERO_FLUX_BOUND; CONST_FLUX_BOUND; SURF_ELEV_BOUND; SURF_SLOPE_BOUND}
+SOUTH_BC_TOGGLE     | ${SOUTH_BC_TOGGLE}  | string    | boundary condition {ICE_FREE_BOUND; ZERO_FLUX_BOUND; CONST_FLUX_BOUND; SURF_ELEV_BOUND; SURF_SLOPE_BOUND}
+NORTH_BC_TOGGLE     | ${NORTH_BC_TOGGLE}  | string    | boundary condition {ICE_FREE_BOUND; ZERO_FLUX_BOUND; CONST_FLUX_BOUND; SURF_ELEV_BOUND; SURF_SLOPE_BOUND}
+#===============================================================================
+# Output
+save_grid_dt        | ${save_grid_dt}     | float     | interval to save grids, years
+SAVE_HI_GRIDS       | ${SAVE_HI_GRIDS}    | string    | option to save computed Hi grids {Yes; No}
+hi_gs_file          | ${hi_gs_file}       | string    | filename for Hi grid stack
+SAVE_ZI_GRIDS       | ${SAVE_ZI_GRIDS}    | string    | option to save computed Zi grids {Yes; No}
+zi_gs_file          | ${zi_gs_file}       | string    | filename for Zi grid stack
+SAVE_MR_GRIDS       | ${SAVE_MR_GRIDS}    | string    | option to save computed MR grids {Yes; No}
+mr_gs_file          | ${mr_gs_file}       | string    | filename for MR grid stack
+save_pixels_dt      | ${save_pixels_dt}   | float     | interval to save time series values, years
+pixel_file          | ${pixel_file}       | string    | filename for monitored pixel info
+SAVE_HI_PIXELS      | ${SAVE_HI_PIXELS}   | string    | option to save computed Hi time series {Yes; No}
+hi_ts_file          | ${hi_ts_file}       | string    | filename for Hi  time series
+SAVE_ZI_PIXELS      | ${SAVE_ZI_PIXELS}   | string    | option to save computed Zi time series {Yes; No}
+zi_ts_file          | ${zi_ts_file}       | string    | filename for Zi time series
+SAVE_MR_PIXELS      | ${SAVE_MR_PIXELS}   | string    | option to save computed MR time series {Yes; No}
+mr_ts_file          | ${mr_ts_file}       | string    | filename for MR  time series

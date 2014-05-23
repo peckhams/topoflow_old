@@ -1,0 +1,224 @@
+<!-- Copyright (c) 2007, Scott Peckham. All rights reserved. -->
+<html>
+<head>
+<title>TopoFlow 1.5 Help - ET - Energy Balance</title>
+<link rel=stylesheet type="text/css" href="help_sys.css">
+</head>
+
+<body bgcolor="#ffffff" link="#0000ff" vlink="#800080">
+
+<table border=1 cellpadding=0 cellspacing=0>
+<tr valign=center>
+   <td CLASS=banner0 align=right>
+      <!--
+      <font size=1><sup>
+      <a target=_top href="top.html">top</a></sup></font>
+      <a href="prev_help.html">
+      <img CLASS=arrow src="left_arrow.jpg"></a>
+      <a href="next_help.html">
+      <img CLASS=arrow src="right_arrow.jpg"></a>&nbsp;
+      -->
+   </td>
+</tr>
+</table>
+ 
+<table border=0 cellspacing=0 cellpadding=10>
+<tr> <td> 
+ 
+<h2>Evapotranspiration &rarr; Energy Balance Method</h2>
+
+<p>The input variables for the Energy Balance method of estimating losses
+due to evaporation are defined as follows: <br>
+<center> <table>
+<tr>
+<td> Q<sub>SW</sub> </td>
+<td> = net shortwave radiation [W / m<sup>2</sup>] </td>
+</tr>
+<tr>
+<td> Q<sub>LW</sub> </td>
+<td> = net longwave radiation [W / m<sup>2</sup>] </td>
+</tr>
+<tr>
+<td> T<sub>air</sub> </td>
+<td> = air temperature [deg C] </td>
+</tr>
+<tr>
+<td> T<sub>surf</sub> </td>
+<td> = surface (snow) temperature [deg C] </td>
+</tr>
+<tr>
+<td> T<sub>soil_x</sub> </td>
+<td> = soil temperature at depth x [deg C] </td>
+</tr>
+<tr>
+<td> x </td>
+<td> = reference depth in soil [m] </td>
+</tr>
+<tr>
+<td> K<sub>soil</sub> </td>
+<td> = thermal conductivity of soil [W / (m deg_C)] </td>
+</tr>
+<!-- ------------------------------------------------------ -->
+<tr>
+<td> u<sub>z</sub> </td>
+<td> = wind velocity at height z [m / s] </td>
+</tr>
+<tr>
+<td> z </td>
+<td> = reference height for wind [m] (above land surface) </td>
+</tr>
+<tr>
+<td> z<sub>0</sub> </td>
+<td> = surface roughness height [m] (with no snow)</td>
+</tr>
+<tr>
+<td> h0<sub>snow</sub> </td>
+<td> = initial snow depth [m] </td>
+</tr>
+<tr>
+<td> &rho;<sub>air</sub> </td>
+<td> = density of the air [kg / m<sup>3</sup>] </td>
+</tr>
+<tr>
+<td> c<sub>air</sub> </td>
+<td> = specific heat capacity of air [J / (kg deg_C)] </td>
+</tr>
+<tr>
+<td> L<sub>v</sub> </td>
+<td> = latent heat of vaporization, water [J / kg] (2500000) </td>
+</tr>
+<tr>
+<td> g </td>
+<td> = gravitational constant, Earth = 9.81 [m / s<sup>2</sup>] </td>
+</tr>
+<tr>
+<td> &kappa; </td>
+<td> = von Karman's constant = 0.41 [unitless] </td>
+</tr>          
+</table> </center>
+
+<p><b>Note:</b> If net <i><b>total radiation</b></i> has been measured, it
+can be entered as Q<sub>SW</sub> and then Q<sub>LW</sub> can be set to zero.
+Any meteorological variables entered here (such as T<sub>air</sub>) are
+automatically shared with other other processes, such as Snowmelt
+and Precipitation. </p>
+
+<p>Snow depth is tracked internally, and can increase from snowfall or
+decrease by melting, starting from its initial value.  In the current
+version there is no mechanism for redistribution of snow.</p>
+
+<p>For each variable, you may choose from the droplist of data
+types.  For the "Scalar" data type, enter a numeric value with
+the units indicated in the dialog.  For the other data types,
+enter a filename.  Values in files must also use the indicated
+units.
+</p>
+
+<p>Single grids and grid sequences are assumed to be stored as
+<b><i> <a href="RTG_format.htm">RTG </a> </i></b> and
+<b><i> <a href="RTS_format.htm">RTS</a> </i></b> files, respectively.
+Time series are assumed to be stored as text files, with one value
+per line. For a time series or grid sequence, the time between
+values must coincide with the timestep provided. </p>
+
+<hr>
+<h3>Equations Used by the Energy-Balance ET Method</h3>
+<p>
+<table>
+<tr>
+<td> ET </td>
+<td> = (1000 * Q<sub>et</sub>) / (&rho;<sub>water</sub> * L<sub>v</sub>) </td>
+<td> = evaporation rate [mm / sec] </td>
+</tr>
+
+<tr>
+<td> Q<sub>et</sub> </td>
+<td> = (Q<sub>SW</sub> + Q<sub>LW</sub> + Q<sub>c</sub> + Q<sub>h</sub>) </td>
+<td> = energy flux used to evaporate water [W / m<sup>2</sup>] </td>
+</tr>
+
+<tr>
+<td> Q<sub>c</sub> </td>
+<td> = K<sub>soil</sub> * (T<sub>soil_x</sub> - T<sub>surf</sub>) * (100 / x) </td>
+<td> = conduction energy flux [W / m<sup>2</sup>] (between surf. and subsurf.) </td>
+</tr>
+
+<tr>
+<td> Q<sub>h</sub> </td>
+<td> = &rho;<sub>air</sub> * c<sub>air</sub> * D<sub>h</sub> *
+      (T<sub>air</sub> - T<sub>surf</sub>)</td>
+<td> = sensible heat flux [W / m<sup>2</sub>] </td>
+</tr>
+
+<tr>
+<td> D<sub>n</sub> </td>
+<td> = u<sub>z</sub> * &kappa;<sup>2</sup>  / 
+       LN[(z - h<sub>snow</sub>) / z0<sub>air</sub>]<sup>2</sup> </td>
+<td> = bulk exchange coeff. (neutrally stable conditions) [m / s] </td>
+</tr>
+
+<tr>
+<td> D<sub>h</sub> </td>
+<td> = D<sub>n</sub> / [1 + (10 * Ri)],
+       &nbsp;&nbsp;&nbsp; (T<sub>air</sub> > T<sub>surf</sub>) </td>
+<td> = bulk exchange coeff. for heat [m / s] (stable) </td>
+</tr>
+
+<tr>
+<td>  </td>
+<td> = D<sub>n</sub> * [1 - (10 * Ri)],
+       &nbsp;&nbsp;&nbsp; (T<sub>air</sub> < T<sub>surf</sub>) </td>
+<td> = bulk exchange coeff. for heat [m / s] (unstable) </td>
+</tr>
+
+<tr>
+<td> Ri </td>
+<td> = g * z * (T<sub>air</sub> - T<sub>surf</sub>) &nbsp; / </td>
+<td>  </td>
+</tr>
+<tr>
+<td>  </td>
+<td> &nbsp;&nbsp;&nbsp;&nbsp;
+     [u<sub>z</sub><sup>2</sup> (T<sub>air</sub> + 273.15)] </td>
+<td> = Richardson's number [unitless] </td>
+</tr>
+</table> </p>
+
+<hr>
+<h3>Notes on the Equations</h3>
+<p>Wherever (d > 0), evaporation results in a reduction in the surface
+flow depth.  Wherever (d = 0), water is removed from subsurface storage.
+If the 1D Richards' equation is used for infiltration, then the
+evaporation rate is applied as a surface boundary condition and alters
+
+<p>In the equation for computing D<sub>n</sub>, the reference
+height, z, is reduced by the computed snow depth, h<sub>snow</sub>.  It
+follows that z must be chosen so as to be greater than any possible snow
+depth. </p>
+
+<hr>
+<h3>References</h3>
+
+<p>Brutsaert, W. (1975) On a derivable formula for long-wave radiation from clear
+skies, <i>Water Resources Research</i>, <b>11</b>, 742-744.</p>
+
+<p>Dingman, S.L (2002) <i>Physical Hydrology</i>, 2nd ed., Prentice Hall, New Jersey.
+(see Chapter 7, pp. 285-299) </p>
+
+<p>Schlicting, H. (1960) <i>Boundary Layer Theory</i>, 4th ed., McGraw-Hill,
+New York, 647 pp.</p>
+
+<p>Zhang, Z., D.L. Kane and L.D. Hinzman (2000) Development and application of a
+spatially-distributed Arctic hydrological and thermal process model (ARHYTHM),
+<i>Hydrological Processes</i>, <b>14</b>, 1017-1044. </p>
+
+
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+
+</td> </tr> </table>
+
+</body>
+</html>
+

@@ -1,0 +1,70 @@
+<!-- Copyright (c) 2007, Scott Peckham. All rights reserved. -->
+<html>
+<head>
+<title>TopoFlow 1.5 Help - Channel Geometry via Order</title>
+<link rel=stylesheet type="text/css" href="help_sys.css">
+</head>
+
+<body bgcolor="#ffffff" link="#0000ff" vlink="#800080">
+
+<table border=1 cellpadding=0 cellspacing=0>
+<tr valign=center>
+   <td CLASS=banner0 align=right>
+      <!--
+      <font size=1><sup>
+      <a target=_top href="top.html">top</a></sup></font>
+      <a href="prev_help.html">
+      <img CLASS=arrow src="left_arrow.jpg"></a>
+      <a href="next_help.html">
+      <img CLASS=arrow src="right_arrow.jpg"></a>&nbsp;
+      -->
+   </td>
+</tr>
+</table>
+ 
+<table border=0 cellspacing=0 cellpadding=10>
+<tr> <td> 
+ 
+<h2>Create &rarr; Channel Geometry Grids &rarr; With HS Order Grid</h2>
+
+<p>This dialog allows you to create grids for several key channel
+properties by parameterizing them in terms of a Horton-Strahler
+order grid.  The channel cross-section is modeled as a trapezoid,
+with bottom width, w, bank angle, a, and a Manning roughness
+parameter, <i>n</i>.  The cross-section is triangular when w = 0, and
+is rectangular when &theta; = 0.  For overland flow, (w >> d) and
+R &rarr; d. Here, R is hydraulic radius and d is the flow depth.
+</p>
+
+<p>The lowest orders here correspond to grid cells on hillslopes
+and by default, the transition from overland flow on hillslopes to
+channelized flow is set to occur at a Horton-Strahler order of 4.
+None of the default settings are expected to be valid in general.
+</p>
+
+<p>The bed width grid is special in the sense that for hillslope pixels
+it is used to model overland flow.  The value for hillslope pixels is
+therefore determined by the grid spacing and you should set the
+Order 1 width to the DEM grid spacing. </p>
+
+<p>A Manning's N value of 0.3 is often used for hillslopes, while
+for channels, N is typically between 0.01 and 0.05, with 0.03
+being a typical middle-range value.  N varies with the bed material
+and may be modeled by Strickler's formula: N = D50^(1/6) / 21.2,
+where D50 is median grain size in meters. </p>
+
+<p>Bank angles should never be set to 90 degrees and should be set
+to 0 on hillslopes.  If channel bed width is taken proportional to the
+square root of discharge, then it should roughly double with a
+unit increase in order.  Note that best results will be obtained
+if measured vs. estimated values are used for each order. </p>
+
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+
+</td> </tr> </table>
+
+</body>
+</html>
+

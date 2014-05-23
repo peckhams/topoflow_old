@@ -1,0 +1,79 @@
+<!-- Copyright (c) 2007, Scott Peckham. All rights reserved. -->
+<html>
+<head>
+<title>TopoFlow 1.5 Help - Channel Grids via Area</title>
+<link rel=stylesheet type="text/css" href="help_sys.css">
+</head>
+
+<body bgcolor="#ffffff" link="#0000ff" vlink="#800080">
+
+<table border=1 cellpadding=0 cellspacing=0>
+<tr valign=center>
+   <td CLASS=banner0 align=right>
+      <!--
+      <font size=1><sup>
+      <a target=_top href="top.html">top</a></sup></font>
+      <a href="prev_help.html">
+      <img CLASS=arrow src="left_arrow.jpg"></a>
+      <a href="next_help.html">
+      <img CLASS=arrow src="right_arrow.jpg"></a>&nbsp;
+      -->
+   </td>
+</tr>
+</table>
+ 
+<table border=0 cellspacing=0 cellpadding=10>
+<tr> <td> 
+ 
+<h2>Create &rarr; Channel Geometry Grids &rarr; With Area Grid</h2>
+<p>
+This dialog allows you to create grids for several key channel
+properties by parameterizing them in terms of a contributing
+area grid, denoted as A.  The channel cross-section is modeled
+as a trapezoid, with bottom width, w, bank angle, a, and a
+Manning roughness parameter, <i>n</i>.  The cross-section is
+triangular when w = 0, and is rectangular when &theta; = 0. </p>
+
+<p> The curve-fitting formulas shown have been selected for their
+ability to fit widely observed trends in hydraulic variables. </p>
+
+<p>Enter measured values into the bottom table and click on the button
+labeled "Update c, b and p".  The parameters c, b and p will be
+updated in the top table to give the best fit to the measured values.
+Note that the rows in the bottom table are labeled Overland, Transition
+and Channel.  The Overland row represents the hillslopes and the
+endmember case where A=0.  The Transition row represents an
+approximate threshold area where hillslopes end and channelized flow
+begins.  The Channel row represents values for a well-defined channel
+in the model basin that has a large contributing area. </p>
+
+<p>The bed width grid is special in the sense that for hillslope pixels
+it is used to model overland flow.  The value for hillslope pixels is
+therefore determined by the grid spacing and you should leave the
+width in the Overland row set to zero. Technically, there should be
+no channels below the threshold area.</p>
+
+<p>A Manning's N value of 0.3 is often used for hillslopes (A=0),
+while for channels, N is typically between 0.01 and 0.05, with 0.03
+being a typical middle-range value.  N varies with the bed material
+and may be modeled by Strickler's formula: <br>
+<center>
+N = D<sub>50</sub><sup>1/6</sup> / 21.2, <br><br>
+</center>
+where D<sub>50</sub> is median grain size in meters. </p>
+
+<p>The value of p for bed width should be close to 0.5, and the value
+of p for Manning's N should be negative.  The value of p for bank
+angle can be set to 0 to indicate that bank angles do not change
+with increasing area. Bank angles should never be set to 90 degrees
+and should be set to 0 on hillslopes. </p>
+
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+
+</td> </tr> </table>
+
+</body>
+</html>
+

@@ -1,0 +1,567 @@
+<!-- Copyright (c) 2010, Scott Peckham. All rights reserved. -->
+<html>
+<head>
+<title>TopoFlow 3.0 Help - Information on Soils</title>
+<link rel=stylesheet type="text/css" href="help_sys.css">
+</head>
+
+<body bgcolor="#ffffff" link="#0000ff" vlink="#800080">
+
+<table border=1 cellpadding=0 cellspacing=0>
+<tr valign=center>
+   <td CLASS=banner0 align=right>
+      <!--
+      <font size=1><sup>
+      <a target=_top href="top.html">top</a></sup></font>
+      <a href="prev_help.html">
+      <img CLASS=arrow src="left_arrow.jpg"></a>
+      <a href="next_help.html">
+      <img CLASS=arrow src="right_arrow.jpg"></a>&nbsp;
+      -->
+   </td>
+</tr>
+</table>
+ 
+<table border=0 cellspacing=0 cellpadding=10>
+<tr> <td> 
+ 
+<h2>Properties of Standard Soil Types</h2>
+
+<p>The following table of soil parameters is based on Table 6-1 in Dingman (2002, p. 235).
+It is based on the analysis of 1845 soils by Clapp and Hornberger (1978).
+Values in parentheses are standard deviations.
+Note that &psi;<sub>B</sub> is the <i>bubbling pressure head</i>, also known as the
+<i>air entry pressure</i> and then denoted by &psi;<sub>ae</sub>. 
+The parameter b is unitless and is known as the <i>pore-size distribution index</i>.
+Its inverse, &lambda;, is also commonly used and is referred to in TopoFlow as the
+<i>pore-size distribution parameter</i>. <br>
+
+<center> <table border cellpadding=4 cellspacing=4>
+<tr>
+<td> <b>Soil Texture</b> </td>
+<td> <b>Porosity, &phi;</b> </td>
+<td> <b>K<sub>sat</sub></b>  [cm/s] </td>
+<td> <b>K<sub>sat</sub></b>  [mm/h] </td>
+<td> <b>&psi;<sub>B</sub></b>  [cm] </td>
+<td> <b>b</b> </td>
+<td> <b>&lambda;</b> = 1/b </td>
+</tr>
+
+<tr>
+<td> Sand </td>
+<td> 0.395 (0.056) </td>
+<td> 1.76 e-2 </td>
+<td> 634 </td>
+<td> -12.1 (14.3) </td>
+<td> 4.05 (1.78) </td>
+<td> 0.247 </td>
+</tr>
+
+<tr>
+<td> Loamy sand </td>
+<td> 0.410 (0.068) </td>
+<td> 1.56 e-2 </td>
+<td> 562 </td>
+<td> -9.0 (12.4) </td>
+<td> 4.38 (1.47) </td>
+<td> 0.228 </td>
+</tr>
+
+<tr>
+<td> Silty sand </td>
+<td> *** </td>
+<td> *** </td>
+<td> *** </td>
+<td> *** </td>
+<td> *** </td>
+<td> *** </td>
+</tr>
+
+<tr>
+<td> Sandy loam </td>
+<td> 0.435 (0.086) </td>
+<td> 3.47 e-3 </td>
+<td> 125 </td>
+<td> -21.8 (31.0) </td>
+<td> 4.90 (1.75) </td>
+<td> 0.204 </td>
+</tr>
+
+<tr>
+<td> Loam </td>
+<td> 0.451 (0.078) </td>
+<td> 6.95 e-4 </td>
+<td> 25.0 </td>
+<td> -47.8 (51.2) </td>
+<td> 5.39 (1.87) </td>
+<td> 0.186 </td>
+</tr>
+
+<tr>
+<td> Silt </td>
+<td> *** </td>
+<td> *** </td>
+<td> *** </td>
+<td> *** </td>
+<td> *** </td>
+<td> *** </td>
+</tr>
+
+<tr>
+<td> Loamy silt </td>
+<td> *** </td>
+<td> *** </td>
+<td> *** </td>
+<td> *** </td>
+<td> *** </td>
+<td> *** </td>
+</tr>
+
+<tr>
+<td> Silty loam </td>
+<td> 0.485 (0.056) </td>
+<td> 7.20 e-4 </td>
+<td> 25.9 </td>
+<td> -78.6 (51.2) </td>
+<td> 5.30 (1.96) </td>
+<td> 0.189 </td>
+</tr>
+
+<tr>
+<td> Sandy clay loam </td>
+<td> 0.420 (0.059) </td>
+<td> 6.30 e-4 </td>
+<td> 22.7 </td>
+<td> -29.9 (37.8) </td>
+<td> 7.12 (2.43) </td>
+<td> 0.140 </td>
+</tr>
+
+<tr>
+<td> Clay loam </td>
+<td> 0.476 (0.053) </td>
+<td> 2.45 e-4 </td>
+<td> 8.82 </td>
+<td> -63.0 (51.0) </td>
+<td> 8.52 (3.44) </td>
+<td> 0.117 </td>
+</tr>
+
+<tr>
+<td> Silty clay loam </td>
+<td> 0.477 (0.057) </td>
+<td> 1.70 e-4 </td>
+<td> 6.12 </td>
+<td> -35.6 (37.8) </td>
+<td> 7.75 (2.77) </td>
+<td> 0.129 </td>
+</tr>
+
+<tr>
+<td> Sandy clay </td>
+<td> 0.426 (0.057) </td>
+<td> 2.17 e-4 </td>
+<td> 7.82 </td>
+<td> -15.3 (17.3) </td>
+<td> 10.4 (1.64) </td>
+<td> 0.096 </td>
+</tr>
+
+<tr>
+<td> Silty clay </td>
+<td> 0.492 (0.064) </td>
+<td> 1.03 e-4 </td>
+<td> 3.71 </td>
+<td> -49.0 (62.1) </td>
+<td> 10.4 (4.45) </td>
+<td> 0.096 </td>
+</tr>
+
+<tr>
+<td> Clay </td>
+<td> 0.482 (0.050) </td>
+<td> 1.28 e-4 </td>
+<td> 4.61 </td>
+<td> -40.5 (39.7) </td>
+<td> 11.4 (3.70) </td>
+<td> 0.088 </td>
+</tr>
+
+</table> </center> 
+<br>
+
+For additional information on typical ranges of hydraulic conductivity, see Table 2.2 (p. 29)
+in Freeze and Cherry (1979).  For typical ranges of porosity, see their Table 2.4 (p. 37).
+<br> <br>
+
+<p>The next table is Table 8.1 (p. 136) from Smith (2002).  It provides values for, G,
+known as the <i>capillary length scale</i>.  G can be computed as the integral over all
+values of pressure head, &psi;, of K(&psi;)/K<sub>sat</sub>.  According to Smith (2002),
+G is almost always between &psi;<sub>B</sub> and 2*&psi;<sub>B</sub>, so it may be wise
+to check its value against the value of &psi;<sub>B</sub> that is used for consistency.
+This table also provides alternate values for the saturated hydraulic conductivity,
+which when compared to the previous table shows how much this parameter can vary within
+a soil texture group.
+<br>
+  
+<center> <table border cellpadding=4 cellspacing=4>
+<tr>
+<td> <b>Soil Texture</b> </td>
+<td> <b>Typical K<sub>sat</sub>  [mm/h] </b> </td>
+<td> <b>G  [mm] </td>
+<td> <b>Dry soil S [mm/h^0.5]</b> </td>
+<td> <b>Time scale, tc [h] </b> </td>
+</tr>
+
+<tr>
+<td> Sand </td>
+<td> 30.0 </td>
+<td> 82 </td>
+<td> 38 </td>
+<td> 0.80 </td>
+</tr>
+
+<tr>
+<td> Loamy sand </td>
+<td> 15.0 </td>
+<td> 97 </td>
+<td> 29 </td>
+<td> 2.0 </td>
+</tr>
+
+<tr>
+<td> Silty sand </td>
+<td> *** </td>
+<td> *** </td>
+<td> *** </td>
+<td> *** </td>
+</tr>
+
+<tr>
+<td> Sandy loam </td>
+<td> 4.4 </td>
+<td> 165 </td>
+<td> 21 </td>
+<td> 11.0 </td>
+</tr>
+
+<tr>
+<td> Loam </td>
+<td> 10.0 </td>
+<td> 385 </td>
+<td> 48 </td>
+<td> 12.0 </td>
+</tr>
+
+<tr>
+<td> Silt </td>
+<td> 2.5 </td>
+<td> 914 </td>
+<td> 37 </td>
+<td> 109 </td>
+</tr>
+
+<tr>
+<td> Loamy silt </td>
+<td> *** </td>
+<td> *** </td>
+<td> *** </td>
+<td> *** </td>
+</tr>
+
+<tr>
+<td> Silty loam </td>
+<td> 4.5 </td>
+<td> 724 </td>
+<td> 44 </td>
+<td> 48 </td>
+</tr>
+
+<tr>
+<td> Sandy clay loam </td>
+<td> 13.0 </td>
+<td> 240 </td>
+<td> 43 </td>
+<td> 5.5 </td>
+</tr>
+
+<tr>
+<td> Clay loam </td>
+<td> 2.6 </td>
+<td> 804 </td>
+<td> 35 </td>
+<td> 92 </td>
+</tr>
+
+<tr>
+<td> Silty clay loam </td>
+<td> 0.7 </td>
+<td> 1590 </td>
+<td> 26 </td>
+<td> 680 </td>
+</tr>
+
+<tr>
+<td> Sandy clay </td>
+<td> 1.2 </td>
+<td> 589 </td>
+<td> 21 </td>
+<td> 73 </td>
+</tr>
+
+<tr>
+<td> Silty clay </td>
+<td> 0.4 </td>
+<td> 3570 </td>
+<td> 29 </td>
+<td> 2600 </td>
+</tr>
+
+<tr>
+<td> Clay </td>
+<td> 4.0 </td>
+<td> 2230 </td>
+<td> 73 </td>
+<td> 167 </td>
+</tr>
+
+</table> </center> 
+<br>
+
+<hr>
+<h3>Soil Characteristic Relations</h3>
+<h4>Definitions</h4>
+<table>
+<tr>
+<td> &Theta;<sub>e</sub> </td>
+<td> = (&theta; - &theta;<sub>r</sub>) /
+       (&theta;<sub>s</sub> - &theta;<sub>r</sub>)</td>
+<td> = effective saturation or scaled water content [unitless] </td>
+</tr>
+
+<tr>
+<td> &theta;<sub>r</sub> </td>
+<td> < &theta;<sub>i</sub> <= &theta; <= &theta;<sub>s</sub> </td>
+<td>  </td>
+</tr>
+
+<tr>
+<td> K<sub>i</sub> </td>
+<td> <= K < K<sub>s</sub> </td>
+<td>  </td>
+</tr>
+
+<tr>
+<td> &psi; </td>
+<td> < 0 </td>
+<td> (in unsaturated zone above water table) </td>
+</tr>
+
+<tr>
+<td> &psi; </td>
+<td> = 0 </td>
+<td> (at the water table) </td>
+</tr>
+
+</table>
+
+<h4>Transitional Brooks-Corey (Smith, 1990)</h4>
+<table>
+<tr>
+<td> K </td>
+<td> = K<sub>s</sub> * &Theta;<sub>e</sub><sup>&eta;/&lambda;</sup> </td>
+<td> = hydraulic conductivity [m / s] (see Notes below) </td>
+</tr>
+
+<tr>
+<td> &psi; </td>
+<td> = &psi;<sub>B</sub>
+       [&Theta;<sub>e</sub><sup>-c/&lambda;</sup> - 1]<sup>1/c</sup>
+       - &psi;<sub>A</sub>  &nbsp;&nbsp; </td>
+<td> = pressure head [meters] (see Notes below) </td>
+</tr>
+</table>
+
+<h4>Standard Brooks-Corey (1964)</h4>
+<table>
+<tr>
+<td> K </td>
+<td> = K<sub>s</sub> * &Theta;<sub>e</sub><sup>&eta;/&lambda;</sup> </td>
+<td> = hydraulic conductivity [m / s] (see Notes below) </td>
+</tr>
+
+<tr>
+<td> &psi; </td>
+<td> = &psi;<sub>B</sub>
+       &Theta;<sub>e</sub><sup>-1/&lambda;</sup> &nbsp;&nbsp; </td>
+<td> = pressure head [meters] (see Notes below) </td>
+</tr>
+</table>
+
+<h4>van Genuchten (1980) </h4>
+<table>
+<tr>
+<td> K </td>
+<td> = K<sub>s</sub> * &Theta;<sub>e</sub><sup>1/2</sup>
+                     [1 - (1 - &Theta;<sub>e</sub><sup>1/m</sup>)<sup>m</sup>]<sup>2</sup> </td>
+<td> = hydraulic conductivity [m / s] (see Notes below) </td>
+</tr>
+
+<tr>
+<td> &psi; </td>
+<td> = (1/&alpha;<sub>g</sub>)
+       [&Theta;<sub>e</sub><sup>-1/m</sup> - 1]<sup>1/n</sup> &nbsp;&nbsp; </td>
+<td> = pressure head [meters] (see Notes below) </td>
+</tr>
+</table>
+
+<hr>
+<h3>Notes</h3>
+
+<ol>
+<li>The equations above are empirical and allow the hydraulic
+conductivity, K, and pressure head, &psi;, to be computed as functions
+of the soil water content, &theta;. Such equations are called
+<b><i>soil characteristic relations</i></b> (or equations or functions).
+See Smith (2002, p. 13-23).
+Changing the parameters in these equations allows different soil types to
+be modeled.  Typical values have been tabulated for many standard soil types.
+</li> <br>
+
+<li>There is a missing minus sign in front of &lambda;
+in Smith(2002, p. 19, eqn. 2.14 and eqn. 2.16), for the standard Brooks-Corey
+relation.  It has been fixed above.
+</li> <br>
+
+<li>The soil characteristic relations used by TopoFlow
+are those of the <b><i>transitional Brooks-Corey</i></b> (TBC) method.
+This method combines the advantages of the well-known Brooks-Corey (1964) and
+van Genuchten (1980) methods, as explained by Smith (2002).  A key difference
+between the 3 methods is the value they give for &psi; when the soil becomes
+saturated, that is, when &theta; = &theta;<sub>s</sub> or &Theta; = 1.
+We usually want &psi; < 0 (capillary-type suction) above the water table where
+&theta; < &theta;<sub>s</sub> and &psi; = 0 at the water table where
+&theta; = &theta;<sub>s</sub>.  By inserting &Theta; = 1 into the equations
+above, we find
+<ul>
+<li> for TBC:  &psi; = -&psi;<sub>A</sub> and K = K<sub>s</sub> (but often, &psi;<sub>A</sub> = 0) </li>
+<li> for BC:   &psi; =  &psi;<sub>B</sub> and K = K<sub>s</sub> </li>
+<li> for vG:   &psi; = 0 and K = K<sub>s</sub> </li>
+</ul>
+For BC, the &psi; curve can be made to rise vertically from &psi;<sub>B</sub>
+to 0 at &Theta; = 1.  By design, the vG and TBC methods do not have this discontinuity
+at saturation. 
+</li> <br>
+
+<li>Although K is computed quite differently for the transitional Brooks-Corey and
+van Genuchten methods, the equations for &psi; are the same if we take:
+&alpha;<sub>g</sub> = 1/&psi;<sub>B</sub>, n = c and m = &lambda;/c. 
+</li> <br>
+
+<li> Note that the <b><i>permanent wilting point</i></b> is associated with a
+pressure head of -15,000 cm.  Water content associated with values less than
+this is considered to be unavailable to plants.  The <b><i>field capacity</i></b>
+is the soil water content associated with a pressure head of about -340 cm
+and is an estimate of the water content that can be held against the force
+of gravity.
+</li> <br>
+
+<li>Soils in nature do not have water contents lower than that corresponding
+to <b><i>hygroscopic water</i></b> (Dingman, 2002, p. 236-238). At this
+extreme dryness water is absorbed directly from the air.  The corresponding
+pressure head (tension head) is -31,000 cm.
+</li> <br>
+
+<li>Note that we need to specify &theta;<sub>r</sub> and &theta;<sub>s</sub> in
+order to compute a value of &theta; for a given value of &psi;.  Due to the way
+in which &theta;<sub>r</sub> appears in the equations, we cannot solve for a
+value of &theta;<sub>r</sub> given a value of &psi;.  However, in cases where
+&theta;<sub>r</sub> << &theta; < &theta;<sub>s</sub>, we can approximate
+&Theta; as (&theta; / &theta;<sub>s</sub>).
+</li> <br>
+
+<li>In view of the information above, TopoFlow 1.5 (IDL version) used: 
+&theta;<sub>i</sub> = &theta;<sub>fc</sub> and <br>
+&theta;<sub>r</sub> = &theta;<sub>s</sub> (-&psi;<sub>B</sub> / 10000)<sup> &lambda;</sup> 
+<br>
+as defaults.
+This expression for &theta;<sub>r</sub> uses a reference pressure head of -10,000 meters
+as the limit between air-dried and oven-dried soil.  See Dingman (2002, p. 237).
+In addition, if a value of &theta;<sub>i</sub> was entered
+that was less than the hygroscopic value, &theta;<sub>H</sub>, then &theta;<sub>H</sub>
+was used instead.
+</li> <br>
+
+<li> In TopoFlow 3.0 (Python version), values of &theta;<sub>i</sub> and
+K<sub>i</sub> are computed for TBC using the given values of &theta;<sub>r</sub>
+and &theta;<sub>s</sub> and assuming that the initial pressure head in the
+soil is that typically associated with the <i>field capacity</i>, i.e.
+&psi = -340 cm.  In addition, the soil water content that corresponds to 
+hygroscopic conditions (&psi = -31000 cm) is computed from the TBC parameters
+and compared to &theta;<sub>r</sub>.  When using the Richards 1D infiltration
+component, these values are printed in the CMT console window at the beginning
+of the run and can be compared to the user-entered values as a consistency check.
+</li> <br>
+
+<li>The unsaturated zone extends from the soil surface all the way down
+to the <b><i>water table</i></b>, where &theta; = &theta;<sub>s</sub>.
+The water table is tracked by TopoFlow as a moving boundary, and may
+actually rise up to the land surface in some places.  When this occurs,
+a subsurface seepage term is included in the water balance equations.
+Typically, &psi;<sub>A</sub> is set to zero so that the pressure
+head is zero at the water table, but it can also be used to model
+hysteresis effects, as explained by Smith (2002). </li> <br>
+
+<li>The <b><i>pore disconnectedness index</i></b>, c, is a measure of the ratio
+of the length of the path followed by water in the soil to a straight-line path
+(Eagleson 1978; Bras 1990).  It is unitless and can be approximated as: <br>
+      <center> c = 2*b + 3 </center> <br>
+where b is again the unitless <b><i>pore-size distribution index</i></b>.
+This is consistent with the expression: <br>
+      <br>
+      <center> &eta; = 2 + 3*&lambda; </center> <br>
+used by Smith (2002), because <br>
+      <center> c = &eta; / &lambda; = &eta; * b. </center>
+</li> <br>
+
+<li>Let r<sub>0</sub> be the rate at which water enters the top of the soil
+profile. If (r<sub>0</sub> >= K<sub>s</sub>), then the limiting value of
+the soil moisture content, &theta;, will be the saturated value, &theta;<sub>s</sub>.
+However, if (r<sub>0</sub> < K<sub>s</sub>), then limiting, maximum value of &theta;
+will be less than the saturated value and turns out to be the same for the
+Brooks-Corey and transitional Brooks-Corey relations.  It is computed by setting
+K = r<sub>0</sub> in the relations and solving for &theta;. </li> <br>
+
+</ol>
+
+<hr>
+<h3>References</h3>
+
+<p>Beven, K.J. (2000) <i>Rainfall-Runoff Modelling: The Primer</i>,
+360 pp., John Wiley and Sons, New York. </p>
+
+<p>Dingman, S.L (2002) <i>Physical Hydrology</i>, 2nd ed., Prentice Hall,
+New Jersey. (see Chapter 6) </p>
+
+<p>Eagleson, P.S. (1978)
+Climate, soil, and vegetation: 3. A simplified model of soil moisture movement
+in the liquid phase, <i>Water Resources Research</i>, <b>18</b>, 722-730.
+</p>
+
+<p>Freeze, R.A. and J.A. Cherry ( 1979) <i>Groundwater</i>, 604 pp.,
+Prentice-Hall, Inc., Englewood Cliffs, New Jersey.</p>
+
+<p>Smith, R.E. (2002) <i>Infiltration Theory for Hydrologic Applications</i>,
+Water Resources Monograph 15, American Geophysical Union, Washington, DC.
+</p>
+
+
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+
+</td> </tr> </table>
+
+</body>
+</html>
+

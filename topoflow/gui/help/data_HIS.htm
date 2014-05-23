@@ -1,0 +1,63 @@
+<!-- Copyright (c) 2010, Scott Peckham. All rights reserved. -->
+<html>
+<head>
+<title>TopoFlow 3.0 Help - CUAHSI HIS Web Services</title>
+<link rel=stylesheet type="text/css" href="help_sys.css">
+</head>
+
+<body bgcolor="#ffffff" link="#0000ff" vlink="#800080">
+
+<table border=1 cellpadding=0 cellspacing=0>
+<tr valign=center>
+   <td CLASS=banner0 align=right>
+      <!--
+      <font size=1><sup>
+      <a target=_top href="top.html">top</a></sup></font>
+      <a href="prev_help.html">
+      <img CLASS=arrow src="left_arrow.jpg"></a>
+      <a href="next_help.html">
+      <img CLASS=arrow src="right_arrow.jpg"></a>&nbsp;
+      -->
+   </td>
+</tr>
+</table>
+ 
+<table border=0 cellspacing=0 cellpadding=10>
+<tr> <td> 
+ 
+<h2>Data &rarr; CUAHSI HIS Web Services</h2>
+
+<p>As part of the <b><a href="http://his.cuahsi.org"> CUAHSI HIS project </a></b>, a
+large and growing collection of hydrologic time series data has been made available
+through a uniform web service called <b><a href="http://hiscentral.cuahsi.org">HIS Central
+</a></b>.  The HIS Central website provides a
+<b><a href="http://hiscentral.cuahsi.org/pub_services.aspx"> list of registered public data services</a></b>
+and a separate information page for each service.  The HIS Central web
+service uses WML (Watershed Markup Language) to create a single, standard interface
+to this diverse and distributed set of web services.
+A list of allowed "concept keywords" that can be used for queries can be found
+<b><a href="http://water.sdsc.edu/hiscentral/webservices/hiscentral.asmx?op=GetSearchableConcepts"> here</a></b>.
+A description of the WSDL interface functions can be found
+<b><a href="http://water.sdsc.edu/hiscentral/webservices/hiscentral.asmx"> here</a></b>.
+</p>
+
+<p>The tabbed dialog for this component lets you create a query by entering a search keyword,
+bounding box, start date, stop date, etc.  Once data has been downloaded from the web service,
+it can either be saved to files or accessed directly by other components through the "Data"
+port, which has a standard CSDMS IRF-based interface.  Note that this component must currently
+be used in "stand-alone/driver" mode, so that the Run button will appear.
+</p>
+
+<p>Additional "Data" components that download data from online web services are planned for
+the near future including a component to download seamless <i><b>USGS NED DEMs</b></i> and a
+component to download grids and grid stacks using <i><b>OpenDAP</b></i>.</p>
+
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+
+</td> </tr> </table>
+
+</body>
+</html>
+

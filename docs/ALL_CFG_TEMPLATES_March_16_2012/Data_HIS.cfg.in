@@ -1,0 +1,29 @@
+#===============================================================================
+# TopoFlow Config File for: HIS_Data
+#===============================================================================
+# Input
+comp_status         | ${comp_status}      | string    | component status {Enabled; Disabled}
+in_directory        | ${in_directory}     | string    | input directory
+out_directory       | ${out_directory}    | string    | output directory
+site_prefix         | ${site_prefix}      | string    | file prefix for the study site
+case_prefix         | ${case_prefix}      | string    | file prefix for the model scenario
+#===============================================================================
+# Query
+data_keyword        | ${data_keyword}     | string    | HIS data keyword
+west_edge_lon       | ${west_edge_lon}    | float     | longitude of west edge of geographic region [dec. degrees]
+east_edge_lon       | ${east_edge_lon}    | float     | longitude of east edge of geographic region [dec. degrees]
+north_edge_lat      | ${north_edge_lat}   | float     | latitude of north edge of geographic region [dec. degrees]
+south_edge_lat      | ${south_edge_lat}   | float     | latitude of south edge of geographic region [dec. degrees]
+start_month         | ${start_month}      | string    | start month {January; February; March; April; May; June; July; August; September; October; November; December}
+start_day           | ${start_day}        | int       | start day
+start_year          | ${start_year}       | int       | start year
+stop_month          | ${stop_month}       | string    | stop month {January; February; March; April; May; June; July; August; September; October; November; December}
+stop_day            | ${stop_day}         | int       | stop day
+stop_year           | ${stop_year}        | int       | stop year
+max_n_values        | ${max_n_values}     | int       | max number of values allowed in any time series
+max_n_series        | ${max_n_series}     | int       | max number of time series allowed in report
+#===============================================================================
+# Output
+save_pixels_dt      | ${save_pixels_dt}   | float     | time interval between time series values [sec]
+SAVE_DAT_PIXELS     | ${SAVE_DAT_PIXELS}  | string    | option to save time series {Yes; No}
+dat_ts_file         | ${dat_ts_file}      | string    | filename for time series

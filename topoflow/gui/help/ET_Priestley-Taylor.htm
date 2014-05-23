@@ -1,0 +1,140 @@
+<!-- Copyright (c) 2007, Scott Peckham. All rights reserved. -->
+<html>
+<head>
+<title>TopoFlow 1.5 Help - ET - Priestley-Taylor</title>
+<link rel=stylesheet type="text/css" href="help_sys.css">
+</head>
+
+<body bgcolor="#ffffff" link="#0000ff" vlink="#800080">
+
+<table border=1 cellpadding=0 cellspacing=0>
+<tr valign=center>
+   <td CLASS=banner0 align=right>
+      <!--
+      <font size=1><sup>
+      <a target=_top href="top.html">top</a></sup></font>
+      <a href="prev_help.html">
+      <img CLASS=arrow src="left_arrow.jpg"></a>
+      <a href="next_help.html">
+      <img CLASS=arrow src="right_arrow.jpg"></a>&nbsp;
+      -->
+   </td>
+</tr>
+</table>
+ 
+<table border=0 cellspacing=0 cellpadding=10>
+<tr> <td> 
+ 
+<h2>Evapotranspiration &rarr; Priestley-Taylor Method</h2>
+
+<p>The input variables for the Priestley-Taylor method of estimating
+losses due to evaporation are defined as follows:<br>
+<center> <table>
+<tr>
+<td> Q<sub>SW</sub> </td>
+<td> = net shortwave radiation [W / m<sup>2</sup>] </td>
+</tr>
+<tr>
+<td> Q<sub>LW</sub> </td>
+<td> = net longwave radiation [W / m<sup>2</sup>] </td>
+</tr>
+<tr>
+<td> T<sub>air</sub> </td>
+<td> = air temperature [deg C] </td>
+</tr>
+<tr>
+<td> T<sub>surf</sub> </td>
+<td> = surface (snow) temperature [deg C] </td>
+</tr>
+<tr>
+<td> T<sub>soil_x</sub> </td>
+<td> = soil temperature at depth x [deg C] </td>
+</tr>
+<tr>
+<td> x </td>
+<td> = reference depth in soil [m] </td>
+</tr>
+<tr>
+<td> K<sub>soil</sub> </td>
+<td> = thermal conductivity of soil [W / (m deg_C)] </td>
+</tr>
+<tr>
+<td> &alpha; </td>
+<td> = coefficient [unitless] </td>
+</tr>
+<tr>
+<td> L<sub>v</sub> </td>
+<td> = latent heat of vaporization, water [J / kg] (2500000) </td>
+</tr>
+</table> </center>
+</p>
+
+<p>For each variable, you may choose from the droplist of data
+types.  For the "Scalar" data type, enter a numeric value with
+the units indicated in the dialog.  For the other data types,
+enter a filename.  Values in files must also use the indicated
+units.
+</p>
+
+<p>Single grids and grid sequences are assumed to be stored as
+<b><i> <a href="RTG_format.htm">RTG </a> </i></b> and
+<b><i> <a href="RTS_format.htm">RTS</a> </i></b> files, respectively.
+Time series are assumed to be stored as text files, with one value
+per line. For a time series or grid sequence, the time between
+values must coincide with the timestep provided. </p>
+
+<p><b>Note:</b> If net <i><b>total radiation</b></i> has been measured, it
+can be entered as Q<sub>SW</sub> and then Q<sub>LW</sub> can be set to zero.
+Any meteorological variables entered here (such as T<sub>air</sub>) are
+automatically shared with other other processes, such as Snowmelt
+and Precipitation. </p>
+
+<hr>
+<h3>Equations Used by the Priestley-Taylor Method</h3>
+<p>
+<table>
+<tr>
+<td> ET </td>
+<td> = (1000 * Q<sub>et</sub>) / (&rho;<sub>water</sub> * L<sub>v</sub>)</td>
+<td> = evaporation rate [mm / sec] </td>
+</tr>
+
+<tr>
+<td> Q<sub>et</sub> </td>
+<td> = &alpha; * [0.406 + (0.011 * T<sub>air</sub>)] * 
+       (Q<sub>SW</sub> + Q<sub>LW</sub> - Q<sub>c</sub>) </td>
+<td> = energy flux used to evaporate water [W / m<sup>2</sup>] </td>
+</tr>
+
+<tr>
+<td> Q<sub>c</sub> </td>
+<td> = K<sub>soil</sub> * (T<sub>soil_x</sub> - T<sub>surf</sub>) * (100 / x) </td>
+<td> = conduction energy flux [W / m<sup>2</sup>] </td>
+</tr>
+</table> </p>
+
+<hr>
+<h3>Notes on the Equations</h3>
+
+<p>Wherever (d > 0), evaporation results in a reduction in the
+surface flow depth.  Wherever (d = 0), water is removed from subsurface
+storage.  If the 1D Richards' equation is used for infiltration, then the
+evaporation rate is applied as a surface boundary condition and alters the
+soil moisture profile accordingly.</p>
+
+<hr>
+<h3>References</h3>
+
+<p>Zhang, Z., D.L. Kane and L.D. Hinzman (2000) Development and application of a
+spatially-distributed Arctic hydrological and thermal process model (ARHYTHM),
+<i>Hydrological Processes</i>, <b>14</b>, 1017-1044. </p>
+
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+
+</td> </tr> </table>
+
+</body>
+</html>
+

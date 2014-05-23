@@ -1,0 +1,21 @@
+#===============================================================================
+# TopoFlow Config File for: Evap_Read_File
+#===============================================================================
+# Input
+comp_status         | ${comp_status}      | string    | component status {Enabled; Disabled}
+in_directory        | ${in_directory}     | string    | input directory
+out_directory       | ${out_directory}    | string    | output directory
+site_prefix         | ${site_prefix}      | string    | file prefix for the study site
+case_prefix         | ${case_prefix}      | string    | file prefix for the model scenario
+n_steps             | ${n_steps}          | long      | number of time steps
+dt                  | ${dt}               | float     | timestep for evaporation rate [sec]
+ET_rate             | ${ET_rate}          | string    | Grid Sequence [mm/hr]
+#===============================================================================
+# Output
+save_grid_dt        | ${save_grid_dt}     | float     | time interval between saved grids [sec]
+SAVE_ER_GRIDS       | ${SAVE_ER_GRIDS}    | string    | option to save grids of evap. rate [mm/hr] {Yes; No}
+er_gs_file          | ${er_gs_file}       | string    | filename for grid stack of evap. rate [mm/hr]
+save_pixels_dt      | ${save_pixels_dt}   | float     | time interval between time series values [sec]
+pixel_file          | ${pixel_file}       | string    | filename for monitored pixel info
+SAVE_ER_PIXELS      | ${SAVE_ER_PIXELS}   | string    | option to save time series of evap. rate {Yes; No}
+er_ts_file          | ${er_ts_file}       | string    | filename for time series of evap. rate [mm/hr]

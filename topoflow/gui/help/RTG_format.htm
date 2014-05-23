@@ -1,0 +1,73 @@
+<!-- Copyright (c) 2007, Scott Peckham. All rights reserved. -->
+<html>
+<head>
+<title>TopoFlow 1.5 Help - Profile-smoothed DEM</title>
+<link rel=stylesheet type="text/css" href="help_sys.css">
+</head>
+
+<body bgcolor="#ffffff" link="#0000ff" vlink="#800080">
+
+<table border=1 cellpadding=0 cellspacing=0>
+<tr valign=center>
+   <td CLASS=banner0 align=right>
+      <!--
+      <font size=1><sup>
+      <a target=_top href="top.html">top</a></sup></font>
+      <a href="prev_help.html">
+      <img CLASS=arrow src="left_arrow.jpg"></a>
+      <a href="next_help.html">
+      <img CLASS=arrow src="right_arrow.jpg"></a>&nbsp;
+      -->
+   </td>
+</tr>
+</table>
+ 
+<table border=0 cellspacing=0 cellpadding=10>
+<tr> <td> 
+ 
+<h2>RTG File Format (RiverTools Grid)</h2>
+
+<p>RiverTools Grid (RTG) are binary files with no header that
+store a 2D array (or grid) whose dimensions and georeferencing
+are same as the DEM (*_DEM.rtg) they were derived from.  They
+may, however, have a different data type than the associated
+DEM.  Values in the file are stored in <b>row major</b> order;
+that is, values for the first (north) row are followed by values
+for the second row, and so on.  The filesize for an RTG file is
+always equal to the following product: </p>
+
+<center> <p>
+filesize = (ncols x nrows x BPE)
+</p> </center>
+
+<p>where <b>BPE</b> is the number of Bytes Per Element in
+the 2D array. The possible data types for an RTG file are
+<b>BYTE</b>, <b>INTEGER</b>, <b>LONG</b>, <b>FLOAT</b>, and
+<b>DOUBLE</b>.  The corresponding values of BPE
+are 1, 2, 4, 4, and 8. Each RTG file has a data type that is
+appropriate for the range of possible values that array can
+contain. This use of the most "economical" data type results
+in more efficient use of disk space and faster access times.
+Georeferencing information associated with an RTG file is
+stored in a plain text file in the <b><a href="RTI_format.htm">
+RTI file format</a></b>. </p>
+
+<p>Given the number of rows and columns in the DEM (nrows and
+ncols), the data type of an RTG file can be deduced from its
+filesize in all cases except when BPE is equal to 4. In this
+case, the data type could be either LONG or FLOAT, and
+additional information is required in order to determine
+which one.  A standard, recognized filename extension is one
+method for deciding between these two data types. </p>
+
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+
+</td> </tr> </table>
+
+</body>
+</html>
+
+
+

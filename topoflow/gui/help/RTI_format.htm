@@ -1,0 +1,88 @@
+<!-- Copyright (c) 2007, Scott Peckham. All rights reserved. -->
+<html>
+<head>
+<title>TopoFlow 1.5 Help - Cascade Rain</title>
+<link rel=stylesheet type="text/css" href="help_sys.css">
+</head>
+
+<body bgcolor="#ffffff" link="#0000ff" vlink="#800080">
+
+<table border=1 cellpadding=0 cellspacing=0>
+<tr valign=center>
+   <td CLASS=banner0 align=right>
+      <!--
+      <font size=1><sup>
+      <a target=_top href="top.html">top</a></sup></font>
+      <a href="prev_help.html">
+      <img CLASS=arrow src="left_arrow.jpg"></a>
+      <a href="next_help.html">
+      <img CLASS=arrow src="right_arrow.jpg"></a>&nbsp;
+      -->
+   </td>
+</tr>
+</table>
+ 
+<table border=0 cellspacing=0 cellpadding=10>
+<tr> <td> 
+ 
+<h2>RTI File Format (RiverTools Information)</h2>
+
+<p>RiverTools Information (RTI) files are small, ASCII
+"header" files that contain georeferencing and other
+descriptive information for a DEM grid file that has the
+same prefix.  RTI files must conform to the following
+rules, which are included at the bottom of every RTI file.
+</p>
+
+<ul>
+<li> RiverTools Information filenames must end with ".rti".
+<br> <br>
+<li> The first line in the file should be: RiverTools Info File
+<br> <br>
+<li> Any line that starts with a semi-colon is ignored.
+<br> <br>
+<li> Colons are used to delimit labels from values.
+<br> <br>
+<li> Values must be listed in a "standard" order.
+<br> <br>
+<li> The number of rows and columns are required.
+<br> <br>
+<li> Pixel geometry codes are: 0=Fixed-Angle (Geographic),
+1=Fixed-Length (usually UTM).
+<br> <br>
+<li> Pixel x-resolution and y-resolution are required.
+<br> <br>
+<li> Measurement units must be METERS or DEGREES.
+<br> <br>
+<li> Elevation data type is required.  Allowed types are:
+     BYTE, INTEGER, LONG, FLOAT, and DOUBLE.
+<br> <br>
+<li> Byte order is required and must be specified as either
+LSB or MSB.
+   <ul>
+   <li> (LSB = Least Significant Byte = little-endian)
+   <li>(MSB = Most Significant Byte = big-endian)
+   </ul>
+<br> <br>
+<li> For 'fixed-angle' pixels, bounding latitudes and longitudes
+are required to compute lengths and areas correctly.
+<br> <br>
+<li> Bounding box coordinates are always for the outer edges
+     of pixels as opposed to pixel centers.
+<br> <br>
+<li> Latitudes south of equator and longitudes west of prime
+     meridian must be specified as negative numbers.
+<br> <br>
+<li> RTI files are most easily edited with the <b>File &rarr; View DEM
+Info</b> dialog in RiverTools but are simple text files that can
+also be created and edited with any text editor.
+</ul>
+
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+
+</td> </tr> </table>
+
+</body>
+</html>

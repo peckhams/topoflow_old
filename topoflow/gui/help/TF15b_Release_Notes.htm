@@ -1,0 +1,280 @@
+<!-- Copyright (c) 2007-2008, Scott Peckham. All rights reserved. -->
+<html>
+<head>
+<title>TopoFlow 1.5 beta Release Notes</title>
+<link rel=stylesheet type="text/css" href="help_sys.css">
+</head>
+
+<body bgcolor="#ffffff" link="#0000ff" vlink="#800080">
+
+<table border=1 cellpadding=0 cellspacing=0>
+<tr valign=center>
+   <td CLASS=banner0 align=right>
+      <!--
+      <font size=1><sup>
+      <a target=_top href="top.html">top</a></sup></font>
+      <a href="prev_help.html">
+      <img CLASS=arrow src="left_arrow.jpg"></a>
+      <a href="next_help.html">
+      <img CLASS=arrow src="right_arrow.jpg"></a>&nbsp;
+      -->
+   </td>
+</tr>
+</table>
+ 
+<table border=0 cellspacing=0 cellpadding=10>
+<tr> <td> 
+ 
+<h2>TopoFlow 1.5 beta Release Notes  (December 21, 2007)</h2>
+
+<p>This document consists of the following three sections:<br>
+<ul>
+<li> <b><a href="#features">New Features in TopoFlow 1.5</a> </b> <br>
+<li> <b><a href="#fixes">Improvements and Bug Fixes in TopoFlow 1.5</a> </b> <br>
+<li> <b><a href="#problems">Known Problems in TopoFlow 1.5 beta</a> </b>
+</ul>
+</p>
+
+<hr>
+
+<a name="features"><h3>New Features in TopoFlow 1.5</h3></a>
+
+<p>The major new features in TopoFlow version 1.5 are: </p>
+
+<p> <ol>
+<li> New methods for modeling infiltration, including (a) the Smith-Parlange
+     3-parameter method, (b) the 1D Richards' equation method (which can
+     compute a separate soil-moisture profile for every grid cell in the DEM),
+     and (c) an improved version of the Green-Ampt (single-event) method.
+     The Richards' equation method uses the <i>transitional Brooks-Corey
+     </i> approach described in R.E. Smith's book called <i>Infiltration Theory
+     for Hydrologic Applications</i> for the two required <i>soil characteristic
+     functions</i>. <br> <br>
+
+<li> New options for modeling the Channel Flow process, including both the
+     diffusive and dynamic wave methods (in addition to kinematic), with
+     the option of computing frictional losses via Manning's formula or the
+     logarithmic law of the wall.  Neither the diffusive nor dynamic wave
+     methods has been extensively tested and volunteers for this are needed.
+     <br> <br>
+
+<li> A more flexible "General data types" method for specifying precipitation
+     data, including the option to specify the rainrates as a grid sequence
+     in the RTS file format and corresponding durations as a time series.
+     Long periods with no rain can be represented as a single frame in
+     the RTS file with all zeros and a corresponding long duration in the
+     time series.
+     <br> <br>
+
+<li> The addition of a menu bar at the top of the wizard interface that
+     allows more flexible workflows.  It also includes a Create menu with
+     a variety of pre-processing tools, a Plot menu and a Help menu.  For
+     example, this allows you to use pre-processing tools in the Create
+     menu while you are still in the middle of setting up a model run.
+     <br> <br>
+
+<li> A new, HTML-based help system, with a Tutorial in the Help menu and
+     context-specific Help buttons in many of the dialogs. <br> <br>
+
+<li> The ability to save all parameter settings to a text file or load them
+     from a previously saved text file by choosing Save Input Vars or Load
+     Input Vars from the File menu. <br> <br>
+
+<li> A shortwave radiation calculator in the Create menu.  This routine
+     creates an RTS file of clear-sky solar radiation flux, Qnet_SW,
+     (shortwave radiation) that is used for the energy-balance methods of
+     Snowmelt and Evaporation. Direct, diffuse and back- scattered radiation
+     fluxes are all modeled. Properties of the atmosphere such as air
+     temperature, relative humidity and dust attenuation are used as well as
+     surface/topographic properties such as slope angle, aspect angle and
+     surface albedo. The approach followed here closely follows the one
+     outlined in S.L Dingman's book, <i>Physical Hydrology</i>.  However, 
+     instantaneous vs. day-integrated radiation fluxes are used and the
+     optical air mass is modeled using the widely used method of Kasten and
+     Young (1989). For more information click on the Help button in the dialog.
+     <br> <br>
+
+<li> A longwave radiation calculator in the Create menu.  This routine creates
+     an RTS file of net longwave radiation flux, Qnet_LW, that is used for the
+     energy-balance methods of Snowmelt and Evaporation. This is computed using
+     the Stefan-Boltzman law.  The main references for this routine are S.L.
+     Dingman's book, <i>Physical Hydrology</i> and Glen Liston's EnBal paper.
+     For more information click on the Help button in the dialog.
+     <br> <br>
+
+<li> Two pre-processing tools in the Create menu that allow channel geometry
+     (e.g. bottom width, bank angle, and bed roughness) to be parameterized
+     using a grid of contributing areas or a grid of Horton-Strahler orders.
+     For more information click on the Help button in the dialog. <br> <br>
+
+<li> A data interpolation tool in the Create menu for creating time-indexed
+     grid stacks from time series data measured at 3 or more stations, via the
+     <i>inverse distance method</i>.  Contributed by Bob Bolton.  For more
+     information click on the Help button in the dialog. <br> <br>
+
+<li> An "Intial Depth" tool in the Create menu for computing a grid of
+     steady-state "normal depths" from slopes, channel geometry, bed roughness
+     and a specified "baseflow recharge" rate.  The resulting grid can be used
+     to specify initial flow depth in the input variable dialogs for the
+     Channel Flow process.  For more information click on the Help button in
+     the dialog. <br> <br>
+
+<li> A "Profile-smoothed DEM tool" in the Create menu. This routine creates a
+     "profile-smoothed" DEM from an input DEM. The elevations in the new DEM
+     should be close to those in the original DEM, but there will no longer be
+     abrupt stair-step features and flats along profiles within which slopes
+     are zero (due to poor vertical resolution and integer-rounding). Instead
+     the elevations and slopes will decrease smoothly along every channel
+     streamline while remaining close to the original elevations.  For more
+     information click on the Help button in the dialog. <br> <br>
+
+<li> A new tool in the Create menu for simulating space-time rainfall as a
+     multifractal stochastic process, contributed by by Thomas Over.
+     <br> <br>
+
+<li> Introduced a new naming convention for output files.  Default filenames
+     will always consist of the run prefix followed by a <i>compound extension
+     </i> that indicates the dimensionality of the data and an abbreviation
+     of the output variable's name.  For example, computed discharge data will
+     have the default filename "[run-prefix]_0D-Q.txt" for time series data
+     (at a monitored grid cell) and "[run-prefix]_2D-Q.rts" for data stored as
+     a grid sequence in the (binary) RTS file format.  For subsurface processes
+     such as infiltration, values at the surface (e.g. infiltration rate, v0)
+     would similarly be stored as "[run-prefix]_0D-v0.txt" and
+     "[run-prefix]_2D-v0.rts" for a time series or grid sequence.  However,
+     for subsurface processes there is now the option of saving the time
+     evolution of a variable like soil moisture as a set of values at different
+     depths below the surface that change with time.  The default filename for
+     a soil-moisture profile that evolves in time is "[run-prefix]_1D-q.txt".
+     The default filename for a "data cube" of subsurface soil moisture values
+     that evolve in time is "[run-prefix]_3D-q.txt". <br> <br>
+
+<li> Added the ability to stop at any time by pressing any key. TopoFlow now 
+     checks every 2 seconds or so whether a key has been pressed and asks if
+     you really want to stop. <br> <br>
+
+<li> Added a small window in the Output panel that plots the hydrograph
+     dynamically during a model run. <br> <br>
+
+<li> Added a Courant condition checker that attempts to verify that the time
+     step a user enters <i>for a given process</i> is small enough to achieve numerical
+     stability.  The main requirement is that the time step is small enough so
+     that flow cannot cross a grid cell in less than one time step.
+</ol> </p>
+
+<hr>
+
+<a name="fixes"><h3>Improvements and Bug Fixes in TopoFlow 1.5</h3></a>
+
+<p>The major changes in this release are:</p>
+
+<p> <ol>
+<li> An improved and more general dialog for entering parameters for the
+     subsurface flow method called "Darcy's Law, surface-parallel layers".
+     <br> <br>
+
+<li> Fixed a bug with computing the cold content, Qcc, in the Energy Balance
+     method for Snowmelt.  Renamed Qcc to Ecc (because of units, cold
+     content is not a flux).  Ecc can also be saved as an output option now.
+     <br> <br>
+
+<li> Extended the energy-balance routines so they now accept both Qnet_SW
+     and Qnet_LW arguments.  If only a total Qnet value is available, then
+     you can enter it as Qnet_SW and set Qnet_LW to zero. <br> <br>
+
+<li> Made some pretty extensive changes in "route.pro" so that now the
+     "function" files (e.g. hydrograph for monitored pixels) are saved
+     continuously instead of waiting until the end of the run, as is done
+     with the output RTS files.  The big advantage of this is that is was
+     very difficult to predict how big arrays like Q_outlet needed to be
+     before a run with some of the stopping options and this often led to
+     a crash.  With the new approach, this will never again be a problem.
+     Also moved some things into separate routines to clean up the code,
+     such as: <br>
+        Check_Output_Options, Open_New_RTS_Files,
+        Write_Pixel_File_Header, Open_New_Pixel_Files,
+        Save_Pixel_Values, Save_Grid_Values, and
+        Close_All_Output_Files. <br> <br>
+
+<li> Set things up so that precip is always entered in more natural units
+     of [mm/hr] now (vs. m/s).  Users may need to convert some of their input
+     files to these units.  Internally, units are converted to [m/s] before
+     use. <br> <br>
+
+<li> Fixed a big bug in the the Dynamic Wave option, but could still use more
+     testing. <br> <br>
+
+<li> Updated input variable dialogs throughout TopoFlow so that virtually any
+     variable can have any of the supported types of Scalar, Time Series,
+     Grid or Grid Sequence.  For example, the coefficient, c0, in the Degree-Day
+     method for the Snowmelt process can now have any type and provides greater
+     modeling flexibility. <br> <br>
+
+<li> Collected "meteorological variables" such as T_air, T_surf, RH (relative
+     humidity), rho_air and many more into a single C-like structure called
+     "met_vars" that is passed as needed.  Updated all affected routines,
+     including many in "getvars.pro".  Removed these vars from the snow_vars
+     and ET_var structures, etc. <br> <br>
+
+<li> Added "LIB_strsplit.pro" to the set of code files and to COMPILE_TF.
+     The STRSPLIT routine is used when loading vars from a file and is part of
+     the IDL user library;  it is not built into IDL. <br> <br>
+
+<li> Added "Close All Open Files" to the File menu.  This mainly provides
+     developers with a simple way to check whether all files are closed
+     correctly, since it also lists which files, if any, were closed. <br> <br>
+
+<li> Now TopoFlow checks for NaNs in the grid of infiltration rates (called IN
+     in "route.pro") and stops with an error message if any are found. <br> <br>
+
+<li> Reporting in the log window now happens every 1 or 2 seconds of real time
+     (using IDL's SYSTIME function) instead of based on how many time steps have
+     elapsed, since the latter depends on which methods are used for the various
+     processes.  SYSTIME is now used also to allow users to quit at any time by
+     pressing a key. <br> <br>
+
+<li> Added the ability to save computed vars such as e_air, e_surf, Ecc, and
+     h_swe (vapor pressures, cold content, and snow water equivalent depth) in
+     the output options for the Snowmelt process. <br> <br>
+
+<li> Made many changes to routines whose names begin with "Initialize_" in
+     route.pro. <br> <br>
+
+<li> Added Update_Mass_Totals, Initialize_Precip_Vars, Check_Infiltration &
+     Check_Steady_State in "route.pro". <br> <br>
+
+<li> Checked key functions in "route.pro" called Precipitation, Snowmelt,
+     Evaporation and Infiltration. <br> <br>
+
+<li> At the beginning of a new model run, TopoFlow now automatically checks
+     the files in the working directory to find the lowest case number that
+     has not been used and uses this to create the default run prefix.
+     <br> <br>
+
+<li> Fixed a bug in calculation of Bulk_Exchange_Coeff (in formulas.pro) that
+     affected case where Dn and Ri (Richardson's number) were both grids.
+     This bug would affect the Energy Balance methods for both Snowmelt and
+     Evaporation. <br> <br>
+</ol> </p>
+
+<hr>
+
+<a name="problems"><h3>Known Problems in TopoFlow 1.5 beta</h3></a>
+
+<p> <ol>
+<li> In this beta release, the unsaturated and saturated zones are only
+linked in a very simple manner.  This part of TopoFlow is being revised
+for the final release of version 1.5. <br> <br>
+
+</ol> </p>
+
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+
+</td> </tr> </table>
+
+</body>
+</html>
+
+

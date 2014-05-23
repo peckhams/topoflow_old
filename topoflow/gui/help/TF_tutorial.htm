@@ -1,0 +1,341 @@
+<!-- Copyright (c) 2007, Scott Peckham. All rights reserved. -->
+<html>
+<head>
+<title>TopoFlow 1.5 Help - Tutorial</title>
+<link rel=stylesheet type="text/css" href="help_sys.css">
+</head>
+
+<body bgcolor="#ffffff" link="#0000ff" vlink="#800080">
+
+<table border=1 cellpadding=0 cellspacing=0>
+<tr valign=center>
+   <td CLASS=banner0 align=right>
+      <!--
+      <font size=1><sup>
+      <a target=_top href="top.html">top</a></sup></font>
+      <a href="prev_help.html">
+      <img CLASS=arrow src="left_arrow.jpg"></a>
+      <a href="next_help.html">
+      <img CLASS=arrow src="right_arrow.jpg"></a>&nbsp;
+      -->
+   </td>
+</tr>
+</table>
+ 
+<table border=0 cellspacing=0 cellpadding=10>
+<tr> <td> 
+ 
+<h2>Getting Started with TopoFlow 1.5 - A Short Tutorial</h2>
+
+<h3>Introduction</h3>
+
+<p>TopoFlow is a free, spatially-distributed hydrologic model with a user-friendly, wizard-style
+interface.  TopoFlow evolved from the merger of a previous rainfall-runoff model based on
+DEM-derived D8 flow grids and a model called ARHYTHM that was designed and tested for
+modeling Arctic watersheds.  For this reason, it offers sophisticated methods for modeling
+temperature-dependent processes such as snowmelt, evaporation, infiltration (frozen ground)
+and shallow subsurface flow.  TopoFlow is highly modular and was designed to be user-extensible.
+In virtually every input dialog, users also have the flexibility of entering any input parameter
+in any of the following forms: </p>
+
+<ol>
+<li>  a scalar (to be used for every pixel and all times)
+<li>  a time series (to be used for every pixel)
+<li>  a single grid  (to be used for all times) or
+<li>  a grid sequence (corresponding to the timestep for that process).
+</ol>
+
+<p>This is one of many features that sets TopoFlow apart from most other spatial hydrologic
+models.</p>
+
+<p>The IDL (Interactive Data Language) source code for TopoFlow is open, but subject to a
+<b><a href="TF_license_agreement.htm">license agreement</a></b>.  By any standard,
+TopoFlow represents a substantial programming effort.
+Version 1.5 consists of about 40,500 lines of IDL code (including internal comments).
+Assuming 60 lines per page, printing out the source code would therefore require about
+675 pages.  [If written in a lower-level language like C, it would require at least 5 to 10
+times more code.]  TopoFlow is a work in progress by multiple programmer-hydrologists and
+we welcome feedback and bug reports from users. </p>
+
+<p>Before starting to work with TopoFlow, you may find it helpful to review the concepts
+behind spatially-distributed hydrologic modeling.  One paper that you might find
+helpful is a draft book chapter on spatial hydrologic modeling written by <b>
+<a href="http://instaar.colorado.edu/topoflow/docs/TopoFlow/Peckham_2007_Geomorphometry_ch25.pdf">
+Peckham (2007a) </a></b>, for an Elsevier book called <b><i>Geomorphometry</i></b>.
+Another paper that contains a great deal of useful background information is the one by
+<b><a href="http://instaar.colorado.edu/topoflow/docs/ARHYTHM/Zhang_et_al_2000.pdf">
+Zhang et al. (2000) </a></b> that describes the ARHYTHM model.
+If you would like to learn more about the point-and-click, hydrologic GIS program called
+RiverTools, you may also be interested in this draft book chapter written by <b>
+<a href="http://instaar.colorado.edu/topoflow/docs/RiverTools/Peckham_2007_Geomorphometry_ch18.pdf">
+Peckham (2007b) </a></b>, also for the <b><i>Geomorphometry</i></b> book.
+</p>
+
+<p>Additional information is available on the official TopoFlow website at:
+<b><a href="http://instaar.colorado.edu/topoflow">
+http://instaar.colorado.edu/topoflow/</a></b>.
+</p>
+
+<h3>How to Set Up a Model Run</h3>
+
+<p> <b>Step 1</b>.  Obtain a DEM (digital elevation model) for the basin that you wish to model.
+If the DEM has dimensions greater than about 300 columns and 300 rows, then it is usually best
+to subsample the DEM (by averaging) to have dimensions in this range.  Using larger DEMs will
+result in longer model runs and may result in RTS files (RiverTools Sequence) for which you
+do not have enough space on your hard drive.  It is good to start with smaller DEMs and then
+to increase the size/resolution of your DEM for subsequent model runs if you determine that
+higher resolution is necessary and you have sufficient time and disk space.  Tools for
+mosaicking, subsetting and subsampling DEMs are available in hydrologic GIS software such
+as RiverTools 3.0.  </p>  
+
+<p> <b>Step 2.</b>  Create a D8 flow grid, area grid, slope grid and Horton-Strahler order
+grid for your DEM using RiverTools 3.0 or a similar program.  The flow grid should be converted,
+if necessary, to have the RiverTools flow codes (the standard ones introduced by Jensen, 1984)
+and a data type of "byte" (1 byte per pixel).  The area and slope grids should have a data
+type of "float" (4 bytes per pixel) and the units in the area grid should be square kilometers.
+The Horton-Strahler order grid should also have a data type of "byte". </p>
+
+<p> <b>Step 3.</b>  TopoFlow requires the column and row of the pixel or pixels in your basin
+for which you wish to monitor the modeled values.  It also requires the area (in sq. km) and
+relief (in meters) for this pixel or pixels.  One way to obtain these values is to
+simultaneously use the Vector Zoom and Value Zoom tools (which are linked) that are available
+in RiverTools 3.0.  The Vector Zoom tool allows you to make sure that you are selecting a
+pixel that lies on the main water course and not, for example, on a nearby hillslope.  The
+Value Zoom tool has a Select Grid option in its Options menu that lets you determine the
+contributing area and relief for the selected pixel. </p>
+ 
+<p> <b>Step 4.</b>  Collect hydrologic parameters for the basin of interest.  Frictional
+losses must be parameterized for every channel in the river network and the parameters
+usually vary in the downstream direction.  The <b>Create &rarr; Channel Geometry Grids</b>
+dialogs in TopoFlow 1.5 allow you to create grids of "Manning's N", bed width and bank
+angle (for a trapezoidal cross-section) by parameterizing them in terms of contributing
+area or Horton-Strahler order (given as grids). In these parameterizations, free parameters
+should be chosen so as to reproduce "Manning's N" or channel width values at locations
+for which these are known, such as the basin outlet.
+</p>
+
+<p>The variables mentioned in the last paragraph are needed to model the "channel process"
+but you will also need parameters for every other type of hydrologic process that you wish
+to model.  This includes snow melt, evapotranspiration, infiltration and shallow subsurface
+flow.  You will need estimates for soil properties such as hydraulic conductivity and
+porosity in order to model the infiltration and subsurface flow processes.  There is usually
+considerable uncertainty associated with these soil properties, since they typically vary
+spatially and can also depend on various aspects of the local geology. </p>
+
+<p> <b>Step 5.</b>  Start TopoFlow and click on the <b>New Model Run</b> button.  The first panel
+in the wizard-style interface asks you for general information regarding the run, such as
+the working directory, data set prefix and model run prefix.  The model run prefix allows
+you to make multiple model runs, with different parameter settings, for the same DEM data
+set.  You can also enter comments into the "Run comments" text box to describe the run and
+these will be saved in the specified "Comment file" in the working directory.  A log file
+is also created that contains a summary of most parameter settings and model output.  This
+log file contains plain text and can be viewed with any text editor. </p>
+
+<p> <b>Step 6.</b>  Click on the <b>Next</b> button at the bottom of the panel.  The next panel
+lets you choose the method that will be used to parameterize each physical process that
+you will be modeling.  You can turn off a process entirely by selecting "None" from the
+droplist of methods.  The droplist usually contains a simple method that requires just a
+few parameters, as well as a more complex and physically-correct method that necessarily
+requires more input data.  As an example, the Snowmelt process has the simple "Degree-Day"
+method as well as the more rigorous "Energy-Balance" method.  TopoFlow uses the hierarchy
+of Process, Method, Functions and Variables as a unifying model framework.   Each method
+may be concisely defined in terms of a set of functions that relate input variables to
+output variables.  TopoFlow is designed so that it is relatively simple for users to add
+their own methods.  However, adding a new method does require some programming in IDL
+and is beyond the scope of this tutorial. </p>
+
+<p>Once you have selected a method from the droplist of choices for a given physical
+process, clicking on the "<b>In...</b>" button opens a dialog for entering the
+parameters that the selected method requires.   You can learn more about any
+selected method, its input variables and equations by clicking on the <b>Help</b>
+button at the bottom of the dialog.  TopoFlow 1.5 uses an HTML help system which
+requires that the help files be installed in a standard place, namely
+"C:/Program Files/TopoFlow/help" on a PC running Windows,
+"/Applications/TopoFlow/help" on a Mac running Mac OS X, and
+"/usr/local/topoflow/help" for Linux/Unix computers.
+Clicking on the "<b>Out...</b>" button opens a dialog for choosing which of the
+modeled hydrologic variables will be saved and how they are to be saved.  The two
+main output options are: (1) Save the variable as a sequence of spatial grids (as
+a RiverTools Sequence or RTS file), at a specified sampling rate and (2) Save the
+values of the variable as a time series (in a multi-column text file) for each of
+the pixels that will be monitored, at a specified sampling rate.  The pixels to be
+monitored are specified in a subsequent wizard panel. </p>
+
+<p> <b>Step 7.</b>  For this tutorial we will select the default, "Uniform in space,
+given durations" for the "Precipitation" process.  Click on the "<b>In...</b>" button to open
+the dialog for entering the input parameters that this method requires.  If you have
+rain gauge data (and a sufficiently small watershed) you may enter that data into this
+table, taking note of the units for Rate and Duration.  You may want to do a test run
+with the default parameters to get a sense of how long it will take for the model to
+run with your data.  Note that increasing the duration can result in a much larger peak
+discharge and a longer model run.  It is unrealistic for large rainrates to occur in a
+spatially uniform manner over basins larger than a relatively moderate size.  It is
+also uncommon for them to have long durations.  It may also be unrealistic to neglect
+some processes such as infiltration. </p>
+
+<p>Once Rate and Duration values have been entered into this dialog's table, you will
+generally want to save them in a text file by clicking on the <b>Save table to file</b>
+button.  One convention for the name of this text file is "00_Rain_Data#.txt", where
+"#" is a number used to distinguish between multiple rainfall tables that you may want
+to experiment with.  The "00_" prefix ensures that all of your saved tables will sort
+to the beginning of your working directory so that they are grouped together and
+easily located.  In a future model run, you can quickly reload this table of values
+by clicking on the <b>Read table from file</b> button and selecting the file you just saved.
+We will see later in this tutorial that other parameter tables in TopoFlow can also be
+saved in this way.  Several sample data sets are available for learning to use
+TopoFlow (e.g. Treynor, Small and Plane) and you can reload sample parameter tables
+for them in this manner. </p>
+
+<p> <b>Step 8.</b>  For this tutorial we will select the default, "Kinematic Wave,
+Manning" method for the important "Channel flow" process.  Click on the "<b>In...</b>" button
+to open the dialog for entering the input parameters that this method requires.  This
+method parameterizes the downstream variation in channel parameters in terms of
+Horton-Strahler order.  Since the flow grid effectively "channelizes" the entire DEM,
+including the hillslopes, orders 1 and 2 will most likely correspond to the hillslope
+pixels while the higher orders will correspond to channel pixels.  However, if the
+pixel sizes for your subsampled DEM are larger than the hillslope scale, then it is
+possible that hillslopes are not resolved at all by your DEM and flow grid.  How you
+set these parameters will depend on this distinction.  If hillslope pixels are
+resolved by your DEM's pixel size (or grid spacing), then you should generally treat
+the order 1 and order 2 pixels as hillslope pixels and set their "Manning's N" and
+"Bed width" values accordingly.  Overland flow on hillslopes tends to follow a
+Manning-like friction law, but with a "Manning's N" value that is around "0.30"
+instead of the typical value for open channels of about "0.03".  The "Bed width"
+for a hillslope pixel should be set to the entire width of the pixel, since frictional
+loss of momentum will then occur over the entire surface of the pixel.  Bank angles
+have no meaning for hillslope pixels, but for channel pixels can be set to a value
+that defines an appropriate trapezoidal channel cross-section. </p>
+
+<p>Once values have been entered into this dialog's table, you will generally want
+to save them in a text file by clicking on the "<b>Save table to file</b>" button.
+One convention for the filename of this text file is "00_Channel_Data#.txt", where
+"#" is a number used to distinguish between multiple tables that you may want to
+experiment with.  Recall from Step 7 that precipitation parameters were previously
+saved in file called "00_Rain_Data.txt". </p>
+
+<p>"Manning's N" parameters definitely have an effect on the resulting hydrograph,
+and can cause multiple peaks in a small basin's hydrograph to be either distinct or
+merged together.  Tables of "Manning's N" values for typical channel types may be
+found in books on open channel flow.  A typical, middle-range value for channels
+is 0.03.  Note that the logarithmic law of the wall and Manning's formula are two
+different methods for parameterizing frictional loss of momentum but they agree
+quite closely as long as the relative roughness (water depth over typically
+roughness length scale) is in the range of 100 to 10,000. </p>
+
+<p>When you are finished entering values into this dialog, click on the <b>OK</b> button
+at the bottom of the dialog to accept and save the new settings.  Note that if any
+of the required grid files (indicated toward the bottom of the dialog) are missing,
+a warning message will be issued.  The "Timestep" at the bottom of the channel
+process method dialog is the timestep that controls the entire model, even though
+some of the other hydrologic processes may only be computed/updated according to
+their own, larger timestep.  A Courant condition can be used to choose a timestep
+that matches your DEM's pixel size so as to ensure numerical stability.  This
+condition dictates that the maximum distance travelled by water anywhere in the
+basin in one timestep (v_max * dt) must be less than one pixel width (dx).  If
+all pixels have the same fixed width, dx, then we require dt < (dx / v_max) for
+stability.  The timestep, dt, is typically reduced by an additional "factor of
+safety" of 2 or more.   For DEMs with fixed-angle pixels the pixel size varies
+with latitude but the same principle applies.  In the current version, TopoFlow
+automatically estimates an optimal timestep and uses it as the default in the
+"Timestep" text box.  It is still possible, however, that the model run will
+require an even smaller timestep for numerical stability.  </p>
+
+<p> <b>Step 9.</b> Now click on the "<b>Out...</b>" button for the "Channel flow" process.
+This opens a dialog that lets you choose which of the modeled variables are to be
+saved and how they are to be saved.  You will usually want to at least save the
+Discharge grid and the Discharge values at your monitored pixels.  It is a good
+idea to use the default filenames as a convention.  Both the "Grids to save" and
+"Values to save" subsections of this dialog have their own sampling timestep.
+You may need to experiment with different timesteps to strike a balance between
+(1) ensuring that important details are resolved and (2) keeping the output file
+sizes from being larger than necessary.  Note, however, that both of these
+sampling timesteps must be greater than the channel process timestep, and they
+should usually be many times larger (e.g. 60 times larger).  Note that the units
+of the sampling timesteps in this dialog are minutes, while the units of the
+channel process timestep is specified in seconds. </p>
+
+<p> <b>Step 10.</b>  You will need to repeat the basic procedure described in
+Steps 7, 8 and 9 to set the parameters for all of the other physical processes
+that you wish to model.  Note that there must be a runoff-generating process like
+"Precipitation", "Snowmelt", etc. in order for the model to operate.  </p>
+
+<p> <b>Step 11.</b>  Once you have finished setting the parameters for all of the
+physical processes you wish to model, including both input and output variables,
+you can save them all in a special text file with the <b>File &rarr; Save Input
+Vars</b> option.  The next time you start TopoFlow you can then reload all of these
+settings by selecting this same text file with the <b>File &rarr; Load Input Vars
+</b> option. </p>
+
+<p> <b>Step 12.</b>  Click on the <b>Next</b> button at the bottom of the Physical
+Process wizard panel to advance to the panel labeled "Info for monitored basins".
+This is where you enter the values that you collected in Step 3.  Once you have
+entered these values, you will generally want to save them for later use with the
+"Save table to file" button.  One convention is to save them to a file called
+"00_Basin_Data.txt".  Recall from Steps 7 and 8 that precipitation parameters and
+channel flow parameters were previously saved in files called "00_Rain_Data.txt"
+and "00_Channel_Data.txt".  At the bottom of this wizard panel, there is a check
+box labeled "Check mass balance for basin 1?".  If this option is checked, then you
+must specifiy an RTM (RiverTools mask) file that defines the set of grid cells that
+lie in the basin upstream of the first monitored grid cell in the list above.
+This option allows TopoFlow to compute a detailed mass-balance check which will
+be printed in the Output Log Window at the end of the model run.  If you have
+RiverTools, you can create an RTM file for a basin with the <b>Extract &rarr;
+Mask &rarr; Subbasin Mask</b> tool. </p>
+
+<p> <b>Step 13.</b>  Click on the <b>Next</b> button at the botton of the wizard panel
+to advance to the final panel of the "New Model Run" wizard.  At the top of this
+dialog you will see a droplist labeled "Stopping criterion".  There are currently
+3 different options in this droplist.  The default is especially useful for
+modeling the hydrologic response due to a storm event and saves you from trying
+to guess how long it will take for the hydrograph to drop to a specified value.
+This method also works for hydrographs with multiple peaks.  The model stops
+when a value equal to P% of the highest value encounted so far is reached.  The
+default is 5 percent.  You can change this value by clicking on the Options button.
+As with the "In..." and "Out..." buttons, you will get a different dialog
+when you click on this button depending on which "Stopping criterion" you have
+selected. </p>
+
+<p> <b>Step 14.</b>  You can use the <b>Back</b> button at the bottom of the wizard panels
+to go back and check or change any of the parameters that you entered previously.
+You can also get an estimate of the total space that will be required to save
+any output files you specified by clicking on the <b>Get Outfile Size</b> button
+at the bottom of the dialog.  If there are messages in the Output Log Window from
+a previous run that you would like to delete, you can do this by clicking on the
+<b>Clear Window</b> button.  </p>
+
+<p> <b>Step 15</b> When you are ready to start the model, click on the <b>Start
+Model Run</b> button at the bottom of the last wizard panel.  Output messages
+will be displayed in the "Output log window" while the model is running.  The
+hydrograph for the first pixel in your list of monitored pixels will be displayed
+dynamically in the small window on the left-hand side.  You can stop a model run
+at any time by pressing any key on your keyboard during the run.  In most cases,
+TopoFlow should stop within 2 seconds of pressing a key and all output files
+should be closed properly. </p>
+
+<p> <b>Step 16.</b>  When a model run is finished, you will most likely want to plot
+some of the results.  The <b>Plot &rarr; Function</b> dialog can be used to create
+a simple plot of numbers in a multi-column text file such as the hydrograph for the
+monitored pixels, which has the filename extension "_OUTQ.txt".  Similarly, the
+<b>Plot &rarr; RTS File</b> option can be used to display a grid sequence (stored
+as an RTS file) as an animation.  The <b>Plot &rarr; RTS to MPG</b> option
+can be used to create an MPEG file from a selected RTS file if you have a valid IDL
+license with the MPEG option enabled. </p>
+
+<p>If you have access to RiverTools 3.0, you can use the <b>Display &rarr; Function</b>
+and <b>Display &rarr; Grid Sequence</b> dialogs to display your hydrographs and grid
+sequences.  Each of these dialogs draws on the functionality of RiverTools 3.0 to
+offer numerous additional features, some of which are located in the Options and Tools
+menus of the display windows.  The Time Profile and Animated Profile tools are
+particularly useful and you also have the option to save animations to AVI (Windows
+Video) files.  (These latter options are only available with Service Pack 3.) </p>
+
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+
+</td> </tr> </table>
+
+</body>
+</html>
+
+

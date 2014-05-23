@@ -1,0 +1,86 @@
+<!-- Copyright (c) 2007, Scott Peckham. All rights reserved. -->
+<html>
+<head>
+<title>TopoFlow 1.5 Help - Precipitation</title>
+<link rel=stylesheet type="text/css" href="help_sys.css">
+</head>
+
+<body bgcolor="#ffffff" link="#0000ff" vlink="#800080">
+
+<table border=1 cellpadding=0 cellspacing=0>
+<tr valign=center>
+   <td CLASS=banner0 align=right>
+      <!--
+      <font size=1><sup>
+      <a target=_top href="top.html">top</a></sup></font>
+      <a href="prev_help.html">
+      <img CLASS=arrow src="left_arrow.jpg"></a>
+      <a href="next_help.html">
+      <img CLASS=arrow src="right_arrow.jpg"></a>&nbsp;
+      -->
+   </td>
+</tr>
+</table>
+ 
+<table border=0 cellspacing=0 cellpadding=10>
+<tr> <td> 
+ 
+<h2>Precipitation &rarr; General Data Types Method</h2>
+
+<p>The input variables used for this Precipitation method are defined as follows:
+<br>
+<center> <table>
+<tr>
+<td> rate </td>
+<td> = precipitation rate [mm/hr]</td>
+</tr>
+<tr>
+<td> duration </td>
+<td> = precip. duration of a given rate [minutes] </td>
+</tr>
+<tr>
+<td> T_air </td>
+<td> = air temperature [deg C] </td>
+</tr>
+</table> </center>
+
+<p>Precipitation falls as snow (and snow depth is incremented)
+whenever the air temperature drops below 0 degrees Celsius.
+If air temperatures are specified in another input dialog, such
+as those for Evapotranspiration and Snowmelt, those values
+will take precedence over values entered here.</p>
+
+<p>For each variable, you may choose from the droplist of data
+types.  For the "Scalar" data type, enter a numeric value with
+the units that are indicated in the dialog.  For the other data
+types, enter a filename.  The values in the file must also have
+the indicated units.
+</p>
+
+<p>Single grids and grid sequences are assumed to be stored as
+<b><i> <a href="RTG_format.htm">RTG </a> </i></b> and
+<b><i> <a href="RTS_format.htm">RTS</a> </i></b> files, respectively.
+Time series are assumed to be stored as text files, with one value
+per line. For a time series or grid sequence, the time between
+values must coincide with the timestep provided. </p>
+
+<p><b>Note:</b> If rainrates are entered as a grid sequence in
+the RTS file format, then the corresponding durations between
+frames should be entered as a time series with the same number
+of values as there are frames in the RTS file.  You will need
+to create a time series of durations even if all of the durations
+are the same.  For periods with no rain, the grid sequence of
+spatial rainrates should contain one frame in which all the values
+are zero and the time series of durations should contain a
+corresponding scalar value which gives the number of minutes for
+which there is no rain. </p>
+
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+
+</td> </tr> </table>
+
+</body>
+</html>
+

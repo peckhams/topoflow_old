@@ -1,0 +1,46 @@
+#===============================================================================
+# TopoFlow Config File for: Snow_Degree_Day
+#===============================================================================
+# Input
+comp_status         | ${comp_status}      | string    | component status {Enabled; Disabled}
+in_directory        | ${in_directory}     | string    | input directory
+out_directory       | ${out_directory}    | string    | output directory
+site_prefix         | ${site_prefix}      | string    | file prefix for the study site
+case_prefix         | ${case_prefix}      | string    | file prefix for the model scenario
+n_steps             | ${n_steps}          | long      | number of time steps
+dt                  | ${dt}               | float     | timestep for snowmelt process [sec]
+Cp_snow_type        | ${Cp_snow_type}     | string    | allowed input types {Scalar; Grid; Time_Series; Grid_Sequence}
+Cp_snow             | ${Cp_snow}          | float     | heat capacity of snow [J/kg/K]
+rho_snow_type       | ${rho_snow_type}    | string    | allowed input types {Scalar; Grid; Time_Series; Grid_Sequence}
+rho_snow            | ${rho_snow}         | float     | density of snow [kg/m^3]
+c0_type             | ${c0_type}          | string    | allowed input types {Scalar; Grid; Time_Series; Grid_Sequence}
+c0                  | ${c0}               | float     | degree-day coefficient [mm/day/deg C]
+T0_type             | ${T0_type}          | string    | allowed input types {Scalar; Grid; Time_Series; Grid_Sequence}
+T0                  | ${T0}               | float     | reference temperature [deg C]
+h0_snow_type        | ${h0_snow_type}     | string    | allowed input types {Scalar; Grid; Time_Series; Grid_Sequence}
+h0_snow             | ${h0_snow}          | float     | depth of snow [m]
+h0_swe_type         | ${h0_swe_type}      | string    | allowed input types {Scalar; Grid; Time_Series; Grid_Sequence}
+h0_swe              | ${h0_swe}           | float     | depth of snow water equivalent (SWE) [m]
+#===============================================================================
+# Output 1
+save_grid_dt        | ${save_grid_dt}     | float     | time interval between saved grids [sec]
+SAVE_MR_GRIDS       | ${SAVE_MR_GRIDS}    | string    | option to save grids of snow meltrate {Yes; No}
+mr_gs_file          | ${mr_gs_file}       | string    | filename for grid stack of snow meltrate [m/s]
+SAVE_HS_GRIDS       | ${SAVE_HS_GRIDS}    | string    | option to save grids of snow depth {Yes; No}
+hs_gs_file          | ${hs_gs_file}       | string    | filename for grid stack of snow depth [m]
+SAVE_SW_GRIDS       | ${SAVE_SW_GRIDS}    | string    | option to save grids of snow water equivalent {Yes; No}
+sw_gs_file          | ${sw_gs_file}       | string    | filename for grid stack of snow water equivalent [m]
+SAVE_CC_GRIDS       | ${SAVE_CC_GRIDS}    | string    | option to save grids of cold content {Yes; No}
+cc_gs_file          | ${cc_gs_file}       | string    | filename for grid stack of cold content [J/m^2]
+#===============================================================================
+# Output 2
+save_pixels_dt      | ${save_pixels_dt}   | float     | time interval between time series values [sec]
+pixel_file          | ${pixel_file}       | string    | filename for monitored pixel info
+SAVE_MR_PIXELS      | ${SAVE_MR_PIXELS}   | string    | option to save time series of snow meltrate {Yes; No}
+mr_ts_file          | ${mr_ts_file}       | string    | filename for time series of  [m/s]
+SAVE_HS_PIXELS      | ${SAVE_HS_PIXELS}   | string    | option to save time series of snow depth {Yes; No}
+hs_ts_file          | ${hs_ts_file}       | string    | filename for time series of snow depth [m]
+SAVE_SW_PIXELS      | ${SAVE_SW_PIXELS}   | string    | option to save time series of snow water equivalent {Yes; No}
+sw_ts_file          | ${sw_ts_file}       | string    | filename for time series of snow water equivalent [m]
+SAVE_CC_PIXELS      | ${SAVE_CC_PIXELS}   | string    | option to save time series of cold content {Yes; No}
+cc_ts_file          | ${cc_ts_file}       | string    | filename for time series of cold content [J/m^2]

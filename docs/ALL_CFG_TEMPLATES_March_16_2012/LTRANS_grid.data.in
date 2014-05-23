@@ -1,0 +1,28 @@
+!-------------------------------------------------------------------------------
+!---------------------------------- GRID.data ----------------------------------
+!-------------------------------------------------------------------------------
+!---------------- Input file for LTRANS with parameters grouped ----------------
+!-------------------------------------------------------------------------------
+
+! Created from the NetCDF grid file: /home/csherwood/proj/lt/sabgomX/sabgomXhisX0001.nc
+
+$gridinfo
+
+               ui = ${ui}       ! u-grid dimension in x direction
+               uj = ${uj}       ! u-grid dimension in y direction
+               vi = ${vi}       ! v-grid dimension in x direction
+               vj = ${vj}       ! v-grid dimension in y direction
+
+        rho_nodes = ${rho_nodes}    ! number of rho points (vi*uj)
+          u_nodes = ${u_nodes}      ! number of u points   (ui*uj)
+          v_nodes = ${v_nodes}      ! number of v points   (vi*vj)
+
+ max_rho_elements = ${max_rho_elements}    ! Number of elements using four rho points as corners
+   max_u_elements = ${max_u_elements}      ! Number of elements using four  u  points as corners
+   max_v_elements = ${max_v_elements}      ! Number of elements using four  v  points as corners
+
+     rho_elements = ${rho_elements}     ! rho elements with at least one out of four corners with mask_rho=1
+       u_elements = ${u_elements}       !  u  elements with at least one out of four corners with mask_u=1
+       v_elements = ${v_elements}       !  v  elements with at least one out of four corners with mask_v=1
+
+$end

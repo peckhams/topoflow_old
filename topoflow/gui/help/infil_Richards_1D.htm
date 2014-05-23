@@ -1,0 +1,225 @@
+<!-- Copyright (c) 2007-2010, Scott Peckham. All rights reserved. -->
+<html>
+<head>
+<title>TopoFlow 1.5 Help - Infiltration - 1D Richards</title>
+<link rel=stylesheet type="text/css" href="help_sys.css">
+</head>
+
+<body bgcolor="#ffffff" link="#0000ff" vlink="#800080">
+
+<table border=1 cellpadding=0 cellspacing=0>
+<tr valign=center>
+   <td CLASS=banner0 align=right>
+      <!--
+      <font size=1><sup>
+      <a target=_top href="top.html">top</a></sup></font>
+      <a href="prev_help.html">
+      <img CLASS=arrow src="left_arrow.jpg"></a>
+      <a href="next_help.html">
+      <img CLASS=arrow src="right_arrow.jpg"></a>&nbsp;
+      -->
+   </td>
+</tr>
+</table>
+ 
+<table border=0 cellspacing=0 cellpadding=10>
+<tr> <td> 
+ 
+<h2>Infiltration &rarr; 1D Richards' Equation (3-layer) Method</h2>
+
+<p>The input variables used for modeling infiltration and unsaturated
+vertical flow with the 1D Richard's equation are defined as follows:
+<center> <table>
+<tr>
+<td> K<sub>s</sub> </td>
+<td> = saturated hydraulic conductivity [m / s] </td>
+</tr>
+
+<tr>
+<td> K<sub>i</sub> </td>
+<td> = initial hydraulic conductivity [m / s]
+       (typically much less than K<sub>s</sub>) </td>
+</tr>
+
+<tr>
+<td> &theta;<sub>s</sub> </td>
+<td> = soil water content at &psi; = 0 [unitless]
+       (often set to the soil porosity, &phi;) </td>
+</tr>
+
+<tr>
+<td> &theta;<sub>i</sub> </td>
+<td> = initial soil water content [unitless] </td>
+</tr>
+
+<tr>
+<td> &theta;<sub>r</sub> </td>
+<td> = residual soil water content [unitless] (must be < &theta;<sub>i</sub>) </td>
+</tr>
+
+<tr>
+<td> &psi;<sub>B</sub> </td>
+<td> = bubbling pressure head [meters]
+      (also called air-entry pressure, &psi;<sub>ae</sub>)</td>
+</tr>
+
+<tr>
+<td> &psi;<sub>A</sub> </td>
+<td> = pressure head offset parameter [meters] </td>
+</tr>
+
+<tr>
+<td> &lambda; </td>
+<td> = pore-size distribution parameter [unitless]  (alt. notation = 1/b ) </td>
+</tr>
+
+<tr>
+<td> &eta; </td>
+<td> = 2 + (3 * &lambda;) [unitless] (see Notes) </td>
+</tr>
+
+<tr>
+<td> c </td>
+<td> = transitional Brooks-Corey curvature parameter [unitless] (see Notes) </td>
+</tr>
+
+<tr>
+<td> dz<sub>nodes</sub> </td>
+<td> = vertical distance between nodes [meters] </td>
+</tr>
+
+<tr>
+<td> n<sub>nodes</sub> </td>
+<td> = number of subsurface vertical nodes </td>
+</tr>
+</table> </center>
+
+<p>For each variable, you may choose from the droplist of data
+types.  For the "Scalar" data type, enter a numeric value with
+the units indicated in the dialog.  For the other data types,
+enter a filename.  Values in files must also use the indicated
+units. </p>
+
+<p>Single grids and grid sequences are assumed to be stored as
+<b><i> <a href="RTG_format.htm">RTG </a> </i></b> and
+<b><i> <a href="RTS_format.htm">RTS</a> </i></b> files, respectively.
+Time series are assumed to be stored as text files, with one value
+per line. For a time series or grid sequence, the time between
+values must coincide with the timestep provided. </p>
+
+<p>Note that the names of Greek letters are spelled out in the
+dialog, so theta = &theta;, psi = &psi; and lambda = &lambda;.
+</p>
+
+<p>The current version allows up to 3 different soil layers,
+each with its own soil properties and number of vertical nodes.
+The soil layer number is indicated at the top of the dialog
+and you use the <b>Next</b> and <b>Back</b> buttons to view
+settings for the various layers. </p>
+
+<hr>
+<h3>Equations Used by the 1D Richards' Equation Method</h3>
+<table>
+<tr>
+<td> v </td>
+<td> = K * (1 - &psi;<sub>z</sub>) </td>
+<td> = Darcy's Law for vertical flow rate [m / s] </td>
+</tr>
+
+<tr>
+<td> v<sub>z</sub> </td>
+<td> = J - &theta;<sub>t</sub> </td>
+<td> = conservation of mass, &nbsp; with source/sink term J </td>
+</tr>
+
+<tr>
+<td> &Theta;<sub>e</sub> </td>
+<td> = (&theta; - &theta;<sub>r</sub>) /
+       (&theta;<sub>s</sub> - &theta;<sub>r</sub>)</td>
+<td> = effective saturation or scaled water content [unitless in [0,1]] </td>
+</tr>
+
+<tr>
+<td>  </td>
+<td>  </td>
+<td> = 0 when &theta; = &theta;<sub>r</sub>, = 1 when &theta; = &theta;<sub>s</sub></td>
+</tr>
+
+<tr>
+<td> K </td>
+<td> = K<sub>s</sub> * &Theta;<sub>e</sub><sup>&eta;/&lambda;</sup> </td>
+<td> = hydraulic conductivity [m / s] (see Notes below) </td>
+</tr>
+
+<tr>
+<td> &psi; </td>
+<td> = &psi;<sub>B</sub>
+       [&Theta;<sub>e</sub><sup>-c/&lambda;</sup> - 1]<sup>1/c</sup>
+       - &psi;<sub>A</sub>  &nbsp;&nbsp; </td>
+<td> = pressure head [meters] (see Notes below) </td>
+</tr>
+</table>
+
+<hr>
+<h3>Notes on the Equations</h3>
+
+<p> <ol>
+<li>These equations are used to compute the time evolution of 1D
+(vertical, subsurface) profiles for
+(1) soil moisture, &theta;,
+(2) pressure head, &psi;,
+(3) hydraulic conductivity, K and
+(4) vertical flow rate, v.  TopoFlow solves these equations
+separately to get time-evolving profiles for every grid cell in a DEM.
+The result is a 3D grid for each of these four variables that spans
+the <b><i>unsaturated zone</i></b>.
+The third equation above just defines a variable that is used in
+the 4th and 5th equations, so the coupled set constitutes 4 equations
+to be solved for 4 unknowns.  These equations can be combined into
+one nonlinear, parabolic, second-order PDE (partial differential
+equation) known as the <b><i>one-dimensional Richards' equation</i></b>.
+</li> <br>
+
+<li>The <b><i>infiltration rate</i></b> is simply the vertical flow
+rate at the ground surface, denoted by v<sub>0</sub>. </li> <br>
+
+<li><b><i>Soil moisture</i></b> is simply another term for the
+water content in the case where the porous medium is a soil. </li> <br>
+
+<li>Subscripts in the first two equations indicate partial derivatives
+with respect to the vertical coordinate, z.  Note that z is the vertical
+distance below the ground surface, in meters. </li> <br>
+
+<li>More information on how soil is modeled in TopoFlow along with published soil
+property tables can be found on this 
+<b><i> <a href="soils_info.htm">soil properties page </a> </i></b>.
+</li> <br>
+
+<li>Two other, simpler methods for modeling infiltration are described on
+the help pages for the <b><i> <a href="infil_Green-Ampt.htm">Green-Ampt method </a>
+</i></b> and the <b><i> <a href="infil_Smith-Parlange.htm">Smith-Parlange 3-parameter
+method. </a> </i></b>
+</li> <br>
+
+</ol> </p>
+
+
+<hr>
+<h3>References</h3>
+
+<p>Dingman, S.L. (2002) <i>Physical Hydrology</i>, 2nd ed., Prentice-Hall,
+Upper Saddle River, New Jersey, 646 pp. </p>
+
+<p>Smith, R.E. (2002) <i>Infiltration Theory for Hydrologic
+Applications</i>, Water Resources Monograph 15, AGU, 212 pp. </p>
+
+
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+
+</td> </tr> </table>
+
+</body>
+</html>
+

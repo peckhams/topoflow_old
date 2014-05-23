@@ -1,0 +1,81 @@
+<!-- Copyright (c) 2007, Scott Peckham. All rights reserved. -->
+<html>
+<head>
+<title>TopoFlow 1.5 Help - Profile-smoothed DEM</title>
+<link rel=stylesheet type="text/css" href="help_sys.css">
+</head>
+
+<body bgcolor="#ffffff" link="#0000ff" vlink="#800080">
+
+<table border=1 cellpadding=0 cellspacing=0>
+<tr valign=center>
+   <td CLASS=banner0 align=right>
+      <!--
+      <font size=1><sup>
+      <a target=_top href="top.html">top</a></sup></font>
+      <a href="prev_help.html">
+      <img CLASS=arrow src="left_arrow.jpg"></a>
+      <a href="next_help.html">
+      <img CLASS=arrow src="right_arrow.jpg"></a>&nbsp;
+      -->
+   </td>
+</tr>
+</table>
+ 
+<table border=0 cellspacing=0 cellpadding=10>
+<tr> <td> 
+ 
+<h2>Create &rarr; Profile-smoothed DEM</h2>
+
+<p>This routine creates a "profile-smoothed" DEM from an input DEM.
+The columns and rows of the pixels on a watershed's main channel are
+read from the "profile file" and then a nonlinear least-squares
+regression is used to find the parameters c and p in a slope-area
+power-law relationship: S = c * A<sup>p</sup>, (sometimes called
+Flint's law) that best fit the elevations and
+areas for these main-channel pixels.  These parameters are then used
+together with the grid of contributing areas in an iterative procedure
+that creates a new DEM by assigning new, floating-point elevations to
+every pixel in the original DEM.  The elevations in the new DEM should
+be close to those in the original DEM, but there will no longer be
+abrupt stair-step features and flats along profiles within which
+slopes are zero (due to poor vertical resolution and integer-rounding).
+Instead, the elevations and slopes will decrease smoothly along every
+channel streamline while remaining close to the original elevations.
+</p>
+
+<p>Well-defined and smoothly-varying slopes along streamlines is
+important when using the kinematic wave method of flow routing. </p>
+
+<p>This algorithm is based on an implicit assumption of spatial
+homogeneity in both the geology and climate, which may not be
+satisfied for many DEMs.  However, the parameters c and p are
+not treated as universal values but are determined on a case by case
+basis from the input channel profile data.  The value of p will
+typically be slightly greater than 0.5. </p>
+
+<p>Note that errors in slope, S, along a channel as measured between grid
+cells in a DEM can be very large, especially in DEMs for which elevations
+have been rounded to the nearest foot or meter.  For example, with 10-meter
+grid cells and a vertical resolution of one meter, the minimum resolvable,
+nonzero slope is 0.1, whereas the actual slope could be less than 0.00001.
+This factor of 10,000 difference represents an enormous error.  However,
+contributing area, A, measured from a DEM depends only on the horizontal
+resolution and therefore the relative error in A is very small for basins
+that are much larger than the grid cell size.  It follows that even if
+Flint's law is only an approximation, using it to compute channel slopes
+from areas is likely to be more accurate than measuring slopes between grid
+cells in the DEM.  Also, because of the inverse relationship between S and
+A, the relative error in A is smallest for the larger basins where the
+measured error in S is largest. </p>  
+
+<p>This algorithm and code is based on unpublished work by S.D. Peckham.</p>
+
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+
+</td> </tr> </table>
+
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!-- Copyright (c) 2007, Scott Peckham. All rights reserved. -->
+<html>
+<head>
+<title>TopoFlow 1.5 Help - Infiltration - Green-Ampt</title>
+<link rel=stylesheet type="text/css" href="help_sys.css">
+</head>
+
+<body bgcolor="#ffffff" link="#0000ff" vlink="#800080">
+
+<table border=1 cellpadding=0 cellspacing=0>
+<tr valign=center>
+   <td CLASS=banner0 align=right>
+      <!--
+      <font size=1><sup>
+      <a target=_top href="top.html">top</a></sup></font>
+      <a href="prev_help.html">
+      <img CLASS=arrow src="left_arrow.jpg"></a>
+      <a href="next_help.html">
+      <img CLASS=arrow src="right_arrow.jpg"></a>&nbsp;
+      -->
+   </td>
+</tr>
+</table>
+ 
+<table border=0 cellspacing=0 cellpadding=10>
+<tr> <td> 
+ 
+<h2>Infiltration &rarr; Green-Ampt Method</h2>
+
+<p>The input variables used by the simple Green-Ampt method for modeling
+infiltration are defined as follows: </p>
+
+<center> <table>
+<tr>
+<td> K<sub>s</sub> </td>
+<td> = saturated hydraulic conductivity [m / s] </td>
+</tr>
+
+<tr>
+<td> K<sub>i</sub> </td>
+<td> = initial hydraulic conductivity [m / s]
+       (typically much less than K<sub>s</sub>)  </td>
+</tr>
+
+<tr>
+<td> &theta;<sub>s</sub> </td>
+<td> = soil water content at &psi;=0 [unitless] 
+       (typically set to the porosity, &phi;)  </td>
+</tr>
+
+<tr>
+<td> &theta;<sub>i</sub> </td>
+<td> = initial soil water content [unitless] </td>
+</tr>
+
+<tr>
+<td> G </td>
+<td> = capillary length scale [meters] </td>
+</tr>
+<tr>
+<td> </td>
+<td> = integral over all &psi; of K(&psi;) / K<sub>s</sub> </td>
+</tr>
+<tr>
+<td> </td>
+<td> = (almost always between &psi;<sub>B</sub> and 2*&psi;<sub>B</sub>) </td>
+</tr>
+
+<tr>
+<td> P </td>
+<td> = precipitation rate [mm / sec] </td>
+</tr>
+
+<tr>
+<td> M </td>
+<td> = snowmelt rate [mm / sec] </td>
+</tr>
+</table> </center>
+
+<p>For a detailed discussion of these variables and infiltration
+theory, see the References below.</p>
+
+<p>For each variable, you may choose from the droplist of data
+types.  For the "Scalar" data type, enter a numeric value with
+the units indicated in the dialog.  For the other data types,
+enter a filename.  Values in files must also use the indicated
+units. </p>
+
+<p>Single grids and grid sequences are assumed to be stored as
+<b><i> <a href="RTG_format.htm">RTG </a> </i></b> and
+<b><i> <a href="RTS_format.htm">RTS</a> </i></b> files, respectively.
+Time series are assumed to be stored as text files, with one value
+per line. For a time series or grid sequence, the time between
+values must coincide with the timestep provided. </p>
+
+<p> Choosing an entry from the droplist labeled  "Closest standard soil type"
+will change the values in the dialog to tabulated values for the selected
+soil type.  However, these values were determined from plot-scale measurements
+and are unlikely to be appropriate for large grid cells.  For large grid
+cells, some type of <i><b>upscaling</b></i> is typically required. </p>
+
+<hr>
+<h3>Equations Used by the Green-Ampt Method</h3>
+<p>
+<table>
+<tr>
+<td> f<sub>c</sub> </td>
+<td> = K<sub>i</sub> + [(K<sub>s</sub> - K<sub>i</sub>) * (F + J) / F] </td>
+<td> = infiltrability [m / sec]  (max infiltration rate) </td>
+</tr>
+
+<tr>
+<td> </td>
+<td> = K<sub>s</sub> + (J / F) * (K<sub>s</sub> - K<sub>i</sub>) </td>
+<td> = infiltrability [m / sec]  (max infiltration rate) </td>
+</tr>
+
+<tr>
+<td> J </td>
+<td> = G * (&theta;<sub>s</sub> - &theta;<sub>i</sub>) </td>
+<td> = a quantity used in previous equation [meters] </td>
+</tr>
+
+<tr>
+<td> v<sub>0</sub> </td>
+<td> = min[(P + M), f<sub>c</sub>] </td>
+<td> = infiltration rate at surface [mm / sec]
+       &nbsp;&nbsp;&nbsp; (K<sub>s</sub> < (P + M)) </td>
+</tr>
+<tr>
+<td>  </td>
+<td> = (P + M) </td>
+<td> = infiltration rate at surface [mm / sec]
+        &nbsp;&nbsp;&nbsp; (K<sub>s</sub> > (P + M)) </td>
+</tr>
+
+<tr>
+<td> F </td>
+<td> = &int; v<sub>0</sub>(t) dt, &nbsp;&nbsp; (from times 0 to t) </td>
+<td> = cumulative infiltration depth [meters] (vs. I' in Smith (2002)</td>
+</tr>
+</table> </p>
+
+<hr>
+<h3>Notes on the Equations</h3>
+<p><ol>
+<li> t<sub>p</sub> = time of ponding [minutes] = the time when the soil
+becomes saturated at the surface, after which v<sub>0</sub>=f<sub>c</sub>
+or v<sub>0</sub>=0 (after surface inputs stop). If (P + M) < K<sub>s</sub>,
+then ponding cannot occur. <br> <br>
+
+<li> The equation for v<sub>0</sub> implies that v<sub>0</sub> = 0 whenever
+(P + M) = 0, since f<sub>c</sub> > 0. <br> <br>
+
+<li> If (P + M) > K<sub>s</sub>, then after a sufficiently long time
+F will become large, (F+J)/F will approach a value of 1 and f<sub>c</sub>
+will decrease asymptotically to K<sub>s</sub>. <br> <br>
+
+<li> The definition of F implies that dF/dt = v<sub>0</sub>.  Here, F is
+the quantity that Smith (2002) refers to as I', but that doesn't display
+well in HTML. <br><br>
+
+<li> The current implementation is meant for single events only
+since F is only reset to 0 at the start of each model run. <br><br>
+
+<li> In the case where (P + M) is uniform in time, it is possible to compute
+the surface soil moisture using a relationship of the form, K = K(&theta;).
+This type of relationship, found empirically, is called a <i><b>soil
+characteristic function</b></i> and is also used in conjunction with the
+1D Richards' equation method of infiltration.
+See Smith (2002, pp. 81-85) for details. <br><br>
+
+<li> The Green-Ampt and Smith-Parlange methods for modeling infiltration are
+based on the <i><b>infiltrability-depth approximation</b></i> or IDA, which uses
+the cumulative infiltrated depth as a "replacement" for time. For details, see
+Smith (2002, pp. 71-73).  These methods are not well-suited to modeling
+redistribution between events or drying of surface layers by evaporation.
+They are best used for single events. <br><br>
+
+<li> If there is standing water of depth, d, at the surface, then G can/should
+be replaced by (G + d) in the equation for J.  This isn't done in the current
+version, since channels typically only occupy a small fraction of a grid cell
+and water depth on hillslopes is typically very small. <br> <br>
+
+<li> This model can be viewed as a special case of the
+<b> <a href="infil_Smith-Parlange.htm">Smith-Parlange 3-parameter</a> </b>
+model in which &gamma;=0.  See the Notes on the help page for that model. <br> <br>
+</ol> </p>
+
+<hr>
+<h3>References</h3>
+
+<p>Smith, R.E. (2002) <i>Infiltration Theory for Hydrologic
+Applications</i>, Water Resources Monograph 15, AGU. </p> 
+
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+<br> <br> <br> <br> <br> <br>
+
+</td> </tr> </table>
+
+</body>
+</html>

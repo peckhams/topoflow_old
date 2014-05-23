@@ -1,0 +1,305 @@
+mkd
+April 14, 2011
+S.D. Peckham
+
+====================
+ Subversion Notes
+====================
+Eric created subversion repositories (sudo) for me.
+Note that the CSDMS subversions repositories are on river.colorado.edu
+  and csdms.colorado.edu is an alias.
+
+======================================
+ Permissions of files to be uploaded
+======================================
+Recursively change permissions on all directories below current:
+% find . -type d -exec chmod 755 {} \;
+
+Recursively change permissions on all files below current:
+% find . -type f -exec chmod 644 {} \;
+
+Recursively change permissions on all NONdirectories below current:
+% find * -not -type d -exec chmod 644 {} \;
+
+===================================
+ Quick Review for Initial Imports
+===================================
+(1) Make an svn repository for "new_model" on river.colorado.edu.
+(2) Change permissions on files to be uploaded, as above.
+(3) Type commands similar to these:
+    % cd Desktop/My_Models  (with New_Model folder inside)
+    % svn checkout https://csdms.colorado.edu/svn/new_model/trunk NEW_MODEL
+    % cp -R New_Model/* NEW_MODEL
+    % cd NEW_MODEL
+    % svn status
+    % svn add *
+    % svn commit -m "Initial import of new model."
+(4) Optionally, tag this version.
+    % svn copy https://csdms.colorado.edu/svn/new_model/trunk https://csdms.colorado.edu/svn/new_model/tags/version-1.0 -m "Tagging version 1.0 of the new_model project."
+st
+
+============
+ Checkouts
+============
+% svn checkout https://csdms.colorado.edu/svn/i2py/trunk i2py_checkout
+Checked out revision 1.
+% cd i2py_checkout
+% ls
+% cp -R ~/Subversion/i2py/i2py-0.1.0/* .
+
+% svn status
+?       i2py
+?       AUTHORS
+?       ChangeLog
+?       setup.py
+?       COPYING
+?       PKG-INFO
+?       idl2python
+?       NEWS
+?       README
+
+% svn add *
+A         AUTHORS
+A         ChangeLog
+A         COPYING
+A         i2py
+A         i2py/__init__.py
+A         i2py/config.py
+A         i2py/error.py
+A         i2py/ir.py
+A         i2py/lex.py
+A         i2py/lexer.py
+A         i2py/map.py
+A         i2py/maplib.py
+A         i2py/parser.py
+A         i2py/util.py
+A         i2py/yacc.py
+A         i2py/ytab.py
+A         idl2python
+A         NEWS
+A         PKG-INFO
+A         README
+A         setup.py
+
+% svn commit -m "Import of version 0.1.0."
+
+=====================
+ Tag version 0.1.0
+=====================
+svn copy https://csdms.colorado.edu/svn/i2py/trunk https://csdms.colorado.edu/svn/i2py/tags/version-0.1.0 -m "Tagging version 0.1.0 of the i2py project."
+Authentication realm: <https://csdms.colorado.edu:443> Subversion
+Password for 'peckhams': 
+
+-----------------------------------------------------------------------
+ATTENTION!  Your password for authentication realm:
+
+   <https://csdms.colorado.edu:443> Subversion
+
+can only be stored to disk unencrypted!  You are advised to configure
+your system so that Subversion can store passwords encrypted, if
+possible.  See the documentation for details.
+
+You can avoid future appearances of this warning by setting the value
+of the 'store-plaintext-passwords' option to either 'yes' or 'no' in
+'/home/beach/faculty/peckhams/.subversion/servers'.
+-----------------------------------------------------------------------
+Store password unencrypted (yes/no)? no
+
+Committed revision 3.
+
+=======================
+ Upload version 0.2.0
+=======================
+% cd Desktop/Subversion/i2py
+% ls
+  i2py-0.1.0		i2py-0.2.0
+% svn checkout https://csdms.colorado.edu/svn/i2py/trunk i2py_checkout
+% cp -R i2py-0.2.0/* i2py_trunk_checkout
+
+% svn status
+?      Tests
+?      idl2python.py
+?      I2PY_020_Users_Guide.doc
+?      I2PY_020_Users_Guide.pdf
+?      i2py/idl_maps.py
+?      i2py/lex.pyc
+?      i2py/parser.pyc
+?      i2py/__init__.pyc
+?      i2py/ytab.pyc
+?      i2py/user_lib.py
+?      i2py/maplib.pyc
+?      i2py/Older_Code
+?      i2py/ir_ALLOW.py
+?      i2py/config.pyc
+?      i2py/callfuncs.py
+?      i2py/map_ALLOW.py
+?      i2py/ir.pyc
+?      i2py/util.pyc
+?      i2py/idl_maps.pyc
+?      i2py/00_README.py
+?      i2py/00_TF_user_lib.py
+?      i2py/error.pyc
+?      i2py/user_lib_ALLOW.py
+?      i2py/callfunc_utils.py
+?      i2py/user_lib.pyc
+?      i2py/callfunc_utils.pyc
+?      i2py/callfuncs.pyc
+?      i2py/map.pyc
+?      i2py/lexer.pyc
+?      i2py/yacc.pyc
+?      i2py/idl_func.py
+M      i2py/ir.py
+M      i2py/map.py
+M      i2py/util.py
+M      i2py/maplib.py
+M      i2py/config.py
+M      AUTHORS
+M      ChangeLog
+
+% svn add *
+A         Tests
+A         Tests/hist_equal.py
+A         Tests/i2py_test.pro
+A         Tests/i2py_test.py
+A         Tests/IO_Tests
+A         Tests/IO_Tests/eof_test.pro
+A         Tests/IO_Tests/eof_test.py
+A  (bin)  Tests/IO_Tests/EOF_TEST_DATA.bin
+A         Tests/IO_Tests/eof_test_edited.py
+A         Tests/IO_Tests/file_tests.py
+A         Tests/IO_Tests/RM_DIR_TEST
+A         Tests/IO_Tests/RM_FILE_TEST.txt
+A         Tests/IO_Tests/RM_TESTS
+A         Tests/IO_Tests/RM_TESTS/RM_DIR_TEST
+A         Tests/IO_Tests/RM_TESTS/RM_FILE_TEST.txt
+A         Tests/IO_Tests/TEST_FILE.log
+A         Tests/IO_Tests/TEST_FILE.txt
+A         Tests/IO_Tests/TEST_TEST.bin
+A         Tests/IO_Tests/TEST_TEXTFILE.txt
+A         Tests/waves.pro
+A         Tests/wx_tests.pro
+A         Tests/wx_tests.py
+svn: warning: 'i2py' is already under version control
+svn: warning: 'idl2python' is already under version control
+A         idl2python.py
+svn: warning: 'setup.py' is already under version control
+
+% svn commit -m "Import of version 0.2.0."
+Sending        AUTHORS
+Sending        ChangeLog
+Adding  (bin)  I2PY_020_Users_Guide.doc
+Adding  (bin)  I2PY_020_Users_Guide.pdf
+Adding         Tests
+Adding         Tests/IO_Tests
+Adding  (bin)  Tests/IO_Tests/EOF_TEST_DATA.bin
+Adding         Tests/IO_Tests/RM_DIR_TEST
+Adding         Tests/IO_Tests/RM_FILE_TEST.txt
+Adding         Tests/IO_Tests/RM_TESTS
+Adding         Tests/IO_Tests/RM_TESTS/RM_DIR_TEST
+Adding         Tests/IO_Tests/RM_TESTS/RM_FILE_TEST.txt
+Adding         Tests/IO_Tests/TEST_FILE.log
+Adding         Tests/IO_Tests/TEST_FILE.txt
+Adding         Tests/IO_Tests/TEST_TEST.bin
+Adding         Tests/IO_Tests/TEST_TEXTFILE.txt
+Adding         Tests/IO_Tests/eof_test.pro
+Adding         Tests/IO_Tests/eof_test.py
+Adding         Tests/IO_Tests/eof_test_edited.py
+Adding         Tests/IO_Tests/file_tests.py
+Adding         Tests/hist_equal.py
+Adding         Tests/i2py_test.pro
+Adding         Tests/i2py_test.py
+Adding         Tests/waves.pro
+Adding         Tests/wx_tests.pro
+Adding         Tests/wx_tests.py
+Sending        i2py/config.py
+Sending        i2py/ir.py
+Sending        i2py/map.py
+Sending        i2py/maplib.py
+Sending        i2py/util.py
+Adding         idl2python.py
+Transmitting file data ...........................svn: Commit failed (details follow):
+svn: MERGE request failed on '/svn/i2py/trunk'
+svn: attempt to write a readonly database
+
+% svn status
+A      Tests
+A      Tests/wx_tests.pro
+A      Tests/i2py_test.pro
+A      Tests/waves.pro
+A      Tests/hist_equal.py
+A      Tests/wx_tests.py
+A      Tests/i2py_test.py
+A      Tests/IO_Tests
+A      Tests/IO_Tests/eof_test.py
+A      Tests/IO_Tests/RM_TESTS
+A      Tests/IO_Tests/RM_TESTS/RM_FILE_TEST.txt
+A      Tests/IO_Tests/RM_TESTS/RM_DIR_TEST
+A      Tests/IO_Tests/TEST_TEXTFILE.txt
+A      Tests/IO_Tests/TEST_TEST.bin
+A      Tests/IO_Tests/eof_test.pro
+A      Tests/IO_Tests/EOF_TEST_DATA.bin
+A      Tests/IO_Tests/file_tests.py
+A      Tests/IO_Tests/RM_FILE_TEST.txt
+A      Tests/IO_Tests/RM_DIR_TEST
+A      Tests/IO_Tests/TEST_FILE.txt
+A      Tests/IO_Tests/eof_test_edited.py
+A      Tests/IO_Tests/TEST_FILE.log
+?      i2py/idl_maps.py
+?      i2py/lex.pyc
+?      i2py/parser.pyc
+?      i2py/__init__.pyc
+?      i2py/ytab.pyc
+?      i2py/user_lib.py
+?      i2py/maplib.pyc
+?      i2py/Older_Code
+?      i2py/ir_ALLOW.py
+?      i2py/config.pyc
+?      i2py/callfuncs.py
+?      i2py/map_ALLOW.py
+?      i2py/ir.pyc
+?      i2py/util.pyc
+?      i2py/idl_maps.pyc
+?      i2py/00_README.py
+?      i2py/00_TF_user_lib.py
+?      i2py/error.pyc
+?      i2py/user_lib_ALLOW.py
+?      i2py/callfunc_utils.py
+?      i2py/user_lib.pyc
+?      i2py/callfunc_utils.pyc
+?      i2py/callfuncs.pyc
+?      i2py/map.pyc
+?      i2py/lexer.pyc
+?      i2py/yacc.pyc
+?      i2py/idl_func.py
+M      i2py/ir.py
+M      i2py/map.py
+M      i2py/util.py
+M      i2py/maplib.py
+M      i2py/config.py
+A      idl2python.py
+M      AUTHORS
+A      I2PY_020_Users_Guide.doc
+M      ChangeLog
+A      I2PY_020_Users_Guide.pdf
+
+
+=====================
+ Tag version 0.2.0
+=====================
+% svn copy https://csdms.colorado.edu/svn/i2py/trunk https://csdms.colorado.edu/svn/i2py/tags/version-0.2.0 -m "Tagging version 0.2.0 of the i2py project."
+
+Error validating server certificate for 'https://csdms.colorado.edu:443':
+ - The certificate is not issued by a trusted authority. Use the
+   fingerprint to validate the certificate manually!
+Certificate information:
+ - Hostname: csdms.colorado.edu
+ - Valid: from Fri, 03 Oct 2008 23:04:23 GMT until Sun, 02 Oct 2011 22:30:42 GMT
+ - Issuer: 07969287, http://certificates.godaddy.com/repository, GoDaddy.com, Inc., Scottsdale, Arizona, US
+ - Fingerprint: 25:03:bd:37:a5:5f:94:9e:1f:d9:0c:28:89:e8:06:e7:db:81:90:c8
+(R)eject, accept (t)emporarily or accept (p)ermanently? p
+Authentication realm: <https://csdms.colorado.edu:443> Subversion
+Password for 'peckhams': 
+
+Committed revision 6.
+
+
