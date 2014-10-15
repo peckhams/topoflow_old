@@ -29,7 +29,7 @@ import topoflow.gui
 #    >>> import topoflow
 #    >>> topoflow.topoflow_test().
 #---------------------------------------
-from topoflow.framework.tests.test_framework import topoflow_test
+# from topoflow.framework.tests.test_framework import topoflow_test
 
 #------------------------------------------------
 # Another idea. This can also be executed with:

@@ -803,11 +803,6 @@ class d8_component(d8_base.d8_component):
         dy = self.dy[0]
         dd = self.dd[0]
 
-        #-----------------------------------------------------
-        # Get a depression-filled DEM via the "erosion" port
-        #-----------------------------------------------------
-        ## DEM = self.get_port_data('DEM',  self.ep, 'EROSION')
-
         #-------------------------------------------------------
         # DEM is read from file by initialize_computed_vars()
         # Depressions should have already been filled, perhaps

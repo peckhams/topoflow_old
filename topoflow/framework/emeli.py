@@ -1,12 +1,19 @@
 #! /usr/bin/env python
 #
-#  NOTE: Commit this to SVN repository soon.
+#  EMELI = Experimental Modeling Environment for Linking and Interoperability
 #
-#  NOTE: In this version, "bmi.get_0d_double()" is used regardless
-#        of the rank of the variable.  Rename to "bmi.get_values()"?
+#-------------------------------------------------------
+#  Before passing "vars_provided" to time interpolator,
+#  we should also restrict list to those that actually
+#  change over time, i.e. remove static vars.
+#------------------------------------------------------- 
+#  Profile the code as follows:
 #
+#  >>> import cProfile
+#  >>> cProfile.run('topoflow.framework.tests.test_framework.topoflow_test()')  
+#      
 #-----------------------------------------------------------------------      
-## Copyright (c) 2012-2013, Scott D. Peckham
+## Copyright (c) 2012-2014, Scott D. Peckham
 ##
 ## Apr   2013. Added automatic time interpolation, using new
 ##             time_interpolator class in time_interpolation.py.
@@ -56,14 +63,11 @@
 #
 #  See the "tests" subfolder for tests.
 #
-#  get_package_paths     # (7/29/13)
-#
 #  class comp_data()
 #      __init__
 #
 #  class framework()
 #
-#      set_path()              # (obsolete)
 #      read_repository()
 #      read_provider_file()
 #      comp_name_valid()
@@ -85,6 +89,7 @@
 #      update()
 #      finalize()
 #      -------------------------
+#      get_cfg_filename()            # (9/18/14)
 #      initialize_all()
 #      update_all()
 #      finalize_all()
@@ -125,56 +130,59 @@ from topoflow.framework import time_interpolation    # (time_interpolator class)
 
 # import OrderedDict_backport  # (for Python 2.4 to 2.7)
 
+import sys    #### for testing
+
 #-----------------------------------------------------------------------
-def get_package_paths( SILENT=False ):
+# Embed some path info directly into EMELI.
+#--------------------------------------------
+##################################################################
+# NOTE:  "get_package_paths" will not work as intended on Python
+# versions less than 3.4 if os.chddir() is called between two
+# calls to get_package_paths().  This is a known Python issue
+# that has been discussed frequently online.  (9/17/14)
+##################################################################
+
+#------------------------------------------------------
+# Get path to the current file (emeli.py).  (7/29/13)
+# At top need: "#! /usr/bin/env python" ??
+# See: https://docs.python.org/2/library/os.path.html
+#------------------------------------------------------
+framework_dir = os.path.dirname( __file__ )
+parent_dir    = os.path.join( framework_dir, '..' )
+# parent_dir    = os.path.join( framework_dir, os.path.pardir )
+examples_dir  = os.path.join( parent_dir, 'examples' )
+#-------------------------------------------------------
+framework_dir = os.path.abspath( framework_dir )
+parent_dir    = os.path.abspath( parent_dir )
+examples_dir  = os.path.abspath( examples_dir )
+#-------------------------------------------------------
+#     framework_dir = os.path.realpath( framework_dir )
+#     parent_dir    = os.path.realpath( parent_dir )
+#     examples_dir  = os.path.realpath( examples_dir )
+#-------------------------------------------------------
+framework_dir = framework_dir + os.sep
+parent_dir    = parent_dir    + os.sep
+examples_dir  = examples_dir  + os.sep
+
+SILENT = False
+if not(SILENT):
+	print ' '
+	print 'Paths for this package:'
+	print 'framework_dir =', framework_dir
+	print 'parent_dir    =', parent_dir
+	print 'examples_dir  =', examples_dir
+	print '__file__      =', __file__
+	print '__name__      =', __name__
+	print ' '
+
+#--------------------------------------
+# Save the full paths in a dictionary
+#--------------------------------------
+paths = dict()
+paths['framework']        = framework_dir
+paths['examples']         = examples_dir
+paths['framework_parent'] = parent_dir
     
-    #----------------------------------------------
-    # Get path to the current file (framework.py)
-    # At top need: "#! /usr/bin/env python" ??
-    #----------------------------------------------
-    framework_dir = os.path.dirname( __file__ )
-    parent_dir    = os.path.join( framework_dir, '..' )
-    examples_dir  = os.path.join( parent_dir, 'examples' )
-    #-------------------------------------------------------
-    framework_dir = os.path.realpath( framework_dir )
-    parent_dir    = os.path.realpath( parent_dir )
-    examples_dir  = os.path.realpath( examples_dir )
-    #-------------------------------------------------------
-    framework_dir = framework_dir + os.sep   ############
-    parent_dir    = parent_dir    + os.sep
-    examples_dir  = examples_dir  + os.sep
-
-    if not(SILENT):
-        print ' '
-        print 'Paths for this package:'
-        print 'framework_dir =', framework_dir
-        print 'parent_dir    =', parent_dir
-        print 'examples_dir  =', examples_dir
-        print '__name__      =', __name__
-        print ' '
-        
-    #----------------------------------------
-    # Return the full paths in a dictionary
-    #----------------------------------------
-    dirs = dict()
-    dirs['framework'] = framework_dir
-    dirs['examples']  = examples_dir
-    dirs['framework_parent'] = parent_dir
-    return dirs
-
-    #---------------------------------------------
-    # (6/19/13) Use some ideas from this later ?
-    #---------------------------------------------   
-##    _COMPONENT_PATH = [
-##        os.path.join(os.path.dirname(__file__), '..', 'components')]
-##    try:
-##        paths = os.environ['LANDLAB_PATH'].split(os.pathsep)
-##    except KeyError:
-##        pass
-##    else:
-##        _COMPONENT_PATH = paths + _COMPONENT_PATH
-
-#   get_package_paths   
 #-----------------------------------------------------------------------
 class comp_data():
     
@@ -242,19 +250,56 @@ class framework():
     secs_per_day   = 24  * secs_per_hour 
     secs_per_year  = 365 * secs_per_day
     secs_per_month = secs_per_year / 12    #########
-    
-##    #-------------------------------------------------------------------
-##    def set_path( self, source_path ):
-##
-##        sys.path.insert( 0, source_path )
-##        sys.path.insert( 0, source_path + 'py_utils/' )  ####
-##
-##        # This doesn't seem necessary or a good idea.
-##        ## os.chdir( source_path )
-##        
-##    #   set_path()
+
+# 	##################################################################
+# 	# NOTE:  "get_package_paths" will not work as intended on Python
+# 	# versions less than 3.4 if os.chddir() is called between two
+# 	# calls to get_package_paths().  This is a known Python issue
+# 	# that has been discussed frequently online.  (9/17/14)
+# 	##################################################################
+# 
+# 	#------------------------------------------------------
+# 	# Get path to the current file (emeli.py).  (7/29/13)
+# 	# At top need: "#! /usr/bin/env python" ??
+# 	# See: https://docs.python.org/2/library/os.path.html
+# 	#------------------------------------------------------
+#     framework_dir = os.path.dirname( __file__ )
+#     parent_dir    = os.path.join( framework_dir, '..' )
+#     # parent_dir    = os.path.join( framework_dir, os.path.pardir )
+#     examples_dir  = os.path.join( parent_dir, 'examples' )
+# 	#-------------------------------------------------------
+#     framework_dir = os.path.abspath( framework_dir )
+#     parent_dir    = os.path.abspath( parent_dir )
+#     examples_dir  = os.path.abspath( examples_dir )
+# 	#-------------------------------------------------------
+# #     framework_dir = os.path.realpath( framework_dir )
+# #     parent_dir    = os.path.realpath( parent_dir )
+# #     examples_dir  = os.path.realpath( examples_dir )
+# 	#-------------------------------------------------------
+#     framework_dir = framework_dir + os.sep
+#     parent_dir    = parent_dir    + os.sep
+#     examples_dir  = examples_dir  + os.sep
+# 
+#     SILENT = False
+#     if not(SILENT):
+#         print ' '
+#         print 'Paths for this package:'
+#         print 'framework_dir =', framework_dir
+#         print 'parent_dir    =', parent_dir
+#         print 'examples_dir  =', examples_dir
+#         print '__file__      =', __file__
+#         print '__name__      =', __name__
+#         print ' '
+# 	
+# 	#--------------------------------------
+# 	# Save the full paths in a dictionary
+# 	#--------------------------------------
+#     paths = dict()
+#     paths['framework']        = framework_dir
+#     paths['examples']         = examples_dir
+#     paths['framework_parent'] = parent_dir
+		
     #-------------------------------------------------------------------
-    ## def read_repository( self, comp_repo_file, SILENT=True ):
     def read_repository( self, SILENT=True ):
 
         #---------------------------------------------------
@@ -278,8 +323,8 @@ class framework():
         # provider_file.  At top of "framework.py" file we need
         # "#! /usr/bin/env python" for this to work.
         #---------------------------------------------------------
-        paths = get_package_paths()
-        framework_dir = paths['framework']
+        # framework_dir = self.paths['framework']
+        framework_dir = paths['framework']   # (paths was saved at top of file)
         repo_dir  = framework_dir
         repo_file = 'component_repository.xml'
         comp_repo_file = repo_dir + repo_file
@@ -659,17 +704,29 @@ class framework():
         #----------------------------------------------
         # (6/20/13) Add package prefix to module_name
         #----------------------------------------------
-        module_prefix = 'topoflow.components.'
-        module_name   = module_prefix + module_name
+        module_prefix    = 'topoflow.components.'
+        full_module_name = module_prefix + module_name
         
         #--------------------------------------------
         # Import the module (no .py extension) and
-        # then create an instance called "port" and
+        # then create an instance called "comp" and
         # place it in the framework.
         #--------------------------------------------
-        exec( 'import ' + module_name )
+        ## print '### full_module_name = ', full_module_name
+        cmd = 'from topoflow.components import ' + module_name
+        exec( cmd )
         exec( 'comp = ' + module_name + '.' + class_name + '()' )
-        
+
+        #--------------------------------------------
+        # Import the module (no .py extension) and
+        # then create an instance called "comp" and
+        # place it in the framework.
+        #--------------------------------------------
+        # THIS IS NO LONGER WORKING, FOR SOME REASON. (9/17/14)
+        ##########################################################
+        ## exec( 'import ' + full_module_name )
+        ## exec( 'comp = ' + full_module_name + '.' + class_name + '()' )
+                        
         #--------------------------------------------------
         # Add new component to the "comp_set" dictionary.
         # NB!  Use "port_name" vs. "comp_name" for key.
@@ -762,7 +819,7 @@ class framework():
         #-------------------
         # Test on Q_outlet
         #-------------------
-##        if (long_var_name == 'watershed_outlet_water__discharge'):
+##        if (long_var_name == 'basin_outlet_water_x-section__volume_flow_rate'):
 ##            comp = self.comp_set[ 'hydro_model' ]
 ##            vals = comp.Q_outlet
 ##            print '########################################################'
@@ -817,72 +874,61 @@ class framework():
         #       prior to calling set_values() in connect().
         #---------------------------------------------------------
         bmi = self.comp_set[ port_name ]
-##        try:
 
         ###############################################
         # THIS IS A LOT FASTER.  (2/20/13)
         ###############################################
-        return bmi.get_0d_double( long_var_name )
-        ###############################################
+        return bmi.get_values( long_var_name )
     
-        #----------------------------------------------
-        # Get data type and rank for long_var_name.
-        # Assume that NumPy dtype string is returned.
-        #----------------------------------------------
-        dtype = bmi.get_var_type( long_var_name )
-        rank  = bmi.get_var_rank( long_var_name )
-
-        #-----------------------------------------------------------
-        # Call the appropriate BMI method.  We could do this other
-        # ways in Python, but this is the general approach.
-        #-----------------------------------------------------------
-        if (dtype == 'float64'):
-            if (rank == 0):
-                values = bmi.get_0d_double( long_var_name )
-            elif (rank == 1):
-                values = bmi.get_1d_double( long_var_name )
-            elif (rank == 2):
-                values = bmi.get_2d_double( long_var_name )
-            elif (rank == 3):
-                values = bmi.get_3d_double( long_var_name )
-##            elif (rank == 4):
-##                values = bmi.get_4d_double( long_var_name )
-                #-------------------------------------------------------------
-        elif (dtype == 'int32'):
-            if (rank == 0):
-                values = bmi.get_0d_int( long_var_name )
-            elif (rank == 1):
-                values = bmi.get_1d_int( long_var_name )
-            elif (rank == 2):
-                values = bmi.get_2d_int( long_var_name )
-            elif (rank == 3):
-                values = bmi.get_3d_int( long_var_name )
-##            elif (rank == 4):
-##                values = bmi.get_4d_int( long_var_name )
-                #-------------------------------------------------------------
-        else:
-            print '############################################'
-            print ' ERROR: In framework.get_values():'
-            print '        Type_name of "' + dtype + '"'
-            print '        is not yet supported.'
-            print '############################################'
-            print ' '
-            
-        #-----------------------------------------------
-        # Return values on this component's own grid
-        # and with its own units for variables.
-        # Set values will do conversions when needed ?
-        #-----------------------------------------------
-        return values
-
-##        except:
-##            print '######################################'
-##            print ' ERROR: In framework.get_values():'
-##            print '        A BMI method call failed.'
-##            print '        Returning a value of zero.'
-##            print '######################################'
-##            print ' '
-##            return numpy.float64( 0 )
+#         #----------------------------------------------
+#         # Get data type and rank for long_var_name.
+#         # Assume that NumPy dtype string is returned.
+#         #----------------------------------------------
+#         dtype = bmi.get_var_type( long_var_name )
+#         rank  = bmi.get_var_rank( long_var_name )
+# 
+#         #-----------------------------------------------------------
+#         # Call the appropriate BMI method.  We could do this other
+#         # ways in Python, but this is the general approach.
+#         #-----------------------------------------------------------
+#         if (dtype == 'float64'):
+#             if (rank == 0):
+#                 values = bmi.get_0d_double( long_var_name )
+#             elif (rank == 1):
+#                 values = bmi.get_1d_double( long_var_name )
+#             elif (rank == 2):
+#                 values = bmi.get_2d_double( long_var_name )
+#             elif (rank == 3):
+#                 values = bmi.get_3d_double( long_var_name )
+# ##            elif (rank == 4):
+# ##                values = bmi.get_4d_double( long_var_name )
+#                 #-------------------------------------------------------------
+#         elif (dtype == 'int32'):
+#             if (rank == 0):
+#                 values = bmi.get_0d_int( long_var_name )
+#             elif (rank == 1):
+#                 values = bmi.get_1d_int( long_var_name )
+#             elif (rank == 2):
+#                 values = bmi.get_2d_int( long_var_name )
+#             elif (rank == 3):
+#                 values = bmi.get_3d_int( long_var_name )
+# ##            elif (rank == 4):
+# ##                values = bmi.get_4d_int( long_var_name )
+#                 #-------------------------------------------------------------
+#         else:
+#             print '############################################'
+#             print ' ERROR: In framework.get_values():'
+#             print '        Type_name of "' + dtype + '"'
+#             print '        is not yet supported.'
+#             print '############################################'
+#             print ' '
+#             
+#         #-----------------------------------------------
+#         # Return values on this component's own grid
+#         # and with its own units for variables.
+#         # Set values will do conversions when needed ?
+#         #-----------------------------------------------
+#         return values
 
     #   get_values()   
     #-------------------------------------------------------------------
@@ -902,144 +948,75 @@ class framework():
         ###############################################
         # THIS IS A LOT FASTER.  (2/20/13)
         ###############################################
-        bmi.set_0d_double( long_var_name, values )
+        bmi.set_values( long_var_name, values )
         return
-        ###############################################
     
-        dtype = str( values.dtype )
-        rank  = numpy.rank( values )
-
-	#------------------------------------------
-        # Use dtype and rank to call appropriate,
-        # static-type BMI functions.
-	#------------------------------------------
-        if (dtype == 'float64'):
-            if (rank == 0):
-                bmi.set_0d_double( long_var_name, values )
-            elif (rank == 1):
-                bmi.set_1d_double( long_var_name, values )
-            elif (rank == 2):
-                bmi.set_2d_double( long_var_name, values )
-            elif (rank == 3):
-                bmi.set_3d_double( long_var_name, values )
-	#------------------------------------------------------
-        elif (dtype == 'int32'):
-            if (rank == 0):
-                bmi.set_0d_int( long_var_name, values )
-            elif (rank == 1):
-                bmi.set_1d_int( long_var_name, values )
-            elif (rank == 2):
-                bmi.set_2d_int( long_var_name, values )
-            elif (rank == 3):
-                bmi.set_3d_int( long_var_name, values )
-        #------------------------------------------------------
-        else:
-            print '############################################'
-            print ' ERROR: In framework.set_values():'
-            print '        Type_name of "' + dtype + '"'
-            print '        is not yet supported.'
-            print '############################################'
-            print ' '
-            
-        #----------------------------------------------
-        # Get data type and rank for long_var_name.
-        # Assume that NumPy dtype string is returned.
-        #---------------------------------------------------
-        # Can't get dtype and rank as shown here because
-        # the component we're setting values into may not
-        # know the var_type and var_rank for long_var_name
-        # because it comes from another component.
-        #---------------------------------------------------
-        # Above approach is more flexible anyway.
-        #---------------------------------------------------        
-        # dtype = bmi.get_var_type( long_var_name )
-        # rank  = bmi.get_var_rank( long_var_name )
-
-        #---------------------------------------------
-        # Check data type and rank for input values.
-        #---------------------------------------------
-##        val_dtype = str( values.dtype )
-##        val_rank  = numpy.rank( values )
-##        
-##        if (val_rank != rank):
-##            print '#############################################'
-##            print ' ERROR: In framework.set_values():'
-##            print '        Rank of values does not match the'
-##            print '        rank of target variable named:'
-##            print '          ' + long_var_name
-##            print '#############################################'
-##            print ' '
-##            return
-##        
-##        if (val_dtype != dtype):
-##            #------------------------------------
-##            # Attempt to cast values to dtype ?
-##            #------------------------------------
-##            new_vals = values.astype( dtype )
-##        else:
-##            new_vals = values
-##        
-##	#------------------------------------------
-##        # Use dtype and rank to call appropriate,
-##        # static-type BMI functions.
-##	#------------------------------------------
-##        if (dtype == 'float64'):
-##            if (rank == 0):
-##                bmi.set_0d_double( long_var_name, new_vals )
-##            elif (rank == 1):
-##                bmi.set_1d_double( long_var_name, new_vals )
-##            elif (rank == 2):
-##                bmi.set_2d_double( long_var_name, new_vals )
-##            elif (rank == 3):
-##                bmi.set_3d_double( long_var_name, new_vals )
-##	#------------------------------------------------------
-##        elif (dtype == 'int32'):
-##            if (rank == 0):
-##                bmi.set_0d_int( long_var_name, new_vals )
-##            elif (rank == 1):
-##                bmi.set_1d_int( long_var_name, new_vals )
-##            elif (rank == 2):
-##                bmi.set_2d_int( long_var_name, new_vals )
-##            elif (rank == 3):
-##                bmi.set_3d_int( long_var_name, new_vals )
-##        #------------------------------------------------------
-##        else:
-##            print '############################################'
-##            print ' ERROR: In framework.set_values():'
-##            print '        Type_name of "' + dtype + '"'
-##            print '        is not yet supported.'
-##            print '############################################'
-##            print ' '
+#         dtype = str( values.dtype )
+#         rank  = numpy.rank( values )
+# 
+# 	    #------------------------------------------
+#         # Use dtype and rank to call appropriate,
+#         # static-type BMI functions.
+# 	    #------------------------------------------
+#         if (dtype == 'float64'):
+#             if (rank == 0):
+#                 bmi.set_0d_double( long_var_name, values )
+#             elif (rank == 1):
+#                 bmi.set_1d_double( long_var_name, values )
+#             elif (rank == 2):
+#                 bmi.set_2d_double( long_var_name, values )
+#             elif (rank == 3):
+#                 bmi.set_3d_double( long_var_name, values )
+# 	    #------------------------------------------------------
+#         elif (dtype == 'int32'):
+#             if (rank == 0):
+#                 bmi.set_0d_int( long_var_name, values )
+#             elif (rank == 1):
+#                 bmi.set_1d_int( long_var_name, values )
+#             elif (rank == 2):
+#                 bmi.set_2d_int( long_var_name, values )
+#             elif (rank == 3):
+#                 bmi.set_3d_int( long_var_name, values )
+#         #------------------------------------------------------
+#         else:
+#             print '############################################'
+#             print ' ERROR: In framework.set_values():'
+#             print '        Type_name of "' + dtype + '"'
+#             print '        is not yet supported.'
+#             print '############################################'
+#             print ' '
                 
     #   set_values()
     #-------------------------------------------------------------------
     def get_values_at_indices( self, long_var_name, indices,
                                port_name ):
 
-	#-------------------------------------------------------------
-	# Notes:  For the specified variable, get the values at the
-	#         specified indices and return them.  If the wrapped
-	#         model is raster, then each raster cell has a long
-	#         integer, calendar-style index and these are used
-	#         for indices.  If the wrapped model is ugrid, then
-	#         each cell in the grid has a unique, long-integer
-	#         ID and these are used for indices.
-	#-------------------------------------------------------------
+		#-------------------------------------------------------------
+		# Notes:  For the specified variable, get the values at the
+		#         specified indices and return them.  If the wrapped
+		#         model is raster, then each raster cell has a long
+		#         integer, calendar-style index and these are used
+		#         for indices.  If the wrapped model is ugrid, then
+		#         each cell in the grid has a unique, long-integer
+		#         ID and these are used for indices.
+		#-------------------------------------------------------------
 
-        #----------------------------------------------
-        # Get data type and rank for long_var_name.
-        # Assume that NumPy dtype string is returned.
-        #----------------------------------------------
-        bmi   = self.comp_set[ port_name ]
-        dtype = bmi.get_var_type( long_var_name )
-        rank  = bmi.get_var_rank( long_var_name )
-
-        if (dtype == 'float64'):
-            if (rank == 2):
-                return bmi.get_2d_double_at_indices( long_var_name, indices )
-        elif (dtype == 'int32'):
-            if (rank == 2):
-                return bmi.get_2d_int_at_indices( long_var_name, indices )
+		#----------------------------------------------
+		# Get data type and rank for long_var_name.
+		# Assume that NumPy dtype string is returned.
+		#----------------------------------------------
+		bmi   = self.comp_set[ port_name ]
+		return bmi.get_values_at_indices( long_var_name, indices )
+	
+# 		dtype = bmi.get_var_type( long_var_name )
+# 		rank  = bmi.get_var_rank( long_var_name )
+# 
+# 		if (dtype == 'float64'):
+# 			if (rank == 2):
+# 				return bmi.get_2d_double_at_indices( long_var_name, indices )
+# 		elif (dtype == 'int32'):
+# 			if (rank == 2):
+# 				return bmi.get_2d_int_at_indices( long_var_name, indices )
             
     #   get_values_at_indices()
     #-------------------------------------------------------------------
@@ -1051,27 +1028,29 @@ class framework():
         # Assume that NumPy dtype string is returned.
         #----------------------------------------------
         bmi   = self.comp_set[ port_name ]
-        dtype = bmi.get_var_type( long_var_name )
-        rank  = bmi.get_var_rank( long_var_name )
-
-        if (dtype == 'float64'):
-            if (rank == 2):
-                bmi.set_2d_double_at_indices( long_var_name, indices, values )
-                return
-        elif (dtype == 'int32'):
-            if (rank == 2):
-                bmi.set_2d_int_at_indices( long_var_name, indices, values )
-                return
-
-        print '######################################################'
-        print ' ERROR: framework.set_values_at_indices() currently'
-        print '        requires target variable to be a 2D array.'
-        print '######################################################'
-        print ' '
+        bmi.set_values_at_indices( long_var_name, indices, values )
+        
+#         dtype = bmi.get_var_type( long_var_name )
+#         rank  = bmi.get_var_rank( long_var_name )
+# 
+#         if (dtype == 'float64'):
+#             if (rank == 2):
+#                 bmi.set_2d_double_at_indices( long_var_name, indices, values )
+#                 return
+#         elif (dtype == 'int32'):
+#             if (rank == 2):
+#                 bmi.set_2d_int_at_indices( long_var_name, indices, values )
+#                 return
+# 
+#         print '######################################################'
+#         print ' ERROR: framework.set_values_at_indices() currently'
+#         print '        requires target variable to be a 2D array.'
+#         print '######################################################'
+#         print ' '
                 
     #   set_values_at_indices()
     #-------------------------------------------------------------------
-    def initialize( self, port_name, cfg_prefix=None,
+    def initialize( self, port_name, cfg_file=None,
                     mode='nondriver'):
 
         #------------------------------
@@ -1079,9 +1058,11 @@ class framework():
         #------------------------------
 ##        if not(self.port_name_valid( port_name )):
 ##            return
-        
+           
         bmi = self.comp_set[ port_name ]
-        bmi.initialize( cfg_prefix=cfg_prefix, mode=mode )
+        if (cfg_file == None):
+            cfg_file = self.get_cfg_filename( bmi )
+        bmi.initialize( cfg_file=cfg_file, mode=mode )
             
     #   initialize()
     #-------------------------------------------------------------------
@@ -1150,8 +1131,26 @@ class framework():
 ##            
 ##    #   instantiate_all()
     #-------------------------------------------------------------------
+    def get_cfg_filename( self, bmi ):  ###################
+    
+        #---------------------------
+        # Get name of the cfg_file
+        #---------------------------
+        cfg_extension = bmi.get_attribute( 'cfg_extension' )
+        file_name     = (self.cfg_prefix + cfg_extension)
+        #-------------------------------------------------
+        ## cfg_directory = (os.getcwd() + os.sep)
+        cfg_directory = self.cfg_directory + os.sep
+        cfg_file      = (cfg_directory + file_name) 
+
+        return cfg_file
+          
+    #   get_cfg_filename()
+    #-------------------------------------------------------------------
     def initialize_all( self, cfg_prefix=None, mode='nondriver'):
 
+        ####### THIS IS NOT USED YET #########
+        
         #--------------------------------------------------
         # Note: The "provider_list" has the ports in
         #       a particular order, while self.comp_set
@@ -1163,7 +1162,8 @@ class framework():
         
         for port_name in self.provider_list:
             bmi = self.comp_set[ port_name ]
-            bmi.initialize( cfg_prefix=cfg_prefix, mode=mode )
+            cfg_file = self.get_cfg_filename( bmi )
+            bmi.initialize( cfg_file=cfg_file, mode=mode )
             
     #   initialize_all()
     #-------------------------------------------------------------------
@@ -1245,175 +1245,175 @@ class framework():
         
     #   finalize_all()
     #-------------------------------------------------------------------
-    def run_model_old( self, driver_port_name='hydro_model',
-                       cfg_directory=None, cfg_prefix=None,
-                       time_interp_method='Linear'):
-        ## (rename to run_comp_set ????)
-      
-        #-------------------
-        # Default settings
-        #-------------------
-        DEBUG = True
-        ## DEBUG = False
-        if (cfg_prefix == None):
-            print 'ERROR: The "cfg_prefix" argument is required.'
-            return
-        if (cfg_directory == None):
-            print 'ERROR: The "cfg_directory" argument is required.'
-            return
-        
-        #--------------------------------------------------
-        # All components, including this one (the driver)
-        # will look in the CWD for their CFG file.
-        #--------------------------------------------------
-        # This must come after "repo" stuff, which also
-        # changes the directory.
-        #--------------------------------------------------        
-        if (cfg_directory != None):
-            os.chdir( cfg_directory )
-        self.cfg_prefix    = cfg_prefix
-        self.cfg_directory = cfg_directory
-
-        #-----------------------------------------------------
-        # Set self.comp_set_list and self.provider_list
-        # from info in the provider file, including the
-        # repository path "repo_path".
-        #-----------------------------------------------------
-        self.provider_file = (cfg_prefix + '_providers.txt')
-        self.read_provider_file()
-        
-        #------------------------------------
-        # Get the component repository info
-        #------------------------------------
-        ## self.repo_path = '/Users/peckhams/Dropbox/00_New_Framework/'
-        ## repo_file = self.repo_path + 'component_repository.xml'
-        ## repo_file = self.repo_dir + 'component_repository.xml'  # (6/19/13)
-        
-        self.read_repository( SILENT=False )
-##        print 'Components in repository:'
-##        for comp_name in f.repo_list:
-##            print '   ' + comp_name
-##        print ' '
-        
-        #--------------------------------------------
-        # Instantiate a complete set of components.
-        #--------------------------------------------
-        # Now the instantiate() method only allows
-        # one component of each "type" (port_name).
-        #--------------------------------------------    
-        for comp_name in self.comp_set_list:
-            self.instantiate( comp_name, SILENT=False )
-        ### self.instantiate_all()   ### Later; change it first.
-       
-        #---------------------------------------------
-        # Try to automatically connect every user to
-        # a corresponding provider in the comp_set.
-        #---------------------------------------------------
-        # Provider components are initialized in the order
-        # of provider_list and then set references in each
-        # component that uses one or more of their vars.
-        #---------------------------------------------------
-##        OK = self.initialize_and_connect_comp_set( REPORT=True )
-##        if not(OK):
-##            return
-
-        #------------------------------------------------------------
-        # (2/18/13) Previous version of framework class initialized
-        # and then connected the components in the comp_set using
-        # embedded references.  In this version we will call a
-        # "get_required_vars()" method within the time loop, which
-        # will in turn call the get_values() and set_values()
-        # methods.  But we still need to initialize the comp set.
-        #------------------------------------------------------------
-        ## OK = self.initialize_comp_set( REPORT=True )
-        OK = self.initialize_comp_set( REPORT=False )
-        if not(OK):
-            return
-        
-        #---------------------------------------
-        # Set mode of the driver component.
-        # Note: Must happen before next block.
-        #---------------------------------------
-        driver = self.comp_set[ driver_port_name ]
-        driver.mode = 'driver'
-        print 'Driver port name =', driver_port_name
-        print ' '
-        
-        #-----------------------------------
-        # Initialize all time-related vars
-        #-----------------------------------
-        self.initialize_time_vars()
-        self.initialize_framework_dt()
-
-        #------------------------------------
-        # Instantiate a "time_interpolator"
-        #------------------------------------
-        time_interpolator = time_interpolation.time_interpolator(
-                                          self.comp_set,
-                                          self.provider_list,
-                                          self.vars_provided,
-                                          time_interp_method )
-        time_interpolator.initialize()
-        #--------------------------------------------
-        # This will be used by set_provided_vars().
-        #--------------------------------------------
-        self.time_interpolator = time_interpolator
-        
-        while not(self.DONE):
-
-            # try:
-            #-------------------------------------------------
-            # Update components that are ready to be updated
-            #----------------------------------------------------
-            # (2/18/13) The "provider_list" we loop over
-            # here refers to entries in the provider_file; they
-            # don't necessarily provide anything to another
-            # component in the comp_set.
-            #----------------------------------------------------
-            # It might be more clear to change these names:
-            #     port_name          -> provider_name
-            #     provider_list -> provider_list
-            #----------------------------------------------------  
-            for port_name in self.provider_list:
-
-                #--------------------------------------------------
-                # Update time interpolation vars for every
-                # long_var_name that is provided by this provider.
-                # Interpolation methods = 'None', 'Linear', etc.
-                #--------------------------------------------------
-                # This calls bmi.update() whenever necessary.
-                # It does so for the driver as well. (4/14/13)
-                #--------------------------------------------------
-                time_interpolator.update( port_name, self.time )
-        
-                #------------------------------------------------
-                # (2/18/13) Use get_values()/set_values() calls
-                # here to set latest vars from this component
-                # into all user components that need it.
-                #------------------------------------------------
-                # This also calls service components as needed.
-                #------------------------------------------------
-                self.set_provided_vars( port_name )
-     
-            #--------------------
-            # Are we done yet ?
-            #--------------------
-            self.DONE = (driver.DONE or self.DONE)    ####
-            self.update_time()
-            ## print 'time =', self.time
-                
-##            except:
-##                print 'ERROR in run_model() method at:'
-##                print '   time_index =', self.time_index
-##                self.status = 'failed'
-##                self.DONE = True
-
-        #-------------------------
-        # Finalize the model run
-        #-------------------------
-        self.finalize_all()
-        
-    #   run_model_old()
+#     def run_model_old( self, driver_port_name='hydro_model',
+#                        cfg_directory=None, cfg_prefix=None,
+#                        time_interp_method='Linear'):
+#         ## (rename to run_comp_set ????)
+#       
+#         #-------------------
+#         # Default settings
+#         #-------------------
+#         DEBUG = True
+#         ## DEBUG = False
+#         if (cfg_prefix == None):
+#             print 'ERROR: The "cfg_prefix" argument is required.'
+#             return
+#         if (cfg_directory == None):
+#             print 'ERROR: The "cfg_directory" argument is required.'
+#             return
+#         
+#         #--------------------------------------------------
+#         # All components, including this one (the driver)
+#         # will look in the CWD for their CFG file.
+#         #--------------------------------------------------
+#         # This must come after "repo" stuff, which also
+#         # changes the directory.
+#         #--------------------------------------------------        
+#         if (cfg_directory != None):
+#             os.chdir( cfg_directory )
+#         self.cfg_prefix    = cfg_prefix
+#         self.cfg_directory = cfg_directory
+# 
+#         #-----------------------------------------------------
+#         # Set self.comp_set_list and self.provider_list
+#         # from info in the provider file, including the
+#         # repository path "repo_path".
+#         #-----------------------------------------------------
+#         self.provider_file = (cfg_prefix + '_providers.txt')
+#         self.read_provider_file()
+#         
+#         #------------------------------------
+#         # Get the component repository info
+#         #------------------------------------
+#         ## self.repo_path = '/Users/peckhams/Dropbox/00_New_Framework/'
+#         ## repo_file = self.repo_path + 'component_repository.xml'
+#         ## repo_file = self.repo_dir + 'component_repository.xml'  # (6/19/13)
+#         
+#         self.read_repository( SILENT=False )
+# ##        print 'Components in repository:'
+# ##        for comp_name in f.repo_list:
+# ##            print '   ' + comp_name
+# ##        print ' '
+#         
+#         #--------------------------------------------
+#         # Instantiate a complete set of components.
+#         #--------------------------------------------
+#         # Now the instantiate() method only allows
+#         # one component of each "type" (port_name).
+#         #--------------------------------------------    
+#         for comp_name in self.comp_set_list:
+#             self.instantiate( comp_name, SILENT=False )
+#         ### self.instantiate_all()   ### Later; change it first.
+#        
+#         #---------------------------------------------
+#         # Try to automatically connect every user to
+#         # a corresponding provider in the comp_set.
+#         #---------------------------------------------------
+#         # Provider components are initialized in the order
+#         # of provider_list and then set references in each
+#         # component that uses one or more of their vars.
+#         #---------------------------------------------------
+# ##        OK = self.initialize_and_connect_comp_set( REPORT=True )
+# ##        if not(OK):
+# ##            return
+# 
+#         #------------------------------------------------------------
+#         # (2/18/13) Previous version of framework class initialized
+#         # and then connected the components in the comp_set using
+#         # embedded references.  In this version we will call a
+#         # "get_required_vars()" method within the time loop, which
+#         # will in turn call the get_values() and set_values()
+#         # methods.  But we still need to initialize the comp set.
+#         #------------------------------------------------------------
+#         ## OK = self.initialize_comp_set( REPORT=True )
+#         OK = self.initialize_comp_set( REPORT=False )
+#         if not(OK):
+#             return
+#         
+#         #---------------------------------------
+#         # Set mode of the driver component.
+#         # Note: Must happen before next block.
+#         #---------------------------------------
+#         driver = self.comp_set[ driver_port_name ]
+#         driver.mode = 'driver'
+#         print 'Driver port name =', driver_port_name
+#         print ' '
+#         
+#         #-----------------------------------
+#         # Initialize all time-related vars
+#         #-----------------------------------
+#         self.initialize_time_vars()
+#         self.initialize_framework_dt()
+# 
+#         #------------------------------------
+#         # Instantiate a "time_interpolator"
+#         #------------------------------------
+#         time_interpolator = time_interpolation.time_interpolator(
+#                                           self.comp_set,
+#                                           self.provider_list,
+#                                           self.vars_provided,
+#                                           time_interp_method )
+#         time_interpolator.initialize()
+#         #--------------------------------------------
+#         # This will be used by set_provided_vars().
+#         #--------------------------------------------
+#         self.time_interpolator = time_interpolator
+#         
+#         while not(self.DONE):
+# 
+#             # try:
+#             #-------------------------------------------------
+#             # Update components that are ready to be updated
+#             #----------------------------------------------------
+#             # (2/18/13) The "provider_list" we loop over
+#             # here refers to entries in the provider_file; they
+#             # don't necessarily provide anything to another
+#             # component in the comp_set.
+#             #----------------------------------------------------
+#             # It might be more clear to change these names:
+#             #     port_name          -> provider_name
+#             #     provider_list -> provider_list
+#             #----------------------------------------------------  
+#             for port_name in self.provider_list:
+# 
+#                 #--------------------------------------------------
+#                 # Update time interpolation vars for every
+#                 # long_var_name that is provided by this provider.
+#                 # Interpolation methods = 'None', 'Linear', etc.
+#                 #--------------------------------------------------
+#                 # This calls bmi.update() whenever necessary.
+#                 # It does so for the driver as well. (4/14/13)
+#                 #--------------------------------------------------
+#                 time_interpolator.update( port_name, self.time )
+#         
+#                 #------------------------------------------------
+#                 # (2/18/13) Use get_values()/set_values() calls
+#                 # here to set latest vars from this component
+#                 # into all user components that need it.
+#                 #------------------------------------------------
+#                 # This also calls service components as needed.
+#                 #------------------------------------------------
+#                 self.set_provided_vars( port_name )
+#      
+#             #--------------------
+#             # Are we done yet ?
+#             #--------------------
+#             self.DONE = (driver.DONE or self.DONE)    ####
+#             self.update_time()
+#             ## print 'time =', self.time
+#                 
+# ##            except:
+# ##                print 'ERROR in run_model() method at:'
+# ##                print '   time_index =', self.time_index
+# ##                self.status = 'failed'
+# ##                self.DONE = True
+# 
+#         #-------------------------
+#         # Finalize the model run
+#         #-------------------------
+#         self.finalize_all()
+#         
+#     #   run_model_old()
     #-------------------------------------------------------------------
     def run_model( self, driver_port_name='hydro_model',
                    cfg_directory=None, cfg_prefix=None,
@@ -1438,16 +1438,6 @@ class framework():
         #--------------------------------------------------
         cfg_directory = os.path.realpath( cfg_directory )
         # cfg_directory = cfg_directory + os.sep     #########
-    
-        #--------------------------------------------------
-        # All components, including this one (the driver)
-        # will look in the CWD for their CFG file.
-        #--------------------------------------------------
-        # This must come after "repo" stuff, which also
-        # changes the directory.
-        #--------------------------------------------------        
-        if (cfg_directory != None):
-            os.chdir( cfg_directory )
         self.cfg_prefix    = cfg_prefix
         self.cfg_directory = cfg_directory
 
@@ -1456,7 +1446,9 @@ class framework():
         # from info in the provider file, including the
         # repository path "repo_path".
         #-----------------------------------------------------
-        self.provider_file = (cfg_prefix + '_providers.txt')
+        provider_file = (cfg_directory + os.sep + cfg_prefix + '_providers.txt')
+        # self.provider_file = (cfg_prefix + '_providers.txt')
+        self.provider_file = provider_file
         self.read_provider_file()
 
         #------------------------------------
@@ -1477,7 +1469,7 @@ class framework():
 ##        for comp_name in f.repo_list:
 ##            print '   ' + comp_name
 ##        print ' '
-        
+            
         #--------------------------------------------
         # Instantiate a complete set of components.
         #--------------------------------------------
@@ -1876,7 +1868,11 @@ class framework():
         #--------------------------------------------------- 
         # Make list of output_vars actually used by others
         # (2/18/13) This may improve runtime performance.
-        #---------------------------------------------------
+        #-------------------------------------------------------
+        # Before passing "vars_provided" to time interpolator,
+        # we should also restrict list to those that actually
+        # change over time, i.e. remove static vars.
+        #-------------------------------------------------------   
         self.vars_provided = dict()
         for port_name in self.comp_set:
             bmi = self.comp_set[ port_name ]
@@ -1968,7 +1964,8 @@ class framework():
             # all of its variables, etc.
             #-------------------------------------------
             ## print 'cfg_prefix =', cfg_prefix
-            self.initialize( provider_name, self.cfg_prefix )
+            cfg_file = None
+            self.initialize( provider_name, cfg_file )
             print 'Initialized component of type: ' + provider_name + '.'
                 
             #--------------------------------------------------------
@@ -2029,19 +2026,49 @@ class framework():
 ##            print '    ' + each
 ##        print '##########################################'              
         
+        #################################################################
+        # We used to call "os.chdir()" here to change to the driver's
+        # CFG directory.  This made the CFG directory the default path
+        # for finding files, consistent with setting "in_directory" in
+        # a CFG file to ".".  However, this created several unwanted
+        # side effects.  For example, the method used to get the full
+        # pathnames to the topoflow package and its subdirectories
+        # (like "examples"), which uses "__file__" does not work as
+        # intended for Python versions less than 3.4 when os.chdir()
+        # is called.  For example, if we run topoflow_test() and then
+        # erode_test(), or try to run topoflow_test() twice, it will
+        # fail with a path problem.  To avoid these problems, we now
+        # (9/21/14):
+        # (1) Set CFG directory from CFG file in check_directories()
+        #     in BMI_base.py.
+        # (2) Change an "in_directory" read from a CFG file as "." to
+        #     the CFG directory from (1).
+        # (3) Avoid all use of os.chdir() in EMELI.
+        # (4) Use full pathnames to files everywhere.
+        ################################################################
+#         if (self.cfg_directory != None):
+#             os.chdir( self.cfg_directory )
+
         #------------------------------------------------
         # Loop over providers in order of provider_list.
         # Note that the dictionary, self.comp_set, is
         # not ordered.  Order of initialize() matters.
         #------------------------------------------------
+        # cfg_prefix_with_dir = (self.cfg_directory + os.sep + self.cfg_prefix) 
+        ## cfg_prefix_with_dir = self.cfg_prefix
+        ## print 'cfg_prefix_with_dir =', cfg_prefix_with_dir
+        ## print 'cfg_prefix =', self.cfg_prefix 
+              
         for provider_name in self.provider_list:
             bmi = self.comp_set[ provider_name ]
             #-------------------------------------------
             # Initialize the provider component to set
             # all of its variables, etc.
             #-------------------------------------------
-            ## print 'cfg_prefix =', cfg_prefix
-            self.initialize( provider_name, self.cfg_prefix )
+            cfg_file = self.get_cfg_filename( bmi )
+            self.initialize( provider_name, cfg_file )
+            ## self.initialize( provider_name, cfg_prefix_with_dir )
+            ## self.initialize( provider_name, self.cfg_prefix )
             print 'Initialized component of type: ' + provider_name + '.'
 
             ####################################################

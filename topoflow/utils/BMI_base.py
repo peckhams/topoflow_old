@@ -1,17 +1,23 @@
-##       
-## Copyright (c) 2009-2013, Scott D. Peckham
-##
-## Jan 2013. Added "initialize_scalar()" method.
-##
-## Feb 2012. Complete BMI, starting from CSDMS_base.py
-##           This now takes the place of CSDMS_base.py.
-##
-## Nov 2011. Cleanup and conversion to BMI function names.
-##
-## May 2010. initialize_config_vars(), cleanup, etc.
-##
-## Aug 2009. Created, as CSDMS_base.py.
-##
+#
+#  We should use "initialize_scalar()" for all scalar assignments.
+#  See the Notes for that method.  Search for "np.float64(0".
+#      
+#  Copyright (c) 2009-2014, Scott D. Peckham
+#
+#  Sep 2014. New initialize_basin_vars(), using outlets.py.
+#            Removed obsolete functions.
+#
+#  Jan 2013. Added "initialize_scalar()" method.
+#
+#  Feb 2012. Complete BMI, starting from CSDMS_base.py
+#            This now takes the place of CSDMS_base.py.
+#
+#  Nov 2011. Cleanup and conversion to BMI function names.
+#
+#  May 2010. initialize_config_vars(), cleanup, etc.
+#
+#  Aug 2009. Created, as CSDMS_base.py.
+#
 #-----------------------------------------------------------------------
 #
 #  Notes:  This file defines a "base class" with a BMI (Basic Model
@@ -61,37 +67,13 @@
 #      get_var_units()                    # (override)
 #      get_var_rank()
 #      get_var_type()
-#      -----------------------------
-#      get_0d_double()
-#      get_1d_double()
-#      get_2d_double()
-#      get_3d_double()
-#      get_2d_double_at_indices()
-#      -----------------------------
-#      set_0d_double()
-#      set_1d_double()
-#      set_2d_double()
-#      set_3d_double()
-#      set_2d_double_at_indices()
-#      -----------------------------
-#      get_0d_int()
-#      get_1d_int()
-#      get_2d_int()
-#      get_3d_int()
-#      get_2d_int_at_indices()
-#      -----------------------------
-#      set_0d_int()
-#      set_1d_int()
-#      set_2d_int()
-#      set_3d_int()
-#      set_2d_int_at_indices()
-
-#      ----------------------------------
-#      Experimental: (not BMI, 2/19/13)        #################
-#      ----------------------------------
-#      store_output_vars()
-#      get_var()
-
+#      get_var_state()  or "mode()"       ############### "static" or "dynamic"  ###########
+#      -------------------------
+#      get_values()                       # (9/22/14)
+#      set_values()                       # (9/22/14)
+#      get_values_at_indices()
+#      set_values_at_indices()
+#
 #      ------------------------------
 #      BMI methods to get time info
 #      ------------------------------
@@ -112,7 +94,6 @@
 #      run_model()          # (not required for BMI)
 #      check_finished()     # (not part of BMI)
 #
-#
 #      -----------------------------
 #      More Time-related (not BMI)
 #      -----------------------------
@@ -129,47 +110,18 @@
 #      print_traceback()             # (10/10/10)
 #      -------------------------
 #      read_config_file()            # (5/17/10, 5/9/11)
-#      read_config_gui()             ########## OBSOLETE SOON ??? ############
 #      initialize_config_vars()      # (5/6/10)
 #      set_computed_input_vars       # (5/6/10) over-ridden by each comp.
-#      initialize_basin_vars()
+#      initialize_basin_vars()       # (9/19/14) New version that uses outlets.py.
+#      initialize_basin_vars0()
 #      -------------------------
 #      prepend_directory()           # (may not work yet)
 #      check_directories()
 #      -------------------------
 #      initialize_scalar()           # (2/5/13, for ref passing)
-#
-#      --------------------------------------
-#      For backward compatibility (not BMI)
-#      --------------------------------------
-#      get_input_items()
-#      get_output_items()
-#      ---------------------
-#      get_rank()
 #      is_scalar()
 #      is_vector()
 #      is_grid()
-#      has_variable()
-#      -----------------------------
-#      get_scalar_double()            ##  get_0d_double()
-#      get_vector_double()            ##  get_1d_double()
-#      get_grid_double()              ##  get_2d_double()
-#      get_values_in_grid_double()    ##  get_2d_double_at_indices()
-#      -----------------------------
-#      set_scalar_double()            ##  set_0d_double()
-#      set_vector_double()            ##  set_1d_double()
-#      set_grid_double()              ##  set_2d_double()
-#      set_values_in_grid_double()    ##  set_2d_double_at_indices()
-#      -----------------------------
-#      get_scalar_long()              ## get_0d_int()
-#      get_vector_long()              ## get_1d_int()
-#      get_grid_long()                ## get_2d_int()
-#      get_values_in_grid_long()      ## get_2d_int_at_indices()
-#      -----------------------------
-#      set_scalar_long()              ## set_0d_int()
-#      set_vector_long()              ## set_1d_int()
-#      set_grid_long()                ## set_2d_int()   
-#      set_values_in_grid_long()  ## set_2d_int_at_indices()
 #
 #-----------------------------------------------------------------------
 
@@ -186,9 +138,19 @@ import traceback        # (10/10/10)
 #--------------------------------------------
 # import basins
    
-import cfg_files as cfg
+## import cfg_files as cfg   # (not used)
+
+import outlets          ## (9/19/14)
 import pixels
 import rti_files
+
+#---------------------------------------------
+# Experiment.  9/19/14
+#---------------------------------------------
+# from topoflow.utils import basins
+# from topoflow.utils import cfg_files as cfg
+# from topoflow.utils import pixels
+# from topoflow.utils import rti_files
 
 #-----------------------------------------------------------------------
 def unit_test():
@@ -220,6 +182,7 @@ class BMI_component:
         self.out_directory    = None
         self.site_prefix      = None
         self.case_prefix      = None
+        self.cfg_prefix       = None       ###### (9/18/14)
         self.comp_status      = 'Enabled'
         
         # NB! This probably won't work here, because a driver
@@ -372,7 +335,7 @@ class BMI_component:
         #------------------------------------------
         if (self.DEBUG):
             print 'Process component: Reading grid info...'
-
+        
         self.grid_info_file = (self.in_directory +
                                self.site_prefix + '.rti')
         info = rti_files.read_info( self.grid_info_file )
@@ -502,7 +465,7 @@ class BMI_component:
 ##            'channel_bed_max_manning_roughness_parameter':'nval_max',
 ##            'channel_bed_min_roughness_length':'z0val_min',
 ##            'channel_bed_min_manning_roughness_parameter':'nval_min',
-##            'channel_cross_section_hydraulic_radius':'Rh',
+##            'channel_x-section_hydraulic_radius':'Rh',
 ##            'channel_outgoing_sediment_discharge':'Qs',  #### check if "mass_flux", etc.
 ##            'channel_outgoing_water_discharge':'Q',
 ##            'channel_outgoing_peak_water_discharge':'Q_peak',
@@ -538,21 +501,21 @@ class BMI_component:
 ##            'land_surface_elevation':'elev',  ######
 ##            'soil_layer_0_porosity':'qs[0]',
 ##            'soil_layer_0_thickness':'th[0,:,:]',
-##            'soil_layer_0_wetted_thickness':'y[0,:,:]',            
+##            'soil_layer_0_saturated_thickness':'y[0,:,:]',            
 ##            'soil_layer_1_porosity':'qs[1]',
 ##            'soil_layer_1_thickness':'th[1,:,:]',
-##            'soil_layer_1_wetted_thickness':'y[1,:,:]',            
+##            'soil_layer_1_saturated_thickness':'y[1,:,:]',            
 ##            'soil_layer_2_porosity':'qs[2]',
 ##            'soil_layer_2_thickness':'th[2,:,:]',
-##            'soil_layer_2_wetted_thickness':'y[2,:,:]',
+##            'soil_layer_2_saturated_thickness':'y[2,:,:]',
 ##            'soil_layer_porosity':'qs',
 ##            'soil_layer_thickness':'th',
-##            'soil_layer_wetted_thickness':'y',  ######### (all soil layers;  how to specify an index?)
+##            'soil_layer_saturated_thickness':'y',  ######### (all soil layers;  how to specify an index?)
 ##            'subsurface_to_surface_water_seepage_rate':'GW',   ################
 ##                 ### land_surface_water_baseflow_seepage_rate
 ##                 ### subsurface_water_seepage_rate
 ##            'surface_soil_layer_porosity':'qs[0]',             # (same as soil_layer_0_porosity above)  ####
-##            'surface_soil_layer_wetted_thickness':'y[0,:,:]',  # (same as soil_layer_0_wetted_thickness above)  ####
+##            'surface_soil_layer_saturated_thickness':'y[0,:,:]',  # (same as soil_layer_0_wetted_thickness above)  ####
 ##            
 ##            #--------------------------
 ##            # Shared evaporation vars
@@ -652,26 +615,22 @@ class BMI_component:
 ##        return dtype
     
     #   get_var_type() 
-    #-------------------------------------------------------------------
-    #-------------------------------------------------------------------       
-    def get_0d_double(self, long_var_name):
+    #-------------------------------------------------------------------     
+    def get_values(self, long_var_name):
 
+        #------------------------------------------------------- 
+        # Note: The value returned by getattr() will have rank
+        #       and data type that goes with long_var_name.
+        #------------------------------------------------------- 
         var_name = self.get_var_name( long_var_name )
-
-        #---------------------------------------------------
-        # Does current component have requested variable ?
-        #---------------------------------------------------
-        # This is not used yet because possible impact on
-        # performance has not been tested yet. (2/17/10)
-        # If it does get used later, it will be added to
-        # all of the "getters".
-        #---------------------------------------------------        
-        ## if not(self.has_variable(var_name)):
-        ##    return np.float64(0)
 
         try:
             return getattr(self, var_name)   ## (2/19/13)
-            # return getattr(self, var_name, 0)  # (default to 0)
+
+            #--------------------------------------------------            
+            # Return 0 as default if attribute doesn't exist.
+            #--------------------------------------------------
+            # return getattr(self, var_name, 0)
             
             #-----------------------------------
             # Using exec works, but is slower.
@@ -690,92 +649,46 @@ class BMI_component:
             ## return np.float64(result)
 
         except:
-            print 'ERROR in BMI_base.get_0d_double()'
+            print 'ERROR in BMI_base.get_values()'
             print '    for var_name =', var_name
             print '    Returning 0.'
-            return np.array(0, dtype='float64')
-            ## return np.float64(0)
-
-            ######## flush output here ??
+ 
+            #-----------------------------------------           
+            # We could also call get_var_rank() and
+            # return an array of the right rank, but
+            # a 0D array seems better.
+            #-----------------------------------------
+            ## value = np.float64(0)   # (scalar)
+            dtype = self.get_var_type( long_var_name )
+            value = np.array(0, dtype=dtype)  # (0D array)
+    
+            #---------------------------------------------        
+            # Save new variable with this name into self
+            # to avoid repeating this message later.
+            #---------------------------------------------
+            setattr(self, var_name, value)
+            return value
         
-    #   get_0d_double()
+    #   get_values()
     #-------------------------------------------------------------------
-    def get_1d_double(self, long_var_name):
+    def set_values(self, long_var_name, value):
 
-        #---------------------------------------------------------
-        # Note: This function was causing a "segmentation fault
-        #       in gui-backend.sh" error message when trying to
-        #       run TopoFlow through the CMT (in CCA framework).
-        #       Solution was to use np.array, as shown.
-        #       (2/17/10)
-        #---------------------------------------------------------
+        #---------------------------------------------------------------
+        # Notes: The "var_name" string cannot contain a ".". (5/17/12)
+        #---------------------------------------------------------------
+        # (2/7/13) We are now using 0D numpy arrays as a way to
+        # produce "mutable scalars" that allow a component with a
+        # reference to the scalar to see changes to its value.
+        # But we can't apply np.float64() to the value as we did
+        # before or it destroys the reference.
+        # See BMI_base.initialize_scalar() for more information.
+        #--------------------------------------------------------------- 
         var_name = self.get_var_name( long_var_name )
-        try:
-            return getattr(self, var_name)  ## (2/19/13)
-
-            #-----------------------------------
-            # Using exec works, but is slower.
-            #-----------------------------------
-            ## exec("result = self." + var_name)
-            ## return result
-            
-            #-----------------------------------
-            # NB! These "break" the reference.
-            #-----------------------------------
-            # return np.array( result, dtype='float64' )
-            #--------------------------------------
-            # NB! This doesn't work (with Babel?)
-            #--------------------------------------
-            # return np.float64(result)  # (breaks ref.)
-        except:
-            print 'ERROR in BMI_base.get_1d_double()'
-            print '    for var_name =', var_name
-            print '    Returning zeros.'
-            return np.zeros([1], dtype='float64')
-        
-    #   get_1d_double()
+        setattr( self, var_name, value )  ## (2/19/13)
+         
+    #   set_values()
     #-------------------------------------------------------------------
-    def get_2d_double(self, long_var_name):
-
-        var_name = self.get_var_name( long_var_name )
-        
-        try:
-            return getattr(self, var_name)  ## (2/19/13)
-
-            #-----------------------------------
-            # Using exec works, but is slower.
-            #-----------------------------------
-            ## exec("result = self." + var_name)
-            ## return result
-
-        except:
-            print 'ERROR in BMI_base.get_2d_double()'
-            print '    for var_name =', var_name
-            print '    Returning zeros.'
-            return np.zeros([1,1], dtype='float64')
-        
-    #   get_2d_double()
-    #-------------------------------------------------------------------
-    def get_3d_double(self, long_var_name):
-
-        var_name = self.get_var_name( long_var_name )
-        
-        try:
-            return getattr(self, var_name)  ## (2/19/13)
-
-            #-----------------------------------
-            # Using exec works, but is slower.
-            #-----------------------------------
-            ## exec("result = self." + var_name)
-            
-        except:
-            print 'ERROR in BMI_base.get_3d_double().'
-            print '    Returning zeros.'
-            return np.zeros([1,1], dtype='float64')
-        
-    #   get_3d_double()
-    #-------------------------------------------------------------------
-    def get_2d_double_at_indices(self, long_var_name, IDs):
+    def get_values_at_indices(self, long_var_name, IDs):
 
         #---------------------------------------------------------
         # Note: This function was causing a "segmentation fault
@@ -795,79 +708,15 @@ class BMI_component:
             var_IDs_name = var_name + '.flat[IDs]'
             result = getattr(self, var_IDs_name)  ## (2/19/13)
             return np.array(result, dtype='float64')
-            
-##            exec("result = self." + var_name + '.flat[IDs]')
-##            return np.array(result, dtype='float64')
-            ## return np.float64(result)
         except:
-            print 'ERROR in BMI_base.get_2d_double_at_indices().'
+            print 'ERROR in BMI_base.get_values_at_indices().'
             print '    Returning zeros.'
-            return np.zeros(len(IDs), dtype='float64')
+            dtype = self.get_var_type( long_var_name )
+            return np.zeros(len(IDs), dtype=dtype)
         
-    #   get_2d_double_at_indices()
+    #   get_values_at_indices()
     #-------------------------------------------------------------------
-    #-------------------------------------------------------------------
-    def set_0d_double(self, long_var_name, scalar):
-
-        #---------------------------------------------------------------
-        # Notes: The "var_name" string cannot contain a ".". (5/17/12)
-        #---------------------------------------------------------------
-        # (2/7/13) We are now using 0D numpy arrays as a way to
-        # produce "mutable scalars" that allow a component with a
-        # reference to the scalar to see changes to its value.
-        # But we can't apply np.float64() to the value as we did
-        # before or it destroys the reference.
-        # See BMI_base.initialize_scalar() for more information.
-        #--------------------------------------------------------------- 
-        var_name = self.get_var_name( long_var_name )
-        setattr( self, var_name, scalar )  ## (2/19/13)
-        
-##        exec("self." + var_name + " = scalar")
-        ##  exec("self." + var_name + " = np.float64(scalar)")
-
-        
-    #   set_0d_double()
-    #-------------------------------------------------------------------
-    def set_1d_double(self, long_var_name, vector):
-
-        #--------------------------------------------------
-        # Notes: First method here should be more robust.
-        #        See Notes for get_vector_double().
-        #--------------------------------------------------
-        var_name = self.get_var_name( long_var_name )
-        setattr( self, var_name, vector )  ## (2/19/13)
-##        exec("self." + var_name + " = vector")  ## (Experiment: 5/19/12)
-        
-        ## exec("self." + var_name + " = vector") in globals(), locals() ## (Experiment: 5/19/12)
-        ## exec("self." + var_name + " = vector.astype('float64'")
-        ## exec("self." + var_name + " = np.array(vector, dtype='float64')")
-
-        #-----------------------------------
-        # Original method (before 2/17/10)
-        #-----------------------------------        
-        # exec("self." + var_name + " = np.float64(vector)")
-    
-    #   set_1d_double()
-    #-------------------------------------------------------------------
-    def set_2d_double(self, long_var_name, grid):
-
-        var_name = self.get_var_name( long_var_name )
-        setattr( self, var_name, grid )  ## (2/19/13)
-##        exec("self." + var_name + " = np.float64(grid)")
-        
-        ## exec("self." + var_name + " = grid")
-      
-    #   set_2d_double()
-    #-------------------------------------------------------------------
-    def set_3d_double(self, long_var_name, grid):
-
-        var_name = self.get_var_name( long_var_name )
-        setattr( self, var_name, grid )  ## (2/19/13)
-        exec("self." + var_name + " = np.float64(grid)")
-    
-    #   set_3d_double()
-    #-------------------------------------------------------------------
-    def set_2d_double_at_indices(self, long_var_name, IDs, values):
+    def set_values_at_indices(self, long_var_name, IDs, values):
 
         #--------------------------------------------------------
         # Notes: This function was tested in the new Diversions
@@ -876,186 +725,8 @@ class BMI_component:
         var_name = self.get_var_name( long_var_name )
         var_IDs_name = var_name + '.flat[IDs]'
         setattr( self, var_IDs_name, values )  ## (2/19/13)
-##        exec("self." + var_name + ".flat[IDs] = values")
         
-        # exec("self." + var_name + ".flat[IDs] = np.float64(values)")
-        
-    #   set_2d_double_at_indices()
-    #-------------------------------------------------------------------
-    #-------------------------------------------------------------------
-    def get_0d_int(self, long_var_name):
-
-        var_name = self.get_var_name( long_var_name )
-        exec("result = np.int32(self." + var_name + ")")
-        return result
-    
-    #   get_0d_int()
-    #-------------------------------------------------------------------
-    def get_1d_int(self, long_var_name):
-
-        #--------------------------------------------
-        # Notes: See Notes for get_2d_double().
-        #--------------------------------------------
-        var_name = self.get_var_name( long_var_name )
-        try:
-            exec("result = self." + var_name)
-            return np.array(result, dtype='int32')
-            #-------------------------
-            # NB! This doesn't work.
-            #-------------------------
-            # return np.int32(result)
-        except:
-            print 'ERROR in BMI_base.get_1d_long().'
-            print '    Returning zeros.'
-            return np.zeros([1], dtype='int32')
-        
-    #   get_1d_int()
-    #-------------------------------------------------------------------
-    def get_2d_int(self, long_var_name):
-
-        var_name = self.get_var_name( long_var_name )
-        exec("result = np.int32(self." + var_name + ")")
-        return result
-    
-    #   get_2d_int()
-    #-------------------------------------------------------------------
-    def get_3d_int(self, long_var_name):
-
-        var_name = self.get_var_name( long_var_name )
-        exec("result = np.int32(self." + var_name + ")")
-        return result
-    
-    #   get_3d_int()
-    #-------------------------------------------------------------------
-    def get_2d_int_at_indices(self, long_var_name, IDs):
-
-        var_name = self.get_var_name( long_var_name )
-        try:
-            exec("result = self." + var_name + '.flat[IDs]')
-            return np.int32(result)
-        except:
-            print 'ERROR in BMI_base.get_2d_long_at_indices().'
-            print '    Returning zeros.'
-            return np.zeros( len(IDs), dtype='int32' )
-        
-    #   get_2d_int_at_indices()
-    #-------------------------------------------------------------------
-    #-------------------------------------------------------------------
-    def set_0d_int(self, long_var_name, scalar):
-
-        var_name = self.get_var_name( long_var_name )
-        exec("self." + var_name + " = np.int32(scalar)")
-    
-    #   set_0d_int()
-    #-------------------------------------------------------------------
-    def set_1d_int(self, long_var_name, vector):
-
-        #--------------------------------------------------
-        # Notes: First method here should be more robust.
-        #        See Notes for get_vector_double().
-        #--------------------------------------------------
-        var_name = self.get_var_name( long_var_name )
-        exec("self." + var_name + " = np.array(vector, dtype='int32')")
-
-        #-----------------------------------
-        # Original method (before 2/17/10)
-        #-----------------------------------
-        # exec("self." + var_name + " = np.int32(vector)")
-        
-    #   set_1d_int()
-    #-------------------------------------------------------------------
-    def set_2d_int(self, long_var_name, grid):
-
-        var_name = self.get_var_name( long_var_name )
-        exec("self." + var_name + " = np.int32(grid)")
-    
-    #   set_2d_int()
-    #-------------------------------------------------------------------
-    def set_3d_int(self, long_var_name, grid):
-
-        var_name = self.get_var_name( long_var_name )
-        exec("self." + var_name + " = np.int32(grid)")
-    
-    #   set_3d_int()
-    #-------------------------------------------------------------------
-    def set_2d_int_at_indices(self, long_var_name, IDs, values):
-
-        #----------------------------------------------------------
-        # Note: Type of "values" should already be long (SIDL).
-        #----------------------------------------------------------
-        var_name = self.get_var_name( long_var_name )
-        # exec("self." + var_name + ".flat[IDs] = np.int32(values)")
-        exec("self." + var_name + ".flat[IDs] = values")
-        
-    #   set_2d_int_at_indices()
-    #-------------------------------------------------------------------  
-    # EXPERIMENTAL methods (not BMI)
-    #-------------------------------------------------------------------       
-    def store_output_vars(self):
-
-        #-----------------------------------------------------
-        # Notes: Calling "exec" in each get_* call (e.g.
-        #        get_0d_double()) seems to be slow.  This
-        #        function is called once during initialize()
-        #        to create a dictionary that allows a
-        #        reference to any variable to be retrieved
-        #        quickly by long_var_name.  However, we
-        #        must be careful in assignments not to break
-        #        the reference.
-        #-----------------------------------------------------    
-##        self._values = dict()
-##        for long_var_name in self._output_var_names:
-##            var_name = self._var_name_map[ long_var_name ]
-##            setattr( self, '_values[ long_var_name ]', self. 
-##            # exec( "self._values[ long_var_name ] = self." + var_name )
-
-        self._values = dict()
-        for long_var_name in self._output_var_names:
-            var_name = self._var_name_map[ long_var_name ] 
-            exec( "self._values[ long_var_name ] = self." + var_name )
-                     
-##        self._values = dict()
-##        for key in self._var_name_map:
-##            # key = long_var_name
-##            var_name = self._var_name_map[ key ]
-##            exec( "self._values[ key ] = self." + var_name )
-            
-    #   store_output_vars()
-    #-------------------------------------------------------------------       
-    def get_var(self, long_var_name):
-
-        var_name = self.get_var_name( long_var_name )
-
-        try:
-            return getattr(self, var_name)   ## (2/19/13)
-            # return getattr(self, var_name, 0)  # (default to 0)
-            
-            #-----------------------------------
-            # Using exec works, but is slower.
-            #-----------------------------------
-            ## exec("result = self." + var_name)
-            ## return result
-
-            #------------------------------------
-            # This doesn't work as a one-liner.
-            #------------------------------------
-            ## exec("return self." + var_name)
-
-            #----------------------------
-            # This breaks the reference.
-            #----------------------------
-            ## return np.float64(result)
-
-        except:
-            print 'ERROR in BMI_base.get_var()'
-            print '    for var_name =', var_name
-            print '    Returning 0.'
-            return np.array(0, dtype='float64')
-            ## return np.float64(0)
-
-            ######## flush output here ??
-        
-    #   get_var()
+    #   set_values_at_indices()          
     #-------------------------------------------------------------------
     # BMI methods to get time-related info
     #-------------------------------------------------------------------
@@ -1176,19 +847,20 @@ class BMI_component:
     #-------------------------------------------------------------------
     # BMI methods for fine-grained control of model
     #-------------------------------------------------------------------
-    def initialize(self, cfg_prefix=None, mode="nondriver"):
+    def initialize(self, cfg_file=None, mode="nondriver"):
 
-        self.status     = 'initializing'  # (OpenMI 2.0 convention)
-        self.mode       = mode
-        self.cfg_prefix = cfg_prefix
+        self.status   = 'initializing'  # (OpenMI 2.0 convention)
+        self.mode     = mode
+        self.cfg_file = cfg_file
         
         #-----------------------------------------------
         # Load component parameters from a config file
         # Will use cfg_file from above.
         #-----------------------------------------------
         ## self.set_constants()
-        self.initialize_config_vars() 
+        self.initialize_config_vars()  # calls check_directories().
         self.read_grid_info()
+        self.initialize_basin_vars()
         self.initialize_time_vars()
 
         #---------------------------------------------
@@ -1336,7 +1008,6 @@ class BMI_component:
         #---------------------------------------------------------
         #       Moved here from erode_base.py on 2/13/12.
         #---------------------------------------------------------
-
 
         #---------------------------------------------------
         # If component isn't the driver, return. (2/20/12)
@@ -1699,15 +1370,24 @@ class BMI_component:
         if not(self.SILENT):
             print 'Reading config file into component state.'
 
+        # print '######## In read_config_file(): cfg_file =', self.cfg_file
         # print '######## In read_config_file(): cfg_prefix =', self.cfg_prefix
 
+        #############################################################
+        # No longer needed; cfg_file is passed to BMI.initialize()
+        # and saved as self.cfg_file. (9/17/14)
+        #############################################################
         #---------------------------
         # Get name of the cfg_file
         #---------------------------
-        cfg_extension = self.get_attribute( 'cfg_extension' )  # (10/26/11)
-        cfg_directory = (os.getcwd() + os.sep)
-        file_name     = (self.cfg_prefix + cfg_extension)
-        self.cfg_file = (cfg_directory + file_name)
+#         cfg_extension = self.get_attribute( 'cfg_extension' )  # (10/26/11)
+#         cfg_directory = (os.getcwd() + os.sep)
+#         file_name     = (self.cfg_prefix + cfg_extension)
+#         self.cfg_file = (cfg_directory + file_name) 
+
+        #------------------------
+        # Does CFG file exist ?
+        #------------------------
         if (self.DEBUG):
             print 'cfg_file =', self.cfg_file
         if not(os.path.exists(self.cfg_file)):
@@ -1782,7 +1462,7 @@ class BMI_component:
                         #--------------------------------------------------
                         exec( "self." + var_name_file_str + " = ''")
                         READ_SCALAR = True
-                        ## var_type = 'double'
+                        ## var_type = 'float64'
                     else:
                         exec( "self." + var_name + " = 0.0")
                         READ_FILENAME = True
@@ -1793,7 +1473,7 @@ class BMI_component:
                 #-----------------------------------
                 # Convert scalars to numpy scalars
                 #-----------------------------------
-                if (var_type in ['double', 'float']):
+                if (var_type in ['float64', 'float']):
                     value = np.float64( value )
 
                     #------------------------
@@ -1859,137 +1539,6 @@ class BMI_component:
                 last_var_name = var_name
 
     #   read_config_file()
-    #-------------------------------------------------------------------
-##    def read_config_gui(self, var_names=None, types=None,
-##                        dialog_str='self.dialog'):
-##
-##        #-------------------------------------------------------------- 
-##        # Note: This is no longer used, but can still be called from
-##        #       initialize_config_vars() and may still be useful
-##        #       in some cases  (11/11/11).
-##        #-------------------------------------------------------------- 
-##        if not(self.SILENT):
-##            print 'Saving GUI settings into component state.'
-##
-##        if (var_names == None):
-##            var_names = self.PPF_var_names
-##        if (types == None):
-##            types = self.PPF_types
-##
-##        last_var_name = ''
-##
-##        #-----------------------------------------
-##        # Save user input into component's state
-##        #-----------------------------------------
-##        for k in xrange(len(var_names)):
-##            var_name      = var_names[k]
-##            var_type      = types[k].lower()
-##            READ_SCALAR   = False
-##            READ_FILENAME = False
-##
-##            #----------------------------------------------
-##            # Does var_name end with an array subscript ?
-##            #----------------------------------------------
-##            p1 = var_name.rfind('[')
-##            p2 = var_name.rfind(']')
-##            if (p1 > 0) and (p2 > p1):
-##                var_base  = var_name[:p1]
-##                subscript = var_name[p1:p2+1]
-##                var_name_file_str = var_base + '_file' + subscript
-##            else:
-##                var_base = var_name
-##                var_name_file_str = var_name + '_file'
-##
-##            #--------------------------------------------
-##            # Update var_type based on droplist setting
-##            #--------------------------------------------
-##            if (last_var_name.startswith(var_base + '_type')):
-##                exec( "type_choice = self." + last_var_name )
-##                if (type_choice.lower() == 'scalar'):
-##                    #--------------------------------------------------
-##                    # It seems that things will work as long as the
-##                    # "type" and "value" fields in the GUI CFG file
-##                    # are consistent.  Don't change var_type here.
-##                    #
-##                    # Otherwise get this message:
-##                    # "Mismatch with value found in typemap
-##                    #  (requested type String, actual type Double)."
-##                    #--------------------------------------------------
-##                    exec( "self." + var_name_file_str + " = ''")
-##                    READ_SCALAR = True
-##                    ## var_type = 'double'
-##                else:
-##                    exec( "self." + var_name + " = 0.0")
-##                    READ_FILENAME = True
-##                    ## var_type = 'string'
-##
-##            # print 'var_name, var_type =', var_name, ',', var_type
-##
-##            #-----------------------------------           
-##            # Read a value of type "var_type"
-##            #-----------------------------------
-##            # Convert scalars to numpy scalars
-##            #-----------------------------------
-##            if (var_type in ['double', 'float']):
-##                exec( "value = " + dialog_str + ".getDouble( var_name, 0.0 )" )
-##                value = np.float64( value )
-##                exec( "self." + var_name + " = value" )
-##            elif (var_type in ['long', 'int']):
-##                exec( "value = " + dialog_str + ".getInt( var_name, 0 )" )
-##                value = np.int32( value )
-##                exec( "self." + var_name + " = value" )
-##            elif (var_type == 'string'):
-##                #-----------------------------------------
-##                # Get the value string for this var_name
-##                #----------------------------------------------------
-##                # If string has a placeholder filename prefix, then
-##                # expand it here.  Need to use original "var_name"
-##                # without appending "_file" until assignment.
-##                #----------------------------------------------------
-##                # case_str = '<case_prefix>'
-##                # site_str = '<site_prefix>'
-##                case_str = '[case_prefix]'
-##                site_str = '[site_prefix]'
-##                #---------------------------------
-##                exec("s = " + dialog_str + ".getString( var_name, 'ERROR' )" )
-##                if (s[:13] == case_str):
-##                    value_str = (self.case_prefix + s[13:])
-##                elif (s[:13] == site_str):
-##                    value_str = (self.site_prefix  + s[13:])
-##                else:
-##                    value_str = s
-##
-##                #-----------------------------------------------
-##                # If var_name starts with "SAVE_" and value is
-##                # Yes or No, then convert to Python boolean.
-##                #-----------------------------------------------
-##                if (var_name[:5] == 'SAVE_'):
-##                    VALUE_SET = True
-##                    if (s.lower() == 'yes'):
-##                        exec( "self." + var_name + " = True" )
-##                    elif (s.lower() == 'no'):
-##                        exec( "self." + var_name + " = False" )
-##                    else:
-##                        VALUE_SET = False
-##                else:
-##                    VALUE_SET = False
-##                #----------------------------------------------------------
-##                if not(VALUE_SET):
-##                    if (READ_FILENAME):
-##                        exec( "self." + var_name_file_str + " = value_str" )
-##                    elif (READ_SCALAR):
-##                        exec( "self." + var_name + " = np.float64(value_str)")
-##                    else:
-##                        exec( "self." + var_name + " = value_str" )
-##
-##            else:
-##                print 'ERROR in BMI_base.read_config_gui().'
-##                print '   Unsupported data type = ' + var_type + '.'
-##                print ' '
-##
-##            last_var_name = var_name
-##
-##    #   read_config_gui()
     #-------------------------------------------------------------------
     def initialize_config_vars(self):
    
@@ -2122,16 +1671,28 @@ class BMI_component:
     def initialize_basin_vars( self ):
 
         #------------------------------------------------------------
+        # This saves outlet_file, outlet_IDs, outlet_ID, n_outlets,
+        # basin_area and basin_relief into self.  (9/19/14)
+        #------------------------------------------------------------
+        outlets.read_outlet_file( self )
+
+    #   initialize_basin_vars()    
+    #-------------------------------------------------------------------
+    def initialize_basin_vars0( self ):
+
+        #------------------------------------------------------------
         # Notes: Most of the TopoFlow and Erode components have the
         #        ability to save values at monitored pixels.  This
         #        method supports this by embedding an instance of
         #        "basins_component" within each component.
         #------------------------------------------------------------
-        # Notes: The routine BMI_base.read_grid_info() look first
+        # Notes: The routine BMI_base.read_grid_info() looks first
         #        in "in_directory" and then in "out_directory" for
         #        the RTI file, which supports TopoFlow and Erode.
-        #------------------------------------------------------------        
-        import basins
+        #------------------------------------------------------------
+        ## from topoflow.utils import basins
+        ## import basins
+        
         self.bp = basins.basins_component()
 
 ##        print 'self.cfg_prefix  =', self.cfg_prefix
@@ -2149,8 +1710,11 @@ class BMI_component:
         self.bp.case_prefix   = self.case_prefix
         self.bp.in_directory  = self.in_directory
         self.bp.out_directory = self.out_directory
+
+        ## This isn't actually used by basins.initialize.
+        cfg_file = (self.in_directory + self.site_prefix + '.rti')
         
-        self.bp.initialize( cfg_prefix=self.cfg_prefix, 
+        self.bp.initialize( cfg_file=cfg_file,
                             SILENT=not(self.DEBUG) )
 
         #-------------------------------
@@ -2171,7 +1735,7 @@ class BMI_component:
         #--------------------------------------------------
         # outlet_IDs = self.bp.get_vector_long('outlet_IDs')
         
-    #   initialize_basin_vars()
+    #   initialize_basin_vars0()
     #-------------------------------------------------------------------
     #-------------------------------------------------------------------
     def prepend_directory(self, file_list, INPUT=True):
@@ -2215,6 +1779,22 @@ class BMI_component:
 ##        print 'self.in_directory  =', self.in_directory
 ##        print 'self.out_directory =', self.out_directory
 
+        #------------------------------------------------------------
+        # In CFG files, the input directory is often set to ".",
+        # which indicates the directory that contains the CFG file.
+        # However, once "os.chdir()" is called, "." will expand to
+        # something else.  Also, we want to avoid calling
+        # "os.chdir()", because it creates problems for finding
+        # package paths.  So to address these issues, we expand
+        # the "." to the full CFG_file directory. (9/21/14)
+        #------------------------------------------------------------
+        if (self.cfg_file != None):
+            cfg_directory = os.path.dirname(self.cfg_file) + os.sep
+            ## print 'cfg_directory =', cfg_directory
+            self.cfg_directory = cfg_directory
+            if (self.in_directory[0] == '.'):
+                self.in_directory = self.cfg_directory
+                
         #------------------------------------------------------
         # Expand path abbreviations: "." and "..", but NOT
         # "~" (11/5/13)
@@ -2255,59 +1835,66 @@ class BMI_component:
     def initialize_scalar(self, value=0.0, dtype='float64'):
 
         #--------------------------------------------------------
-        # If we do this, then return var is MUTABLE and other
-        # components with a reference to it WILL see it change.
-        # Values will print without square brackets and trying
-        # to subscript it will generate an error.
-        # we ask for element 0 "[0]".  Note that we CAN compare
-        # these to scalars with "<", ">", "==", etc.
+        # If we create scalars as 0D numpy arrays, then:
+        # - return var is MUTABLE and other components with
+        #   a reference to it WILL see it change.
+        # - Values will print without square brackets.
+        # - Trying to subscript it will generate the error:
+        #   "IndexError: 0-d arrays can't be indexed"
+        # - We CAN compare this type of scalar to others with
+        #   "<", ">", "==", etc.
+        # - We can get the data type with ".dtype".
+        # - The data type will be "numpy.ndarray".
+        # - numpy.rank(x) will return 0.
         #--------------------------------------------------------
         # In order to preserve the reference (mutable scalar),
-        # assignments must be done carefully.  In the case of
-        # incrementing the value, x += 1 is OK but x = (x+1) is
-        # not.  The direct assignment x = 5 is not OK, but we
-        # can use x.fill(5).
+        # assignments must be done carefully.
+        #
+        # - Direct assignment or replacement:
+        #   x=5 will BREAK the reference, but
+        #   x.fill(5) is OK.
+        #   x[:]=5 will generate this error:
+        #      "ValueError: cannot slice a 0-d array"
+        # 
+        # - Incrementing the value:
+        #   x = (x+1) will BREAK the reference, but
+        #   x += 1 is OK.
         #--------------------------------------------------------
+        # Recall that most numpy array operators have an
+        # optional third argument that allows "in-place" calcs.
+        #--------------------------------------------------------        
         return np.array(value, dtype=dtype)
     
         #--------------------------------------------------------
-        # If we do this, then return var is MUTABLE and other
-        # components with a reference to it WILL see it change.
-        # However, values will print with square brackets unless
-        # we ask for element 0 "[0]".  Note that we CAN compare
-        # these to scalars with "<", ">", "==", etc.
+        # If we create scalars like this, then:
+        # - return var is MUTABLE and other components with
+        #   a reference to it WILL see it change.
+        # - Values will print WITH square brackets unless we
+        #   ask for element 0 "[0]".
+        # - We CAN compare this type of scalar to others with
+        #    "<", ">", "==", etc.
+        # - We can get the data type with ".dtype".
+        # - The data type will be "numpy.ndarray".
+        # - numpy.rank(x) will return 1.
+        # - They are really 1D arrays with one element.
         #--------------------------------------------------------
         ## return np.array([value], dtype=dtype)
 
         #---------------------------------------------------------
-        # If we do this, then return var is IMMUTABLE and other
-        # components with a reference to it won't see it change.
+        # If we create scalars like this, then:
+        # -  return var is IMMUTABLE and other components with
+        #    a reference to it WILL NOT see it change.
+        # - We CAN compare this type of scalar to others with
+        #    "<", ">", "==", etc.
+        # - We can get the data type with ".dtype".
+        # - The data type will be "numpy.float64".
+        # - numpy.rank(x) will return 0.
         #---------------------------------------------------------
         # return np.float64(0)
         
     #   initialize_scalar()
     #-------------------------------------------------------------------
-    #-------------------------------------------------------------------
-    # These are for backward compatibility;  not part of new BMI.
-    #-------------------------------------------------------------------
-    def get_input_items(self):
-
-        return self.get_input_var_names()
-    
-    #   get_input_items()
-    #-------------------------------------------------------------------
-    def get_output_items(self):
-
-        return self.get_output_var_names()
-    
-    #   get_output_items()
-    #-------------------------------------------------------------------
-    def get_rank(self, var_name):
-
-        # For backward compatibility.  (Might not be used anywhere.)
-        return self.get_var_rank( var_name )
-
-    #   get_rank()
+    # These are for convenience;  not part of BMI.
     #-------------------------------------------------------------------
     def is_scalar(self, var_name):
 
@@ -2359,276 +1946,8 @@ class BMI_component:
 
     #   is_grid()
     #-------------------------------------------------------------------
-    def has_variable(self, var_name):
 
-        #------------------------------------------------------
-        # If var_name includes square brackets for subscripts
-        # remove them to get the actual variable name.
-        #------------------------------------------------------
-        bracket_pos = var_name.find('[')
-        if (bracket_pos != -1):
-            key = var_name[0:bracket_pos]
-        else:
-            key = var_name
-
-        #---------------------------------------------------
-        # Does current component have requested variable ?
-        #---------------------------------------------------
-        VARIABLE_FOUND = self.__dict__.has_key(key)
-        if not(VARIABLE_FOUND):
-            print 'ERROR: Component does not have the'
-            print '       requested variable: ' + var_name
-            print ' '
-            
-        return VARIABLE_FOUND
-        
-    #   has_variable()
-    #-------------------------------------------------------------------
-    #-------------------------------------------------------------------
-    def get_scalar_double(self, var_name):
-
-        # For backward compatibility.
-        return self.get_0d_double( var_name )
-
-    #   get_scalar_double()
-
-    #-------------------------------------------------------------------
-    def get_vector_double(self, var_name):
-
-        # For backward compatibility.
-        return self.get_1d_double( var_name )
-
-    #   get_vector_double()
-    #-------------------------------------------------------------------
-    def get_grid_double(self, var_name):
-
-        # For backward compatibility.
-        return self.get_2d_double( var_name )
-
-    #   get_grid_double()
-    #-------------------------------------------------------------------
-    def get_values_in_grid_double(self, var_name, IDs):
-
-        # For backward compatibility.
-        return self.get_2d_double_at_indices( var_name, IDs )
-
-    #   get_values_in_grid_double()
-    #-------------------------------------------------------------------
-    #-------------------------------------------------------------------
-    def set_scalar_double(self, var_name, scalar):
-
-        # For backward compatibility.
-        self.set_0d_double( var_name, scalar )
-
-    #   set_scalar_double()
-    #-------------------------------------------------------------------
-    def set_vector_double(self, var_name, vector):
-
-        # For backward compatibility.
-        self.set_1d_double( var_name, vector )
-
-    #   set_vector_double()
-    #-------------------------------------------------------------------
-    def set_grid_double(self, var_name, grid):
-
-        # For backward compatibility.
-        self.set_2d_double( var_name, grid )
-
-    #   set_grid_double()
-    #-------------------------------------------------------------------
-    def set_values_in_grid_double(self, var_name, IDs, values):
-
-        # For backward compatibility.
-        self.set_2d_double_at_indices( var_name, IDs, values )
-
-    #   set_values_in_grid_double()
-    #-------------------------------------------------------------------
-    #-------------------------------------------------------------------
-    def get_scalar_long(self, var_name):
-
-        # For backward compatibility.
-        return self.get_0d_int( var_name )
-
-    #   get_scalar_long()
-    #-------------------------------------------------------------------
-    def get_vector_long(self, var_name):
-
-        # For backward compatibility.
-        return self.get_1d_int( var_name )
-
-    #   get_vector_long()
-    #-------------------------------------------------------------------
-    def get_grid_long(self, var_name):
-
-        # For backward compatibility.
-        return self.get_2d_int( var_name )
-
-    #   get_grid_long()
-    #-------------------------------------------------------------------
-    def get_values_in_grid_long(self, var_name, IDs):
-
-        # For backward compatibility.
-        return self.get_2d_int_at_indices( var_name, IDs )
-
-    #   get_values_in_grid_long()
-    #-------------------------------------------------------------------
-    #-------------------------------------------------------------------
-    def set_scalar_long(self, var_name, scalar):
-
-        # For backward compatibility.
-        self.set_0d_int( var_name, scalar )
-
-    #   set_scalar_long()
-    #-------------------------------------------------------------------
-    def set_vector_long(self, var_name, vector):
-
-        # For backward compatibility.
-        self.set_1d_int( var_name, vector )
-
-    #   set_vector_long()
-    #-------------------------------------------------------------------
-    def set_grid_long(self, var_name, grid):
-
-        # For backward compatibility.
-        self.set_2d_int( var_name, grid )
-
-    #   set_grid_long()
-    #-------------------------------------------------------------------
-    def set_values_in_grid_long(self, var_name, IDs, values):
-
-        # For backward compatibility.
-        self.set_2d_int_at_indices( var_name, IDs, values )
-
-    #   set_values_in_grid_long()
-    #-------------------------------------------------------------------
-    # EXPERIMENTAL METHODS (3/12/12)
-    #-------------------------------------------------------------------
-    def initialize_port_map(self):
-
-        self.port_names = ['meteorology', 'precip',
-                           'channels', 'infil', 'evap',
-                           'snow', 'ice', 'diversions',
-                           'satzone']
-        
-        self.port_map = { 'meteorology':self.mp,
-                          'precip':self.mp,
-                          'channels':self.cp,
-                          'infil':self.ip,
-                          'evap':self.ep,
-                          'snow':self.sp,
-                          'ice':self.iip,
-                          'diversions':self.dp,
-                          'satzone':self.gp }
-
-    #   initialize_port_map()
-    #-------------------------------------------------------------------
-    def get_input(self, long_var_name=None, port_name=None,
-                  DEBUG=False):
-        
-        #---------------------------------------------------------
-        # Note: This method is "private", or not part of the
-        #       exposed component interface (or port), so its
-        #       return type (in Python) can be dynamic.
-        #       However, the functions called by this one below
-        #       are "port functions" and therefore have static
-        #       return types.
-        #---------------------------------------------------------
-        if (port_name is None):
-            print 'ERROR in BMI_base.get_input():'
-            print '    Missing port_name argument.'
-            return np.float64(0)
-                        
-        #----------------------------
-        # Is port_name recognized ?
-        #----------------------------
-        if (port_name not in self.port_names):
-            print 'ERROR in BMI_base.get_input():'
-            print '    port_name:', port_name, ', is not recognized.'
-            return
-
-        try:
-            #---------------------------------------------------
-            # Returned values will be on the other component's
-            # own grid and with its own units for variables.
-            # Set values will do conversions when needed ?
-            #---------------------------------------------------
-            cmi = self.port_map[ port_name ]
-            values = cmi.get_values( long_var_name )
-        except:
-            print '######################################'
-            print ' ERROR in BMI_base.get_input():'
-            print '     Unable to get variable named:'
-            print '    ' + long_var_name
-            print '     from:', port_name, 'port.'
-            print '     Returning a value of zero.'
-            print '######################################'
-            print ' '
-            values = np.float64( 0 )
-             
-        #--------------
-        # For testing
-        #--------------
-        if (DEBUG):
-            str1 = '>>> ' + long_var_name + ' is a '
-            str3 = '. type(' + long_var_name + ') =', type(values)
-            print (str1 + str2 + str3)
-             
-        #----------------------------------
-        # Make sure return type is double
-        #----------------------------------
-        return values
-        ### return np.float64( values )
-        
-    #   get_input()
-    #-------------------------------------------------------------------
-    def set_input(self, long_var_name, var, port_name=None):
-        
-        #---------------------------------------------------------
-        # Note: This method is "private", or not part of the
-        #       exposed component interface (or port), so its
-        #       return type (in Python) can be dynamic.
-        #       However, the functions called by this one below
-        #       are "port functions" and therefore have static
-        #       return types.
-        #---------------------------------------------------------
-        # Note: To maximize performance, we may want to just get
-        #       the type for each var_name once during the
-        #       initialize() call and save it internally.
-        #---------------------------------------------------------
-        # Note: (2/8/10) Bug fix.  A variable such as "h_swe"
-        #       may be initialized to a scalar (in snow comp.)
-        #       so "port.is_scalar()" will return True.  But if
-        #       "var" is a grid, then we won't be allowed to
-        #       "set it" as one.  Solution is to replace:
-        #       if (port.is_scalar(var_name)) to:
-        #       if (size(var) == 1):
-        #---------------------------------------------------------
-        if (port_name is None):
-            print 'ERROR in BMI_base.set_input():'
-            print '    Missing port_name argument.'
-        
-        try:
-            #-----------------------------------------------
-            # Values are on this component's own grid and
-            # with its own units for variables.
-            # Set values will do conversions when needed ?
-            #-----------------------------------------------
-            values = np.float64( var )
-            cmi    = self.port_map[ port_name ]
-            cmi.set_values( long_var_name, values )
-        except:
-            print '######################################'
-            print ' ERROR in BMI_base.set_input():'
-            print '     Unable to set variable named:'
-            print '    ' + long_var_name
-            print '     to:', port_name, 'port.'
-            print '######################################'
-            print ' '
-            
-    #   set_input()
-    #-------------------------------------------------------------------
-
-
+    
 
 
 

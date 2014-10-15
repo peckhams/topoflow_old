@@ -5,13 +5,16 @@
 # (2/3/13) Still need to remove calls to "idl_funcs".
 
 ########################################################
-        
-## Copyright (c) 2010-2013, Scott D. Peckham
-
-## January 2013   (Revised handling of input/output names).
-## October 2012   (CSDMS Standard Names with BMI)
-## Jan-Feb 2010   (started from diversions_base.py)
-## May 2010 (changes to unit_test())
+#        
+# Copyright (c) 2010-2014, Scott D. Peckham
+#
+# Sept 2014.  Big changes so Channels component now requests
+#             what is needed from Diversions component.
+#
+# January 2013   (Revised handling of input/output names).
+# October 2012   (CSDMS Standard Names with BMI)
+# Jan-Feb 2010   (started from diversions_base.py)
+# May 2010 (changes to unit_test())
 
 #---------------------------------------------------------------------
 # Notes:  This component is written so that only a small amount
@@ -103,23 +106,66 @@ class diversions_component( diversions_base.diversions_component ):
         'dialog_title':       'Diversions: Fraction Method Parameters',
         'time_units':         'seconds' }
 
-    _input_var_names = [
-        'channel_model__time_step',    ## (2/3/13, see notes)
-        'channel_water__volume' ]                  # vol@channels
-        ### 'channel_water_model__time_step' ]     # dt@channels
+    _input_var_names = []
+#         'canals_entrance_water__volume_flow_rate' ]        # Q_canals_in
 
     _output_var_names = [
-        'model__time_step' ]
+        'canals__count',                                   # n_canals
+        'canals_entrance_water__volume_fraction',          # Q_canals_fraction
+        'canals_entrance__x_coordinate',                   # canals_in_x
+        'canals_entrance__y_coordinate',                   # canals_in_y
+        'canals_exit_water__volume_flow_rate',             # Q_canals_out
+        'canals_exit__x_coordinate',                       # canals_out_x
+        'canals_exit__y_coordinate',                       # canals_out_y
+        'model__time_step',                                # dt
+        'sinks_water__volume_flow_rate',                   # Q_sinks
+        'sinks__count',                                    # n_sinks
+        'sinks__x_coordinate',                             # Q_sinks_x
+        'sinks__y_coordinate',                             # Q_sinks_y
+        'sources_water__volume_flow_rate',                 # Q_sources
+        'sources__count',                                  # n_sources
+        'sources__x_coordinate',                           # Q_sources_x
+        'sources__y_coordinate' ]                          # Q_sources_y
 
     _var_name_map = {
-        'channel_model__time_step': 'channel_dt',    ## (2/3/13, see notes)
-	'channel_water__volume':    'vol',
-        'model__time_step':         'dt' }
+        'canals_entrance_water__volume_flow_rate': 'Q_canals_in',
+        #-----------------------------------------------------------
+        'canals__count':                          'n_canals',
+        'canals_entrance__x_coordinate':          'canals_in_x',
+        'canals_entrance__y_coordinate':          'canals_in_y',
+        'canals_entrance_water__volume_fraction': 'Q_canals_fraction',
+        'canals_exit__x_coordinate':              'canals_out_x',
+        'canals_exit__y_coordinate':              'canals_out_y',
+        'canals_exit_water__volume_flow_rate':    'Q_canals_out',
+        'model__time_step':                       'dt',
+        'sinks__count':                           'n_sinks',
+        'sinks__x_coordinate':                    'sinks_x',
+        'sinks__y_coordinate':                    'sinks_y',
+        'sinks_water__volume_flow_rate':          'Q_sinks',
+        'sources__count':                         'n_sources',
+        'sources__x_coordinate':                  'sources_x',
+        'sources__y_coordinate':                  'sources_y',
+        'sources_water__volume_flow_rate':        'Q_sources' }
 
     _var_units_map = {
-        'channel_model__time_step': 's',    ## (2/3/13, see notes)
-	'channel_water__volume':    'm3',
-        'model__time_step':         's' }
+        'canals_entrance_water__volume_flow_rate': 'm3 s-1',
+        #------------------------------------------------------
+        'canals__count':                          '1',
+        'canals_entrance__x_coordinate':          'm',
+        'canals_entrance__y_coordinate':          'm',
+        'canals_entrance_water__volume_fraction': '1',
+        'canals_exit__x_coordinate':              'm',
+        'canals_exit__y_coordinate':              'm',
+        'canals_exit_water__volume_flow_rate':    'm3 s-1',
+        'model__time_step':                       's',
+        'sinks__count':                           '1',
+        'sinks__x_coordinate':                    'm',
+        'sinks__y_coordinate':                    'm',
+        'sinks_water__volume_flow_rate':          'm3 s-1',
+        'sources__count':                         '1',
+        'sources__x_coordinate':                  'm',
+        'sources__y_coordinate':                  'm',
+        'sources_water__volume_flow_rate':        'm3 s-1' }
     
     #------------------------------------------------    
     # Return NumPy string arrays vs. Python lists ?
@@ -142,7 +188,7 @@ class diversions_component( diversions_base.diversions_component ):
     #-------------------------------------------------------------------
     def get_input_var_names(self):
         
-	#--------------------------------------------------------
+	    #--------------------------------------------------------
         # Note: These are currently variables needed from other
         #       components vs. those read from files or GUI.
         #--------------------------------------------------------
@@ -222,27 +268,22 @@ class diversions_component( diversions_base.diversions_component ):
         #-------------------------
         file_unit = open(self.source_file, 'r')
 
-        #--------------------------------------------------
+        #----------------------------------------------------
         # Read number of sources, max number of timesteps
-        # for any source and the common timestep, dt
-        #--------------------------------------------------
+        # for any source and the common timestep, source_dt
+        #----------------------------------------------------
         n_sources = cfg.read_value(file_unit, dtype='Int32')
         nt_max    = cfg.read_value(file_unit, dtype='Int32')
-        dt        = cfg.read_value(file_unit, dtype='Float64')
-
-        ########################################################
-        # (2/3/13) Get "dt" from sink_file vs. channels comp.
-        ########################################################
-        self.dt = dt
+        source_dt = cfg.read_value(file_unit, dtype='Float64')
+        self.source_dt =source_dt
         
         #--------------------
         # Initialize arrays
         #--------------------
-        self.source_IDs    = np.zeros([n_sources], dtype='Int32')
-        self.nt_sources    = np.zeros([n_sources], dtype='Int32')
-        self.Q_sources_all = np.zeros([n_sources, nt_max], dtype='Float64')
-        self.n_sources     = n_sources
-
+        self.source_IDs     = np.zeros([n_sources], dtype='Int32')
+        self.nt_sources     = np.zeros([n_sources], dtype='Int32')
+        self.Q_sources_all  = np.zeros([n_sources, nt_max], dtype='Float64')
+        self.n_sources      = n_sources
         self.nt_max_sources = nt_max
         
         #-----------------------------------
@@ -264,7 +305,15 @@ class diversions_component( diversions_base.diversions_component ):
         # Close the input file
         #-----------------------
         file_unit.close()
-            
+
+        #-------------------------------------
+        # Compute xy coordinates for sources
+        #-------------------------------------
+        source_rows    = (self.source_IDs / self.nx)
+        source_cols    = (self.source_IDs % self.nx)
+        self.sources_x = (source_cols * self.dx)
+        self.sources_y = (source_rows * self.dy)  
+                    
     #   read_source_data()
     #--------------------------------------------------------------------------
     def read_sink_data(self):
@@ -300,21 +349,16 @@ class diversions_component( diversions_base.diversions_component ):
         #------------------------------------------------
         n_sinks = cfg.read_value(file_unit, dtype='Int32')
         nt_max  = cfg.read_value(file_unit, dtype='Int32')
-        dt      = cfg.read_value(file_unit, dtype='Float64')
-
-        ########################################################
-        # (2/3/13) Get "dt" from sink_file vs. channels comp.
-        ########################################################
-        self.dt = dt
+        sink_dt = cfg.read_value(file_unit, dtype='Float64')
+        self.sink_dt = sink_dt
         
         #--------------------
         # Initialize arrays
         #--------------------
-        self.sink_IDs    = np.zeros([n_sinks], dtype='Int32')
-        self.nt_sinks    = np.zeros([n_sinks], dtype='Int32')
-        self.Q_sinks_all = np.zeros([n_sinks, nt_max], dtype='Float64')
-        self.n_sinks     = n_sinks
-        
+        self.sink_IDs     = np.zeros([n_sinks], dtype='Int32')
+        self.nt_sinks     = np.zeros([n_sinks], dtype='Int32')
+        self.Q_sinks_all  = np.zeros([n_sinks, nt_max], dtype='Float64')
+        self.n_sinks      = n_sinks
         self.nt_max_sinks = nt_max
         
         #---------------------------------
@@ -337,6 +381,14 @@ class diversions_component( diversions_base.diversions_component ):
         #-----------------------
         file_unit.close()              
 
+        #-----------------------------------
+        # Compute xy coordinates for sinks
+        #-----------------------------------
+        sink_rows    = (self.sink_IDs / self.nx)
+        sink_cols    = (self.sink_IDs % self.nx)
+        self.sinks_x = (sink_cols * self.dx)
+        self.sinks_y = (sink_rows * self.dy)  
+        
     #   read_sink_data()
     #--------------------------------------------------------------------------
     def read_canal_data(self):
@@ -412,8 +464,8 @@ class diversions_component( diversions_base.diversions_component ):
         # Compute "nt_canals", which is the number of timesteps
         # it takes for flow to travel from end to end.
         #--------------------------------------------------------
-        # This depends on "self.dt", which is set to self.cp.dt
-        # by self.initialize().  It can vary between runs.
+        # This depends on "self.dt", which is now read from the
+        # Diversion component CFG file.  ## (9/22/14)
         #--------------------------------------------------------
         self.nt_canals = np.ceil(self.canal_times / self.dt)
         
@@ -422,6 +474,19 @@ class diversions_component( diversions_base.diversions_component ):
         #-----------------------
         file_unit.close()
 
+        #-----------------------------------------------------
+        # Compute xy coordinates for canal entrance and exit
+        #-----------------------------------------------------
+        canal_in_rows    = (self.canal_in_IDs / self.nx)
+        canal_in_cols    = (self.canal_in_IDs % self.nx)
+        self.canals_in_x = (canal_in_cols * self.dx)
+        self.canals_in_y = (canal_in_rows * self.dy)       
+        #-----------------------------------------------------
+        canal_out_rows    = (self.canal_out_IDs / self.nx)
+        canal_out_cols    = (self.canal_out_IDs % self.nx)
+        self.canals_out_x = (canal_out_cols * self.dx)
+        self.canals_out_y = (canal_out_rows * self.dy)         
+                        
         #-----------------------------------------------------
         # Create a 2D array to store the discharge values as
         # they are moving toward downstream end of canal.
@@ -455,20 +520,19 @@ class diversions_component( diversions_base.diversions_component ):
         # Update discharge, Q, for every source ID
         #-------------------------------------------
         if (self.time_index < self.nt_max_sources):
-            Q_sources = self.Q_sources_all[ :, self.time_index ]
-            dvol = (Q_sources * self.dt)
+            self.Q_sources[:] = self.Q_sources_all[ :, self.time_index ]
         else:
-            dvol = np.zeros(self.n_sources)
+            self.Q_sources[:] = np.zeros(self.n_sources)
 
         #------------------------------------------------------------
         # Update flow volumes, vol, in CHANNELS component (2/17/10)
         #------------------------------------------------------------
         # If a grid cell contains a "source", then an additional Q
         # will flow *into* that grid cell and increase flow volume.
-        #------------------------------------------------------------
-        vols = self.cp.get_values_in_grid_double( 'vol', self.source_IDs )
-        vols += dvol
-        self.cp.set_values_in_grid_double( 'vol', self.source_IDs, vols )
+        #------------------------------------------------------------ 
+        ## vols = self.cp.get_values_in_grid_double( 'vol', self.source_IDs )
+        ## vols += (Q_sources * self.dt)
+        ## self.cp.set_values_in_grid_double( 'vol', self.source_IDs, vols )
         
         #--------------
         # For testing
@@ -502,9 +566,9 @@ class diversions_component( diversions_base.diversions_component ):
         # discharge values.
         #-----------------------------------------
         if (self.time_index < self.nt_max_sinks):
-            Q_sinks = self.Q_sinks_all[ :, self.time_index ]
+            Q_sinks[:] = self.Q_sinks_all[ :, self.time_index ]
         else:
-            Q_sinks = np.zeros(self.n_sinks)
+            Q_sinks[:] = np.zeros(self.n_sinks)
 
         #--------------------------------------------------------
         # Update discharges, Q, in CHANNELS component (2/17/10)
@@ -515,17 +579,17 @@ class diversions_component( diversions_base.diversions_component ):
         #     This changes the Q grid and must be done before
         #     using the Q grid for further calculations below.
         #--------------------------------------------------------
-        Q_vals = self.cp.get_values_in_grid_double( 'Q', self.sink_IDs )
-        Q_vals -= Q_sinks
-        self.cp.set_values_in_grid_double( 'Q', self.sink_IDs, Q_vals )
+        ## Q_vals = self.cp.get_values_in_grid_double( 'Q', self.sink_IDs )
+        ## Q_vals -= Q_sinks
+        ## self.cp.set_values_in_grid_double( 'Q', self.sink_IDs, Q_vals )
 
         #------------------------------------------------------------
         # Update flow volumes, vol, in CHANNELS component (2/17/10)
         # NB!  We MUST update "vol" also and not just "Q".
         #------------------------------------------------------------
-        vols = self.cp.get_values_in_grid_double( 'vol', self.sink_IDs )
-        vols -= (Q_sinks * self.dt)
-        self.cp.set_values_in_grid_double( 'vol', self.sink_IDs, vols )
+        ## vols = self.cp.get_values_in_grid_double( 'vol', self.sink_IDs )
+        ## vols -= (Q_sinks * self.dt)
+        ## self.cp.set_values_in_grid_double( 'vol', self.sink_IDs, vols )
         
     #   update_sinks()
     #--------------------------------------------------------------------------
@@ -568,10 +632,10 @@ class diversions_component( diversions_base.diversions_component ):
         # in CHANNELS component (2/17/10)
         #---------------------------------------------------
         # print '#### update_canals(), Q_vals block...'
-        Q_vals = self.cp.get_values_in_grid_double( 'Q', self.canal_in_IDs )
-        Q_canals_in = (self.canal_Q_fractions * Q_vals)
-        Q_vals -= Q_canals_in
-        self.cp.set_values_in_grid_double( 'Q', self.canal_in_IDs, Q_vals )
+#         Q_vals = self.cp.get_values_in_grid_double( 'Q', self.canal_in_IDs )
+#         Q_canals_in = (self.canal_Q_fractions * Q_vals)
+#         Q_vals -= Q_canals_in
+#         self.cp.set_values_in_grid_double( 'Q', self.canal_in_IDs, Q_vals )
 
         #-------------------------------------------------------
         # Update flow volumes, vol, at upstream ends of canals
@@ -579,16 +643,20 @@ class diversions_component( diversions_base.diversions_component ):
         # NB!  We MUST update "vol" also and not just "Q".
         #-------------------------------------------------------
         # print '#### update_canals(), vols block...'
-        vols = self.cp.get_values_in_grid_double( 'vol', self.canal_in_IDs )
-        vols -= (Q_canals_in * self.dt)
-        self.cp.set_values_in_grid_double( 'vol', self.canal_in_IDs, vols )
+#         vols = self.cp.get_values_in_grid_double( 'vol', self.canal_in_IDs )
+#         vols -= (Q_canals_in * self.dt)
+#         self.cp.set_values_in_grid_double( 'vol', self.canal_in_IDs, vols )
 
         #----------------------------------------------
         # Add specified discharge (Q_in) to upstream
         # end of each canal (at array index 0)
-        #----------------------------------------------
+        ######################################################
+        # Diversions component now gets Q_canals_in from the
+        # Channels component as a requested input_var.
+        ######################################################
         # print '#### update_canals(), canal_Q block...'
-        self.canal_Q[:, 0] = Q_canals_in
+        ## self.canal_Q[:, 0] = Q_canals_in        
+        self.canal_Q[:, 0] = self.Q_canals_in   # (from Channels)
         
         #------------------------------------------------
         # Get "Q" at downstream end of each canal.
@@ -606,10 +674,12 @@ class diversions_component( diversions_base.diversions_component ):
         #-------------------------------------------------------
         # print '#### update_canals(), for loop...'
         nc  = self.n_canals
-        Q_canals_out = np.empty(nc, dtype='Float32')
+        ## Q_canals_out = np.empty(nc, dtype='Float32')
+        self.Q_canals_out[:] = np.empty(nc, dtype='Float32')
         for k in xrange(nc):
             nt_k  = self.nt_canals[k]
-            Q_canals_out[k] = self.canal_Q[k, nt_k-1]
+            self.Q_canals_out[k] = self.canal_Q[k, nt_k-1]
+            ## Q_canals_out[k] = self.canal_Q[k, nt_k-1]
             ## Q_canals_out[k] = self.canal_Q[:, nt_k-1]
         ## self.canal_Q[:, nt_k:] = 0.0  # (not necessary)
 
@@ -618,9 +688,9 @@ class diversions_component( diversions_base.diversions_component ):
         # in CHANNELS component (2/17/10)
         # NB!  We MUST update "vol" also and not just "Q".
         #---------------------------------------------------------
-        vols = self.cp.get_values_in_grid_double( 'vol', self.canal_out_IDs )
-        vols += (Q_canals_out * self.dt)
-        self.cp.set_values_in_grid_double( 'vol', self.canal_out_IDs, vols )
+#         vols = self.cp.get_values_in_grid_double( 'vol', self.canal_out_IDs )
+#         vols += (Q_canals_out * self.dt)
+#         self.cp.set_values_in_grid_double( 'vol', self.canal_out_IDs, vols )
 
         #--------------
         # For testing

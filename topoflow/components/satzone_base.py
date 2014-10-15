@@ -54,11 +54,12 @@
 #     >>> a.flat[w2] = 99   # (this works)
 #     >>> a.flat[w2] = [-2,-1]  # (this works)
 #     >>> np.put(a, w2, 99)  # (this works)
-                
+               
 #-----------------------------------------------------------------------
 #
 #  class satzone_component
 #
+#      set_constants()
 #      initialize()
 #      update()
 #      finalize()
@@ -75,9 +76,10 @@
 #      ----------------------------------
 #      update_Sh()
 #      update_Q_gw()
+#      update_top_layer_for_ET()     # (9/25/14)
 #      update_water_table()
 #      update_seep_rate()
-#      update_GW_integral()      # (GW = seeprate)
+#      update_GW_integral()          # (GW = seeprate)
 #      ------------------------
 #      open_input_files()
 #      read_input_files()
@@ -129,7 +131,16 @@ class satzone_component( BMI_base.BMI_component ):
     #-----------------------------------------------------
 
     #-------------------------------------------------------------------
-    def initialize(self, cfg_prefix=None, mode="nondriver",
+    def set_constants(self):
+
+        #------------------------
+        # Define some constants
+        #------------------------
+        self.nodata = np.float64(-9999)
+    
+    #   set_constants()
+    #-------------------------------------------------------------------
+    def initialize(self, cfg_file=None, mode="nondriver",
                    SILENT=False):
 
         #------------------------------------------------------------
@@ -143,9 +154,9 @@ class satzone_component( BMI_base.BMI_component ):
             print ' '
             print 'Groundwater component: Initializing...'
             
-        self.status     = 'initializing'  # (OpenMI 2.0 convention)
-        self.mode       = mode
-        self.cfg_prefix = cfg_prefix
+        self.status   = 'initializing'  # (OpenMI 2.0 convention)
+        self.mode     = mode
+        self.cfg_file = cfg_file
         
         #-----------------------------------------------
         # Load component parameters from a config file
@@ -234,11 +245,6 @@ class satzone_component( BMI_base.BMI_component ):
             self.DONE = True
             self.status = 'initialized'  # (OpenMI 2.0 convention)
             return
-
-        ############################################
-        # Not needed by new framework.  5/17/12.
-        ############################################
-##        self.initialize_required_components(mode)
         
         #----------------------------
         # Initialize more variables
@@ -279,6 +285,8 @@ class satzone_component( BMI_base.BMI_component ):
         #-------------------------
         self.update_Sh()
         self.update_Q_gw()
+        # print 'CALLING update_top_layer_for_ET()...'
+        self.update_top_layer_for_ET()
         # print 'CALLING update_water_table()...'
         self.update_water_table()
         # print 'CALLING update_seep_rate()...'
@@ -377,9 +385,9 @@ class satzone_component( BMI_base.BMI_component ):
         # can later change any list entry to a scalar or grid
         # (type 'np.ndarray'), according to its "Ks_type".
         #---------------------------------------------------------
-        self.Ks  = list(np.zeros(n_layers, dtype='Float64'))
-        self.qs  = list(np.zeros(n_layers, dtype='Float64'))
-        self.th  = list(np.zeros(n_layers, dtype='Float64'))
+        self.Ks  = list(np.zeros(n_layers, dtype='float64'))
+        self.qs  = list(np.zeros(n_layers, dtype='float64'))
+        self.th  = list(np.zeros(n_layers, dtype='float64'))
 
         #----------------------------------------------------------------
         # Note: The variables qs, th and y are ndarrays.  If we define
@@ -409,8 +417,8 @@ class satzone_component( BMI_base.BMI_component ):
         #----------------------------------
         # Do this here?  See update_Q_gw.
         #----------------------------------
-        self.Q_gw = np.zeros([self.ny, self.nx], dtype='Float64')
-        self.GW   = np.zeros([self.ny, self.nx], dtype='Float64') #(5/20/10)
+        self.Q_gw = np.zeros([self.ny, self.nx], dtype='float64')
+        self.GW   = np.zeros([self.ny, self.nx], dtype='float64') #(5/20/10)
         self.vol_GW = self.initialize_scalar(0, dtype='float64')
         
         #---------------------------------
@@ -473,7 +481,7 @@ class satzone_component( BMI_base.BMI_component ):
         #-----------------------------------------------------------
         nx = self.nx
         ny = self.ny
-        self.y = np.zeros([self.n_layers, ny, nx], dtype='Float64')
+        self.y = np.zeros([self.n_layers, ny, nx], dtype='float64')
 
         #----------------------------------------------------------------
         # Note: The variables qs, th and y are ndarrays.  If we define
@@ -540,28 +548,36 @@ class satzone_component( BMI_base.BMI_component ):
         # tf_d8_base.read_grid_info() also needs
         # in_directory to be set. (10/27/11)
         ###############################################
+        
+        #--------------------------------------------------         
+        # D8 component builds its cfg filename from these  
+        #--------------------------------------------------      
         self.d8.site_prefix  = self.site_prefix
         self.d8.in_directory = self.in_directory
-        
-        self.d8.initialize( cfg_prefix=self.cfg_prefix )
+        self.d8.initialize( cfg_file=None )
 
     #   initialize_d8_vars()
     #-------------------------------------------------------------------
     def adjust_flow_depths(self):
+
+        #---------------------------------------------------------        
+        # Note: This is meant to be called from the method
+        #       initialize_computed_vars(), but isn't called yet
+        #       because it is not implemented correctly.
+        #       It is only needed if there are places where the
+        #       water table is above the land surface.
+        #---------------------------------------------------------
         
-        #---------------------------------
-        # If water table > land surface,
-        # increment the flow depth grid.
-        #---------------------------------
-        nodata = np.float64(-9999)             ############
+        #------------------------------------------------------------
+        # If water table > land surface, increment flow depth grid.
+        #------------------------------------------------------------
         diff = (self.h_table - self.elev)
-        #** w = np.where(diff > 0)
+        ### w = np.where(diff > 0)
         w    = np.where(np.logical_and(np.logical_and((diff > 0), \
-                                           (self.elev > nodata)), \
+                                           (self.elev > self.nodata)), \
                                            (np.isfinite(self.elev))))
         nw = np.size(w[0])
         if (nw != 0):
-            ## d = self.cp.get_grid_double('d', self.cp)  # (flow depth grid)
             d = self.d   ## (2/3/13, new framework)
             #######################################
             #  THIS IS NOT CORRECT FOR CHANNELS
@@ -597,6 +613,8 @@ class satzone_component( BMI_base.BMI_component ):
         #-----------------------------------------------------------
         # Notes:  It is assumed that the flow directions don't
         #         change even though the free surface is changing.
+        #-----------------------------------------------------------
+        # Notes:  Check that ds includes channel sinuosity.
         #-----------------------------------------------------------
         delta_h = (self.h_table - self.h_table[self.d8.parent_IDs])
         self.Sh =  delta_h / self.d8.ds
@@ -662,9 +680,9 @@ class satzone_component( BMI_base.BMI_component ):
         # Is this independent of method ?
         # If not, don't do it here.
         #-----------------------------------
-        dh_dt   = (self.h_table - self.h_last) / self.dt        #[m/s]
+        dh_dt   = (self.h_table - self.h_last) / self.dt       # [m/s]
         self.GW = (self.h_table > self.elev) * dh_dt
-        #*** self.GW = np.maximum(self.GW, 0.0)    ;(force to be positive)
+        ## np.maximum(self.GW, 0.0, self.GW)    ;(force to be positive)
         
         #--------------------------------
         # Redefine h_last for next time
@@ -685,6 +703,176 @@ class satzone_component( BMI_base.BMI_component ):
             self.vol_GW += np.sum(volume)
 
     #   update_GW_integral()
+    #-------------------------------------------------------------------
+    def update_top_layer_for_ET(self):
+
+        #-------------------------------------------------------
+        # Note: Computed ET values are generally taken to be
+        #       "potential" values which may not be achieved
+        #       if there is not enough water at or near the
+        #       surface.  The Channels component includes ET
+        #       in excess rainrate, R, and ET may therefore
+        #       offset contributions from P, SM, MR and GW.
+        #       If R < 0, the Channels component will remove
+        #       water from the volume in the channel before
+        #       computing the channel flow depth.
+        #-------------------------------------------------------
+        #       This function attempts to consume water from
+        #       the top soil layer (subsurface).
+        #-------------------------------------------------------
+        # Note: ET = ET rate with units of [m/s].
+        #        d = depth of surface water [m]
+        #        h = water table height above datum
+        #        y = thicknesses [m] of all soil layers
+        #            when using Darcy subsurface flow
+        #-------------------------------------------------------
+
+        #############        
+        return          # (not ready yet)
+        #############
+        
+        #-----------------------------------------------------
+        # Potential depth of water that can be removed by ET
+        #-----------------------------------------------------
+        # (8/25/09) Does it make sense to allow ET
+        # and dzw to be scalars ??
+        #-------------------------------------------
+        dzw = (self.dt * self.ET)
+        ## print 'size(dzw) =', np.size(dzw)
+        
+        #----------------
+        # For debugging
+        #----------------
+        #if (np.size(dzw) == 1) then begin
+        #    msg = [' ','ERROR: dzw is not an array. ', ' ']
+        #    result = GUI_Message(msg, /INFO)
+        #    STOP
+        #endif
+
+        depth = self.depth    # (2/3/13, "d@channel")
+        UPDATE_DEPTH = False
+        
+        wL  = np.where( dzw <= depth )
+        nwL = np.size( wL[0] )
+        wG  = np.where( dzw > depth )
+        nwG = np.size( wG[0] )
+
+        if (nwL != 0):    
+            #---------------------------------
+            # Reduce the surface water depth
+            #---------------------------------
+            depth[wL]    = (depth[wL] - dzw[wL])
+            UPDATE_DEPTH = True
+            dzw[wL]      = np.float64(0)
+        
+        if (nwG != 0):    
+            #-----------------------------
+            # Save a copy of initial dzw
+            #-----------------------------
+            dzw0 = dzw.copy()
+            
+            #-------------------------------------
+            # Consume all surface water first
+            # This doesn't account for channels.
+            #-------------------------------------
+            dzw[wG]      = dzw[wG] - depth[wG]
+            depth[wG]    = np.float64(0)
+            UPDATE_DEPTH = True
+            
+            #---------------------------------------
+            # Try to take remainder from top layer
+            # Compute water content of top layer
+            #---------------------------------------
+            # Used before 7/13/06
+            #----------------------
+            # p  = gv.soil_P[0]  ;(top layer porosity)
+            # y0 = y[*,*,0]
+            # content_1 = (y0[wG] * p)
+            #---------------------------------------------
+            # self.gp.qs is a 1D array of doubles that
+            # gives theta_sat for each soil layer.
+            # This is taken equal to porosity here.
+            #---------------------------------------------
+            # self.gp.y[0,:,:] is a grid of doubles that
+            # gives the "wetted thickness" of top layer
+            #---------------------------------------------
+            p0 = self.p0       # (2/3/13, new framework)
+            y0 = self.y0       # (2/3/13, new framework)
+            h  = self.h_table  # (2/3/13, new framework)
+
+            SCALAR_POROSITY = (np.size(p0) == 1)  # (Always True now)
+            if (SCALAR_POROSITY):    
+                content_1 = (y0[wG] * p0)
+            else:    
+                content_1 = (y0[wG] * p0[wG])
+            
+            wwL  = np.where( dzw[wG] <= content_1 )
+            nwwL = np.size( wwL[0] )
+            wwG  = np.where( dzw[wG] > content_1 )
+            nwwG = np.size( wwG[0] )
+
+            #####################################################
+            # See Notes at top regarding "nested WHERE calls".
+            #####################################################
+
+            #---------------------------------------------
+            # Can get all remaining water from top layer
+            # Reduce the water table height
+            #---------------------------------------------
+            if (nwwL != 0):    
+                if (SCALAR_POROSITY):
+                    dh = dzw.flat[wwL] / p0
+                    #### dh = dzw[wG][wwL] / p0
+                else:
+                    dh = dzw.flat[wwL] / p0.flat[wwL]
+                    #### dh = dzw[wG][wwL] / p0[wG][wwL]
+
+                h.flat[wwL]   = h.flat[wwL]  - dh
+                y0.flat[wwL]  = y0.flat[wwL] - dh
+                dzw.flat[wwL] = np.float64(0)     # (not really needed ?)
+                
+##                h[wG][wwL]   = h[wG][wwL] - dh
+##                y0[wG][wwL]  = y0[wG][wwL] - dh
+##                dzw[wG][wwL] = np.float64(0)   # (not really needed ?)
+            
+            #-----------------------------------------------
+            # Can't get all remaining water from top layer
+            #-----------------------------------------------
+            # Get what is available, and then redefine ET
+            # for mass balance consistency
+            #-----------------------------------------------
+            if (nwwG != 0):
+                dh = y0.flat[wwG]
+                h.flat[wwG]   = h.flat[wwG] - dh
+                y0.flat[wwG]  = np.float64(0)
+                dzw.flat[wwG] = dzw.flat[wwG] - content_1[wwG]
+                #################################################
+                ##### Is there a problem in above line with
+                ##### content_1[wwG] part ???
+                #------------------------------------------------
+                dzw_used    = dzw0.flat[wwG] - dzw.flat[wwG]
+                
+                ##############################################
+                # self.ET.flat[wwG] = (dzw_used / self.dt)
+                ##############################################
+                                
+##                dh = y0[wG][wwG]
+##                h[wG][wwG]   = h[wG][wwG] - dh
+##                y0[wG][wwG]  = np.float64(0)
+##                dzw[wG][wwG] = dzw[wG][wwG] - content_1[wwG]
+##                #--------------------------------------------
+##                dzw_used    = dzw0[wG][wwG] - dzw[wG][wwG]
+##                self.ET[wG][wwG] = (dzw_used / self.dt)
+      
+            #-----------------------------------------------
+            # Replace top layer in y (saturated thickness)
+            #-----------------------------------------------
+            self.y[0,:,:]   = y0
+            self.h_table[:] = h
+##            print '       type(y0) =', type(y0)
+##            print '       type(h)  =', type(h)  
+    
+    #   update_top_layer_for_ET()
     #-------------------------------------------------------------------
     def update_water_table(self):
 
@@ -740,7 +928,6 @@ class satzone_component( BMI_base.BMI_component ):
         # Initialize dzw with outflow term.
         # Doesn't involve neighbor pixels.
         #------------------------------------
-        ### Rg  = self.get_port_data('Rg', self.ip)   #######
         Rg  = self.Rg   # (using new framework, 5/18/12)
         
         dzw = self.dt * (Rg - self.Q_gw / self.da)    ### USE gp.dt vs. main_dt !! ###
@@ -937,7 +1124,7 @@ class satzone_component( BMI_base.BMI_component ):
                             dh = dzw.flat[wL] / pk.flat[wL]
                         self.h_table.flat[wL] += dh
                         yk.flat[wL] += dh                       
-                        dzw.flat[wL] = float64(0)
+                        dzw.flat[wL] = np.float64(0)
                         
 ##                        IDs = wR[w[wL]]                        
 ##                        if (SCALAR_POROSITY):    
@@ -946,12 +1133,12 @@ class satzone_component( BMI_base.BMI_component ):
 ##                            dh = dzw[IDs] / pk[IDs]
 ##                        self.h_table[IDs] += dh
 ##                        yk[IDs] += dh                       
-##                        dzw[IDs] = float64(0)
+##                        dzw[IDs] = np.float64(0)
                         
                     self.y[k,:,:] = yk   # (replace a layer in y)
                 else:
                     pass
-                    # dum = int16(0)
+                    # dum = np.int16(0)
                     #kstr = str(k)
                     #print '   Layer ' + kstr + ' is full.'
 
@@ -984,7 +1171,7 @@ class satzone_component( BMI_base.BMI_component ):
 ##            if (nIDs > 0):    
 ##                IDs = wR[w]
 ##                self.h_table[IDs] += dzw[IDs]
-##                dzw[IDs] = float64(0)   # (need this)
+##                dzw[IDs] = np.float64(0)   # (need this)
         
         #-----------------------------------------
         # Process pixels where water table falls
@@ -1032,12 +1219,12 @@ class satzone_component( BMI_base.BMI_component ):
                     
                     if (nwG != 0):
                         self.h_table.flat[wG] -= yk.flat[wG]
-                        yk.flat[wG]            = float64(0)
+                        yk.flat[wG]            = np.float64(0)
                         dzw.flat[wG]          += content_k[wG]  #(neg + pos)
                         
 ##                        IDs = wF[w[wG]]
 ##                        self.h_table[IDs] -= yk[IDs]
-##                        yk[IDs]  = float64(0)
+##                        yk[IDs]  = np.float64(0)
 ##                        dzw[IDs] += content_k[w[wG]]  #(neg + pos)
                     
                     if (nwL != 0):      #(3/8/04: BUG FIX)
@@ -1051,7 +1238,7 @@ class satzone_component( BMI_base.BMI_component ):
                             dh = dzw.flat[wL] / pk.flat[wL]
                         self.h_table.flat[wL] += dh
                         yk.flat[wL]           += dh
-                        dzw.flat[wL]           = float64(0)
+                        dzw.flat[wL]           = np.float64(0)
                         
 ##                        IDs = wF[w[wL]]
 ##                        if (SCALAR_POROSITY):    
@@ -1060,7 +1247,7 @@ class satzone_component( BMI_base.BMI_component ):
 ##                            dh = dzw[IDs] / pk[IDs]
 ##                        self.h_table[IDs] += dh
 ##                        yk[IDs]           += dh
-##                        dzw[IDs]           = float64(0)
+##                        dzw[IDs]           = np.float64(0)
                         
                         #dz_min = dzw.min()
                         #dz_max = dzw.max()
@@ -1267,7 +1454,7 @@ class satzone_component( BMI_base.BMI_component ):
     #-------------------------------------------------------------------  
     def open_output_files(self):
 
-        model_output.check_nio()
+        model_output.check_netcdf()
         self.update_outfile_names()
         
         #--------------------------------------

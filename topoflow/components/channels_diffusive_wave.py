@@ -1,10 +1,15 @@
-
-## Copyright (c) 2001-2013, Scott D. Peckham
-##
-## October 2012   (CSDMS Standard Names and BMI)
-## January, May, July 2009
-## May 2010 (changes to unit_test() and read_cfg_file()
-
+#
+#  Copyright (c) 2001-2014, Scott D. Peckham
+#
+#  Sep 2014.  New standard names and BMI updates and testing.
+#  Nov 2013.  Converted TopoFlow to a Python package.
+#  Feb 2013.  Adapted to use EMELI framework.
+#  Oct 2012.  CSDMS Standard Names and BMI.
+#  May 2010.  Changes to unit_test() and read_cfg_file().
+#  Jul 2009.  Updates.
+#  May 2009.  Updates.
+#  Jan 2009.  Converted from IDL to Python with I2PY.
+#
 #-----------------------------------------------------------------------
 #  NOTES:  This file defines a "diffusive wave" channel flow component
 #          and related functions.  It inherits from the channels
@@ -91,8 +96,11 @@ class channels_component(channels_base.channels_component):
 
         #----------------------------
         # Update free surface slope
-        #----------------------------
-        self.update_free_surface_slope()   # (called S_free)
+        #-----------------------------------------------------
+        # This is called to update self.S_free for DIFFUSIVE
+        # and DYNAMIC cases in channel_base.update().
+        #-----------------------------------------------------
+        ### self.update_free_surface_slope()
 
         #-------------------------------------------
         # Compute velocity using S_free vs. S_bed
@@ -106,13 +114,13 @@ class channels_component(channels_base.channels_component):
         # Use Manning's formula
         #------------------------
         if (self.MANNING):    
-            self.u = self.manning_formula(self.S_free)
+            self.u = self.manning_formula()
         
         #--------------------------------------
         # Use the Logarithmic Law of the Wall
         #--------------------------------------
         if (self.LAW_OF_WALL):    
-            self.u = self.law_of_the_wall(self.S_free)
+            self.u = self.law_of_the_wall()
 
         #----------------------------------------
         # Allow negative velocity (backflow) ??

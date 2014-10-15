@@ -11,12 +11,18 @@
 ##     set to max of "nd_max" values that appear in
 ##     read_source_data(), read_sink_data(), etc. (11/14/11)
 ##============================================================
- 
-## Copyright (c) 2001-2010, Scott D. Peckham
-## January 2009   (converted from IDL)
-## August 2009
-## May 2010 (changes to initialize() and read_cfg_file()
-
+#
+#  Copyright (c) 2001-2014, Scott D. Peckham
+#
+#  Sep 2014.  New standard names and BMI updates and testing.
+#  Nov 2013.  Converted TopoFlow to a Python package.
+#  Feb 2013.  Adapted to use EMELI framework.
+#  Oct 2012.  CSDMS Standard Names and BMI.
+#  May 2010.  Changes to initialize() and read_cfg_file().
+#  Jul 2009.  Updates.
+#  May 2009.  Updates.
+#  Jan 2009.  Converted from IDL to Python with I2PY.
+#
 #---------------------------------------------------------------------
 # Notes:  Maybe replace "dur_sums" approach with the same approach
 #         now used in precip.py ??
@@ -24,20 +30,13 @@
 #         Make sure volume in caller gets updated correctly.
 #---------------------------------------------------------------------
 #
-#  class diversions_component:  (inherits from CSDMS_base.py)
+#  class diversions_component:  (inherits from BMI_base.py)
 # 
 #      initialize()
 #      update()
 #      finalize()
 #      set_computed_input_vars()
 #---------------------------------
-#      get_cca_ports()           # (in CSDMS_base.py)
-#      release_cca_ports()       # (in CSDMS_base.py)
-#      get_cca_port_info()       # (5/11/10)
-#      embed_child_components()
-#      add_child_ports()
-#      initialize_ports()
-#----------------------------
 #      read_input_files()
 #      read_source_data()
 #      read_sink_data()
@@ -46,6 +45,7 @@
 #      update_sources()
 #      update_sinks()
 #      update_canals()
+#
 #--------------------------------------------------------------------
 
 import numpy as np
@@ -58,17 +58,17 @@ from topoflow.utils import idl_func  # (still needed for idl.readf...)
 
 #---------------------------------------------------------------------
 class diversions_component( BMI_base.BMI_component ):
-    
-    def initialize(self, cfg_prefix=None, mode="nondriver",
+ 
+    def initialize(self, cfg_file=None, mode="nondriver",
                    SILENT=False):
 
         if not(SILENT):
             print ' '
             print 'Diversions component: Initializing...'
         
-        self.status     = 'initializing'  # (OpenMI 2.0 convention)
-        self.mode       = mode
-        self.cfg_prefix = cfg_prefix
+        self.status   = 'initializing'  # (OpenMI 2.0 convention)
+        self.mode     = mode
+        self.cfg_file = cfg_file
         
         #-----------------------------------------------
         # Load component parameters from a config file 
@@ -78,37 +78,48 @@ class diversions_component( BMI_base.BMI_component ):
         self.read_grid_info()  # (need this, 5/19/10)
         self.initialize_basin_vars()  # (5/14/10)
         
-        #-----------------------------------
-        # Initialize dt for all diversions
-        #-----------------------------------
-        ## self.dt = self.cp.get_scalar_double('dt')  ########
-        #-----------------------------------------------------
-        # New framework approach now sets dt using port_name
-        #-----------------------------------------------------
-
-        ############################################################
-        ############################################################
-        # (2/3/13) In "diversions_fraction_method.py", "dt" is
-        # set by read_source_data() and read_sink_data() and
-        # shouldn't be set to "channel_dt".  But "dt" does not
-        # get set for canals yet.
-        
+        ############################################################   
         # With new framework approach, we can't request the time
-        # step for a specific port name as "dt" (due to conflicts)
-        # but a component can get another's time step if they both
-        # use a variable like "channel_model__time_step" with
-        # any distinct name like "channel_dt".
+        # step for a specific component as "dt" (due to conflicts).
+        ############################################################   
+        # The Diversions component "dt" should probably match that
+        # of the Channels component.  (Must be named "dt" vs.
+        # "canal_dt".)
         ############################################################
-        ############################################################
-        self.time = np.float64(0)  # (only to support get_current_time)
-        self.dt = self.channel_dt
+        self.initialize_time_vars()
         
+        #-----------------------------------------------------
+        # These are used by the Channels component (9/22/14)
+        # to tell if diversions are available and "on".
+        #-----------------------------------------------------
+        if not(self.use_canals):
+            self.n_canals = self.initialize_scalar( 0, dtype='int32')
+        if not(self.use_sinks):
+            self.n_sinks = self.initialize_scalar( 0, dtype='int32')
+        if not(self.use_sources):
+            self.n_sources = self.initialize_scalar( 0, dtype='int32')
+
         #-------------------------------
         # Return if no method selected
         #-------------------------------
         if (self.comp_status == 'Disabled'):
             if not(SILENT):
                 print 'Diversions component: Disabled.'
+            self.n_canals          = self.initialize_scalar( 0, dtype='int32')  # int
+            self.n_sinks           = self.initialize_scalar( 0, dtype='int32')
+            self.n_sources         = self.initialize_scalar( 0, dtype='int32')
+            self.Q_canals_fraction = self.initialize_scalar( 0, dtype='float64')
+            self.Q_canals_out      = self.initialize_scalar( 0, dtype='float64')
+            self.Q_sinks           = self.initialize_scalar( 0, dtype='float64')
+            self.Q_sources         = self.initialize_scalar( 0, dtype='float64')
+            self.canals_in_x       = self.initialize_scalar( 0, dtype='float64')
+            self.canals_in_y       = self.initialize_scalar( 0, dtype='float64')
+            self.canals_out_x      = self.initialize_scalar( 0, dtype='float64')
+            self.canals_out_y      = self.initialize_scalar( 0, dtype='float64')
+            self.sinks_x           = self.initialize_scalar( 0, dtype='float64')
+            self.sinks_y           = self.initialize_scalar( 0, dtype='float64')
+            self.sources_x         = self.initialize_scalar( 0, dtype='float64')
+            self.sources_y         = self.initialize_scalar( 0, dtype='float64')
             self.DONE   = True
             self.status = 'initialized'  # (OpenMI 2.0 convention)
             return
@@ -136,29 +147,15 @@ class diversions_component( BMI_base.BMI_component ):
             return
         self.status = 'updating'  # (OpenMI 2.0 convention)
 
-        #---------------------------------------------------
-        # (2/3/13) New framework passes ref to vol@channel
-        #---------------------------------------------------
-        # Get the grid of "flow volumes" from channel port
-        #---------------------------------------------------
-        # self.vol = self.cp.get_grid_double('vol')
-
-        #-----------------------------------------------
-        # Update self.vol with inputs/outputs from all
-        # sources, sinks and diversions
-        #-----------------------------------------------
+        #-----------------------------------------------------
+        # Update info from all sources, sinks and diversions
+        #-----------------------------------------------------
         # print '### Calling update_sources()...'
         self.update_sources()
         # print '### Calling update_sinks()...'
         self.update_sinks()
         # print '### Calling update_canals()...'
         self.update_canals()
-        
-        #------------------------------------------------------
-        # Update the grid of "flow volumes" from channel port
-        #------------------------------------------------------
-        self.cp.set_grid_double('vol', self.vol)
-        ##  self.set_grid_double('vol', self.vol)  # (Bug fix: 1/11/10)
 
         #------------------------
         # Update internal clock
@@ -183,6 +180,12 @@ class diversions_component( BMI_base.BMI_component ):
     #-------------------------------------------------------------------
     def set_computed_input_vars(self):
 
+        #---------------------------------------------------------------    
+        # Note: The initialize() method calls initialize_config_vars()
+        #       (in BMI_base.py), which calls this method at the end.
+        #       But read_input_files() has not been called yet.
+        #       See initialize_computed_vars().
+        #--------------------------------------------------------------
         self.use_sources = (self.use_sources == 'Yes')
         self.use_sinks   = (self.use_sinks   == 'Yes')
         self.use_canals  = (self.use_canals  == 'Yes')

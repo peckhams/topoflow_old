@@ -173,7 +173,7 @@ class erosion_component( BMI_base.BMI_component ):
         
     #   set_constants()
     #-------------------------------------------------------------------
-    def initialize(self, cfg_prefix=None, mode="nondriver",
+    def initialize(self, cfg_file=None, mode="nondriver",
                    SILENT=False):
 
         #--------------------------------------------------------
@@ -185,7 +185,7 @@ class erosion_component( BMI_base.BMI_component ):
 
         self.status = 'initializing'  # (OpenMI 2.0 convention)
         self.mode   = mode
-        self.cfg_prefix = cfg_prefix
+        self.cfg_file = cfg_file
 
         #-----------------------------------------------
         # Load component parameters from a config file
@@ -296,15 +296,7 @@ class erosion_component( BMI_base.BMI_component ):
         # output var dialog for the channel process.
         #--------------------------------------------------
         if (self.SAVE_Z_PIXELS and (self.z_ts_file == '')):    
-            self.z_ts_file = (self.case_prefix + '_0D-z.txt')       
-
-        #-----------------------------------------------------
-        #  If this component is running in stand-alone mode,
-        #  then it must initialize the process modules that
-        #  it is going to use.
-        #-----------------------------------------------------
-        ## self.initialize_required_components( mode )
-        ## COMMENTED ABOVE LINE FOR BMI_base conversion (3/8/12)
+            self.z_ts_file = (self.case_prefix + '_0D-z.txt')
         
         self.open_output_files()
         self.status = 'initialized'  # (OpenMI 2.0 convention) 
@@ -839,12 +831,7 @@ class erosion_component( BMI_base.BMI_component ):
         # IN = infil rate    [m/s]
         # MR = icemelt rate  [m/s]
         #--------------------------------------------------------------        
-        P  = self.get_port_data('P',  self.mp,  'METEOROLOGY')
-        # SM = self.get_port_data('SM', self.sp,  'SNOW')
-        # GW = self.get_port_data('GW', self.gp,  'SATZONE')
-        # ET = self.get_port_data('ET', self.ep,  'EVAP')
-        # IN = self.get_port_data('IN', self.ip,  'INFIL')
-        # MR = self.get_port_data('MR', self.iip, 'ICE')
+        P_rain = self.P_rain
         
         #--------------
         # For testing
@@ -858,8 +845,8 @@ class erosion_component( BMI_base.BMI_component ):
 ##        # print '(Hmin,  Hmax)  =', H.min(), H.max()
 ##        print ' '
 
-        self.R = P
-        ## self.R = (P + SM + GW + MR) - (ET + IN)
+        self.R = P_rain
+        ## self.R = (P_rain + SM + GW + MR) - (ET + IN)
             
     #   update_R()
     #-------------------------------------------------------------------
@@ -883,11 +870,6 @@ class erosion_component( BMI_base.BMI_component ):
         # Note: self.U is currently set by read_config_file()
         #------------------------------------------------------
         return
-
-        #----------------------------------------
-        # Compute the "uplift rate", U, [mm/yr]
-        #----------------------------------------      
-        self.U = self.get_port_data('U',  self.up,  'UPLIFT')
         
     #   update_U()     
     #-------------------------------------------------------------------
@@ -2144,7 +2126,7 @@ class erosion_component( BMI_base.BMI_component ):
     #-------------------------------------------------------------------  
     def open_output_files(self):
 
-        model_output.check_nio()    # (test import and info message)
+        model_output.check_netcdf()    # (test import and info message)
         self.update_outfile_names()
         
         #--------------------------------------

@@ -1,19 +1,20 @@
 
 # S.D. Peckham
-# October 13, 2009
-# December 2, 2009 (updated open_new_file to use "info")
+# Sept 2014 (new version to use netCDF4)
 # June 2010 (streamlined a bit more)
+# December 2, 2009 (updated open_new_file to use "info")
+# October 13, 2009
 
 import os
 import sys
 import time
 
-import numpy
+import numpy as np
 import bov_files
 import file_utils
 import rti_files
 
-# import Nio    # (a module in the PyNIO package) 
+import netCDF4 as nc
 
 #-------------------------------------------------------------------
 
@@ -22,10 +23,10 @@ import rti_files
 #
 #   class ncgs_file():
 #
-#       import_nio()
+#       import_netCDF4()
 #       open_file()
 #       check_and_store_info()   # (12/2/09)
-#       get_nio_type_map()
+#       get_dtype_map()
 #       open_new_file()
 #       add_grid()
 #       get_grid()
@@ -57,14 +58,14 @@ def unit_test(nx=4, ny=5, n_grids=6, VERBOSE=False,
         print 'ERROR during open_new_file().'
         return
     
-    grid = numpy.arange(nx * ny, dtype='Float32')
+    grid = np.arange(nx * ny, dtype='Float32')
     grid = grid.reshape( (ny, nx) )
 
     #-----------------------------------------------
     # (6/10/10) Can use this to test new ability
     # of add_grid() to convert from scalar to grid
     #-----------------------------------------------
-    # grid = numpy.float32(0)
+    # grid = np.float32(0)
     
     #----------------------------------
     # Add some test grids to the file
@@ -111,7 +112,7 @@ def save_ncgs_frame(ncgs_file_name=None, rtg_file_name=None):
     grid = ncgs.get_grid( grid_name, time_index )
     ncgs.close()
     
-    grid = numpy.array( grid )
+    grid = np.array( grid )
     print 'min(grid), max(grid) =', grid.min(), grid.max()
 
     rtg_unit = open( rtg_file_name, 'wb' )
@@ -122,25 +123,25 @@ def save_ncgs_frame(ncgs_file_name=None, rtg_file_name=None):
 #-------------------------------------------------------------------
 class ncgs_file():
 
-    #----------------------------------------------------------
+    #------------------------------------------------------
     # Note:  ncgs = NetCDF Grid Stack (used by CSDMS)
     #
-    #        (10/9/10) Added check_nio_for_netcdf() function
-    #        in model_output.py that each component can call
+    #        (10/9/10) Added check_netcdf() function in
+    #        model_output.py that each component can call
     #        in its open_output_files() method.
-    #----------------------------------------------------------
-    def import_nio(self):
+    #------------------------------------------------------
+    def import_netCDF4(self):
 
         try:
-            import Nio  # (a module in the PyNIO package) 
-            # print 'Imported Nio version: ' + Nio.__version__
-            return Nio
+            import netCDF4
+            # print 'Imported netCDF4 version: ' + netCDF4.__version__
+            return netCDF4
         except:
-##            python_version = sys.version[:3]
 ##            print ' '
 ##            print 'SORRY, Cannot write netCDF files because'
-##            print 'the "Nio" package cannot be imported.'
+##            print 'the "netCDF4" package cannot be imported.'
 ##            print ' '
+##            python_version = sys.version[:3]
 ##            if (python_version != '2.6'):
 ##                print 'Note that "PyNIO" is only installed for'
 ##                print 'Python version 2.6 on "beach".'
@@ -148,21 +149,15 @@ class ncgs_file():
 ##                print ' '
             return False
         
-    #   import_nio()
+    #   import_netCDF4()
     #----------------------------------------------------------
     def open_file(self, file_name):
-
-        #--------------------------------------------------
-        # Try to import the Nio module from PyNIO package
-        #--------------------------------------------------
-        Nio = self.import_nio()
-        if not(Nio): return
-        
+      
         #-------------------------
         # Open file to read only
         #-------------------------
         try:
-            ncgs_unit = Nio.open_file(file_name, mode="r")
+            ncgs_unit = nc.Dataset(file_name, mode='r')
             self.ncgs_unit = ncgs_unit
             ### return ncgs_unit
             return True
@@ -257,27 +252,39 @@ class ncgs_file():
         
     #   check_and_store_info()
     #----------------------------------------------------------
-    def get_nio_type_map(self):
+    def get_dtype_map(self):
 
         #----------------------------------------
-        # Possible settings for "nio_type_code"
+        # Possible settings for "dtype_code"
+        #----------------------------------------------------
+        # These two-char codes are used for netCDF4 package
+        #----------------------------------------------------
+        # See:  http://unidata.github.io/netcdf4-python/
+        #----------------------------------------------------
+        dtype_map = {'float64':'f8', 'float32':'f4',
+                     'int64':'i8', 'int32':'i4',
+                     'int16':'i2', 'int8':'i1',
+                     'S|100':'S1'}  # ( ????? )       
+        
+        #-------------------------------------------------
+        # These one-char codes are used for Nio in PyNIO
+        #-------------------------------------------------
+        # dtype_code = "d"  # (double, Float64)
+        # dtype_code = "f"  # (float,  Float32)
+        # dtype_code = "l"  # (long,   Int64)
+        # dtype_code = "i"  # (int,    Int32)
+        # dtype_code = "h"  # (short,  Int16)
+        # dtype_code = "b"  # (byte,   Int8)
+        # dtype_code = "S1" # (char)
         #-------------------------------------------
-        # nio_type_code = "d"  # (double, Float64)
-        # nio_type_code = "f"  # (float,  Float32)
-        # nio_type_code = "l"  # (long,   Int64)
-        # nio_type_code = "i"  # (int,    Int32)
-        # nio_type_code = "h"  # (short,  Int16)
-        # nio_type_code = "b"  # (byte,   Int8)
-        # nio_type_code = "S1" # (char)
-        #-------------------------------------------
-        nio_type_map = {'float64':'d', 'float32':'f',
-                        'int64':'l', 'int32':'i',
-                        'int16':'s', 'int8':'b',
-                        'S|100':'S1'}  # (check last entry)                      
+#         dtype_map = {'float64':'d', 'float32':'f',
+#                         'int64':'l', 'int32':'i',
+#                         'int16':'s', 'int8':'b',
+#                         'S|100':'S1'}  # (check last entry)                      
 
-        return nio_type_map
+        return dtype_map
     
-    #   get_nio_type_map()
+    #   get_dtype_map()
     #----------------------------------------------------------
     def open_new_file(self, file_name, info=None,
                       var_name='X',
@@ -288,12 +295,6 @@ class ncgs_file():
                       time_units='minutes',
                       comment='',
                       MAKE_RTI=True, MAKE_BOV=False):
-     
-        #--------------------------------------------------
-        # Try to import the Nio module from PyNIO package
-        #--------------------------------------------------
-        Nio = self.import_nio()
-        if not(Nio): return False
 
         #----------------------------
         # Does file already exist ?
@@ -311,35 +312,45 @@ class ncgs_file():
         self.units_name = units_name
         self.dtype      = dtype
 
-        #-------------------------
-        # Save the Nio type code
-        #-------------------------
-        nio_type_map  = self.get_nio_type_map()
-        nio_type_code = nio_type_map[ dtype.lower() ]
-        self.nio_type_code = nio_type_code
-        
+        #-----------------------------------
+        # Save the two-char data type code
+        #-----------------------------------
+        dtype_map  = self.get_dtype_map()
+        dtype_code = dtype_map[ dtype.lower() ]
+        self.dtype_code = dtype_code
+
         #-------------------------------------
         # Open a new netCDF file for writing
-        #-------------------------------------
-        # Sample output from time.asctime():
-        #     "Thu Oct  8 17:10:18 2009"
-        #-------------------------------------
-        opt = Nio.options()
-        opt.PreFill = False            # (for efficiency)
-        opt.HeaderReserveSpace = 4000  # (4000 bytes, for efficiency)
-        history = "Created using PyNIO " + Nio.__version__ + " on "
-        history = history + time.asctime() + ". " 
-        history = history + comment
-        # print 'MADE IT PAST history BLOCK'
-        
+        #-------------------------------------        
         try:
-            ncgs_unit = Nio.open_file(file_name, mode="w",
-                                      options=opt, history=history )
+            ## format = 'NETCDF4'
+            format = 'NETCDF4_CLASSIC'
+            ncgs_unit = nc.Dataset(file_name, mode='w', format=format)
             OK = True
         except:
             OK = False
             return OK
 
+        #------------------------------------------------------------
+        # Option to pre-fill with fill values
+        # Set fill_value for a var with "var._Fill_Value = number"
+        # For Nio was:  opt.PreFill = False # (for efficiency)
+        #------------------------------------------------------------
+        ncgs_unit.set_fill_off()
+        # ncgs_unit.set_fill_on()
+        
+        #-------------------------------------
+        # Prepare and save a history string
+        #-------------------------------------
+        # Sample output from time.asctime():
+        #     "Thu Oct  8 17:10:18 2009"
+        #-------------------------------------
+        history = "Created using netCDF4 " + nc.__version__ + " on "
+        history = history + time.asctime() + ". " 
+        history = history + comment
+        ncgs_unit.history = history
+        # print 'MADE IT PAST history BLOCK'
+        
 ##        print 'nx =', self.info.ncols
 ##        print 'ny =', self.info.nrows
 ##        print 'dx =', self.info.xres
@@ -352,48 +363,49 @@ class ncgs_file():
         # Without using "int()" here, we get this:
         #     TypeError: size must be None or integer
         #----------------------------------------------
-        ncgs_unit.create_dimension("nx", int(self.info.ncols))
-        ncgs_unit.create_dimension("ny", int(self.info.nrows))
-        ncgs_unit.create_dimension("time", None)   # (unlimited dimension)
+        ncgs_unit.createDimension('nx', int(self.info.ncols))
+        ncgs_unit.createDimension('ny', int(self.info.nrows))
+        ncgs_unit.createDimension('time', None)   # (unlimited dimension)
         # print 'MADE IT PAST create_dimension CALLS.'
         
         #-------------------------
         # Create a time variable
         #------------------------------------------
         #('d' = float64; must match in add_grid()
+        # In netCDF4 package, use 'f8' vs. 'd'.
         #------------------------------------------
-        tvar = ncgs_unit.create_variable('time', 'd', ("time",))
-        ncgs_unit.variables['time'].units = time_units
+        tvar = ncgs_unit.createVariable('time', 'f8', ('time',))
+        tvar.units = time_units
+        ### ncgs_unit.variables['time'].units = time_units
         
         #--------------------------------
         # Create a variable in the file
-        #----------------------------------
-        # Returns "var" as a PyNIO object
-        #----------------------------------
-        var = ncgs_unit.create_variable(var_name, nio_type_code,
-                                        ("time", "ny", "nx"))
-        ## var = nc_unit.create_variable(var_name, nio_type_code,
-        ##            ("time", "nx", "ny"))
+        #--------------------------------
+        var = ncgs_unit.createVariable(var_name, dtype_code,
+                                        ('time', 'ny', 'nx'))
 
+        #----------------------------------
+        # Specify a "nodata" fill value ?
+        #----------------------------------
+        # var._Fill_Value = -9999.0    ## Used for pre-fill above ?
+        
         #-------------------------------------------
         # Create a separate, scalar "time stamp" ?
         #-------------------------------------------
-        # t = nc_unit.create_variable("time", nio_type_code, ("time"))
+        # t = nc_unit.createVariable('time', dtype_code, ('time'))
         
         #----------------------------------
         # Specify a "nodata" fill value ?
         #----------------------------------
-        var._FillValue = -9999.0    ## Does this jive with Prefill above ??
+#         var._FillValue = -9999.0    ## Was used for Nio.
         
         #------------------------------------
         # Create attributes of the variable
         #------------------------------------
-        ncgs_unit.variables[var_name].long_name = long_name
-        ncgs_unit.variables[var_name].units     = units_name
-        ncgs_unit.variables[var_name].dx        = self.info.xres
-        ncgs_unit.variables[var_name].dy        = self.info.yres  ### (12/2/09)
-##        ncgs_unit.variables[var_name].dx        = dx
-##        ncgs_unit.variables[var_name].dy        = dy  ### (10/15/09)
+        ncgs_unit.variables[var_name].long_name    = long_name
+        ncgs_unit.variables[var_name].units        = units_name
+        ncgs_unit.variables[var_name].dx           = self.info.xres
+        ncgs_unit.variables[var_name].dy           = self.info.yres  ### (12/2/09)
         ncgs_unit.variables[var_name].y_south_edge = self.info.y_south_edge
         ncgs_unit.variables[var_name].y_north_edge = self.info.y_north_edge
         ncgs_unit.variables[var_name].x_west_edge  = self.info.x_west_edge
@@ -421,24 +433,24 @@ class ncgs_file():
         if (time_index == -1):
             time_index = self.time_index
         if (time == None):
-            time = numpy.float64( time_index )
+            time = np.float64( time_index )
             
         #---------------------------------------
         # Write a time to existing netCDF file
         #---------------------------------------
         times = self.ncgs_unit.variables[ 'time' ]
-        times[ time_index ] = time
+        times[ time_index ] = time  ############################ CHECK
         
         #---------------------------------------
         # Write a grid to existing netCDF file
         #---------------------------------------
         var = self.ncgs_unit.variables[ grid_name ]
-        if (numpy.rank(grid) == 0):
+        if (np.rank(grid) == 0):
             #-----------------------------------------------
             # "grid" is actually a scalar (dynamic typing)
             # so convert it to a grid before saving
             #-----------------------------------------------
-            grid2 = grid + numpy.zeros([self.ny, self.nx],
+            grid2 = grid + np.zeros([self.ny, self.nx],
                                        dtype=self.dtype)
             var[ time_index ] = grid2.astype(self.dtype)
         else:
@@ -474,12 +486,14 @@ class ncgs_file():
     #-------------------------------------------------------------------
     def close_file(self):
 
+        # self.ncgs_unit.sync()  ## (netCDF4 has no "flush")
         self.ncgs_unit.close()
 
     #   close_file()
     #-------------------------------------------------------------------
     def close(self):
 
+        # self.ncgs_unit.sync()  ## (netCDF4 has no "flush")
         self.ncgs_unit.close()
 
     #   close()

@@ -198,12 +198,7 @@ class d8_component( d8_base.d8_component ):
         dx = self.dx[0]
         dy = self.dy[0]
         dd = self.dd[0]
-
-        #-----------------------------------------------------
-        # Get a depression-filled DEM via the "erosion" port
-        #-----------------------------------------------------
-        ## DEM = self.get_port_data('DEM',  self.ep, 'EROSION')
-        
+ 
         #--------------------------------------------------------------
         # Note: DEM may be passed to this function but may also
         # have been read from DEM_file in initialize_computed_vars().

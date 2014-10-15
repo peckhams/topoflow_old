@@ -129,149 +129,138 @@ class infil_component(infil_base.infil_component):
         'time_units':         'seconds' }
     
     _input_var_names = [
-        'atmosphere_water__liquid_equivalent_precipitation_rate',  # P
-        'glacier__melt_rate',                     # (MR)
-        'land_surface__elevation',                # (elev)
-        'land_water__evaporation_rate',           # (ET)
-        'snow__melt_rate',                        # (SM)
-        'soil_water_table_surface__elevation' ]   # (h_table)               
+        'atmosphere_water__rainfall_volume_flux',           # (P_rain)  
+        'glacier_ice__melt_volume_flux',                    # (MR)
+        'land_surface__elevation',                          # (elev)
+        'land_surface_water__evaporation_volume_flux',      # (ET)
+        'snowpack__melt_volume_flux',                       # (SM)
+        'soil_water_sat-zone_top_surface__elevation' ]      # (h_table)               
 
     #-----------------------------------------------------------
     # We use "bubbling_pressure_head" vs. "air_entry_pressure"
     # because base quantity is "head" with units of length.
     # We could use "air_entry_pressure_head", though.
     #-----------------------------------------------------------
-    # It seems better to use "modified_brooks_corey" instead
-    # of "transitional_brooks_corey" used by Smith.
-    # Or perhaps: "brooks_corey_smith" ??
-    #-----------------------------------------------------------
-    #    soil__van_genuchten_alpha_parameter
-    #    soil__van_genuchten_m_parameter
-    #    soil__van_genuchten_n_parameter
-    #-----------------------------------------------------------
-    # "soil_water__volume_fraction" vs.
-    # "soil__water_content"
-    #-----------------------------------------------------------
-    # "soil_water" or "underground_water" or "water_in_soil"
-    # or "ground_water" or "subsurface_water" or ???
-    #-----------------------------------------------------------
     # We may want to make some of these available by layer.
-    #-----------------------------------------------------------
+    #-------------------------------------------------------------------
+    # lambda = brooks-corey pore-size distribution parameter
+    # b      = brooks-corey pore-size distribution index" = 1 / lambda
+    # c      = brooks-corey-smith pore connectedness index
+    #        = (eta / lambda) = (2*b + 3)
+    #-------------------------------------------------------------------
+    # See infil_base.set_constants() for how these constants are set:
+    #   psi_oven_dry, psi_air_dry, psi_min, psi_hygro,
+    #   psi_wilt and psi_field.
+    #-------------------------------------------------------------------
+    # porosity is set in soil_base.py.  #####################
+    #-------------------------------------------------------------------           
     _output_var_names = [
-        'land_water__infiltration_rate',  # IN
-        'land_water__area_time_integral_of_infiltration_rate', # vol_IN
-           ## 'model_grid_cell__area',           # da
-        'model__time_step',                      # dt
-        'soil__brooks_corey_eta_parameter',
-           ## 'soil__brooks_corey_lambda_inverse_parameter',  # "b"
-        'soil__brooks_corey_lambda_parameter',
-           ## 'soil__brooks_corey_pore_size_distribution_parameter',
-           ## 'soil__porosity'
-        'soil__brooks_corey_smith_c_parameter',
-        'soil__brooks_corey_smith_pressure_head_offset_parameter',
-           ## 'soil_water__downward_flow_rate',
-           ## 'soil_water__air_entry_pressure_head',
-        'soil_water__bubbling_pressure_head',
-        'soil_water__downward_volume_flux',
-        # 'soil_water__field_capacity_volume_fraction',
-        'soil_water__hydraulic_conductivity',
-        'soil_water__initial_hydraulic_conductivity',
-        'soil_water__initial_volume_fraction',
-        'soil_water__pressure_head',
-        'soil_water__hygroscopic_volume_fraction',
-        # 'soil_water__relative_hydraulic_conductivity',  # (or "ratio" ??)
-        'soil_water__residual_volume_fraction',
-        'soil_water__saturated_hydraulic_conductivity',
-        'soil_water__saturated_volume_fraction',
-        'soil_water_table__area_time_integral_of_recharge_rate',  # vol_Rg
-        'soil_water_table__recharge_rate',    # Rg
-        # 'soil_water__normalized_volume_fraction',
-        'soil_water__volume_fraction',
-        # 'soil_water__wilting_point_volume_fraction',
-        'soil_water__wetting_front_depth' ]  # Zw
-
-############################
-# Add q0 to output_vars
-############################
+        'model__time_step',                                # dt
+        # 'model_grid_cell__area',                         # da
+        # 'soil__porosity',                                # phi
+        'soil_surface_water__domain_time_integral_of_infiltration_volume_flux', # vol_IN
+        'soil_surface_water__infiltration_volume_flux',    # IN
+        'soil_surface_water__volume_fraction',             # q0
+        # 'soil_water__brooks-corey_b_parameter',          # b
+        'soil_water__brooks-corey_eta_parameter',          # eta
+        'soil_water__brooks-corey_lambda_parameter',       # lam
+        'soil_water__brooks-corey-smith_c_parameter',      # c
+        'soil_water__brooks-corey-smith_pressure_head_offset_parameter',  # pA
+        'soil_water__bubbling_pressure_head',              # pB
+        # 'soil_water__field-capacity_volume_fraction',    # qf  ######## CHECK
+        'soil_water__hydraulic_conductivity',              # K
+        'soil_water__hygroscopic_volume_fraction',         # qH
+        'soil_water__initial_hydraulic_conductivity',      # Ki
+        'soil_water__initial_volume_fraction',             # qi
+        # 'soil_water__normalized_volume_fraction',        # S_eff
+        'soil_water__pressure_head',                       # p
+        # 'soil_water__relative_hydraulic_conductivity',   # K_rel
+        'soil_water__residual_volume_fraction',            # qr
+        'soil_water__saturated_hydraulic_conductivity',    # Ks
+        'soil_water__saturated_volume_fraction',           # qs
+        'soil_water__volume_fraction',                     # q
+        # 'soil_water__wilting-point_volume_fraction',     # qw
+        'soil_water_flow__z_component_of_darcy_velocity',  # v
+        'soil_water_sat-zone_top__domain_time_integral_of_recharge_volume_flux',  # vol_Rg
+        'soil_water_sat-zone_top__recharge_volume_flux',   # Rg
+        'soil_water_wetting-front__depth' ]                # Zw
 
     _var_name_map = {
-        'atmosphere_water__liquid_equivalent_precipitation_rate': 'P',
-        'glacier__melt_rate':                  'MR',
-        'land_surface__elevation':             'elev',
-        'land_water__evaporation_rate':        'ET',
-        'snow__melt_rate':                     'SM',
-        'soil_water_table_surface__elevation': 'h_table',
-        #---------------------------------------------------------
-        'land_water__infiltration_rate': 'IN',
-        'land_water__area_time_integral_of_infiltration_rate': 'vol_IN',
-        ## 'model_grid_cell__area': 'da', 
-        'model__time_step': 'dt',
-        'soil__brooks_corey_eta_parameter': 'eta',
-           ## 'soil__brooks_corey_lambda_inverse_parameter': 'b',
-        'soil__brooks_corey_lambda_parameter': 'lam',
-           ## 'soil__brooks_corey_pore_size_distribution_parameter': 'lam',
-           ## 'soil__porosity': 'phi',
-        'soil__brooks_corey_smith_c_parameter': 'c',
-        'soil__brooks_corey_smith_pressure_head_offset_parameter': 'pA',
-           ## 'soil_water__air_entry_pressure_head': 'pB',
-        'soil_water__bubbling_pressure_head': 'pB',
-        'soil_water__downward_volume_flux': 'v',
-        # 'soil_water__field_capacity_volume_fraction': 'qf', ######
-        'soil_water__hydraulic_conductivity': 'K',
-        'soil_water__initial_hydraulic_conductivity': 'Ki',
-        'soil_water__initial_volume_fraction': 'qi',
-        'soil_water__pressure_head': 'p',
-        'soil_water__hygroscopic_volume_fraction': 'qH',
-        # 'soil_water__relative_hydraulic_conductivity':'Krel',  # (or "ratio" ??)
-        'soil_water__residual_volume_fraction': 'qr',
-        'soil_water__saturated_hydraulic_conductivity': 'Ks',
-        'soil_water__saturated_volume_fraction': 'qs',
-        'soil_water_table__area_time_integral_of_recharge_rate': 'vol_Rg',
-        'soil_water_table__recharge_rate': 'Rg',
-        # 'soil_water__normalized_volume_fraction',
-        'soil_water__volume_fraction': 'q',
-        # 'soil_water__wilting_point_volume_fraction':'qw',
-        'soil_water__wetting_front_depth': 'Zw' }
+        'atmosphere_water__rainfall_volume_flux':          'P_rain',
+        'glacier_ice__melt_volume_flux':                   'MR',
+        'land_surface__elevation':                         'elev',
+        'land_surface_water__evaporation_volume_flux':     'ET',
+        'snowpack__melt_volume_flux':                      'SM',
+        'soil_water_sat-zone_top_surface__elevation':      'h_table',
+        #--------------------------------------------------------------
+        'model__time_step':                                'dt',
+        ## 'model_grid_cell__area':                        'da', 
+        # 'soil__porosity':                                'phi',
+        'soil_surface_water__domain_time_integral_of_infiltration_volume_flux': 'vol_IN',
+        'soil_surface_water__infiltration_volume_flux':    'IN',
+        'soil_surface_water__volume_fraction':             'q0',
+        # 'soil_water__brooks-corey_b_parameter':          'b',
+        'soil_water__brooks-corey_eta_parameter':          'eta',
+        'soil_water__brooks-corey_lambda_parameter':       'lam',
+        'soil_water__brooks-corey-smith_c_parameter':      'c',
+        'soil_water__brooks-corey-smith_pressure_head_offset_parameter': 'pA',      
+        'soil_water__bubbling_pressure_head':              'pB',
+        # 'soil_water__field-capacity_volume_fraction':    'qf',  ######  CHECK
+        'soil_water__hydraulic_conductivity':              'K',
+        'soil_water__hygroscopic_volume_fraction':         'qH',
+        'soil_water__initial_hydraulic_conductivity':      'Ki',
+        'soil_water__initial_volume_fraction':             'qi',
+        # 'soil_water__normalized_volume_fraction',        'S_eff',
+        'soil_water__pressure_head':                       'p',
+        # 'soil_water__relative_hydraulic_conductivity':   'K_rel',
+        'soil_water__residual_volume_fraction':            'qr',
+        'soil_water__saturated_hydraulic_conductivity':    'Ks',
+        'soil_water__saturated_volume_fraction':           'qs',
+        'soil_water__volume_fraction':                     'q',
+        # 'soil_water__wilting-point_volume_fraction':     'qw',
+        'soil_water_flow__z_component_of_darcy_velocity':  'v',
+        'soil_water_sat-zone_top__domain_time_integral_of_recharge_volume_flux': 'vol_Rg',
+        'soil_water_sat-zone_top__recharge_volume_flux':   'Rg',
+        'soil_water_wetting-front__depth':                 'Zw' }
 
     _var_units_map = {
-        'atmosphere_water__liquid_equivalent_precipitation_rate': 'm s-1',
-        'glacier__melt_rate':                  'm s-1',
-        'land_surface__elevation':             'm',
-        'land_water__evaporation_rate':        'm s-1',
-        'snow__melt_rate':                     'm s-1',
-        'soil_water_table_surface__elevation': 'm',
-        #---------------------------------------------------------
-        'land_water__infiltration_rate': 'm s-1',
-        'land_water__area_time_integral_of_infiltration_rate': 'm3',
-        ## 'model_grid_cell__area': 'm2', 
-        'model__time_step': 's',
-        'soil__brooks_corey_eta_parameter': '1',
-           ## 'soil__brooks_corey_lambda_inverse_parameter': '1',
-        'soil__brooks_corey_lambda_parameter': '1',
-           ## 'soil__brooks_corey_pore_size_distribution_parameter': '1',
-           ## 'soil__porosity': '1',
-        'soil__brooks_corey_smith_c_parameter': '1',
-        'soil__brooks_corey_smith_pressure_head_offset_parameter': 'm',
-           ## 'soil_water__air_entry_pressure_head': 'm',
+        'atmosphere_water__rainfall_volume_flux':          'm s-1',   
+        'glacier_ice__melt_volume_flux':                   'm s-1',
+        'land_surface__elevation':                         'm',
+        'land_surface_water__evaporation_volume_flux':     'm s-1',
+        'snowpack__melt_volume_flux':                      'm s-1',
+        'soil_water_sat-zone_top_surface__elevation':      'm',
+        #------------------------------------------------------------
+        'model__time_step': 's',     ############## CHECK
+        # 'model_grid_cell__area': 'm2',
+        # 'soil__porosity': '1',
+        'soil_surface_water__domain_time_integral_of_infiltration_volume_flux': 'm3',
+        'soil_surface_water__infiltration_volume_flux': 'm s-1',
+        'soil_surface_water__volume_fraction': '1',
+        # 'soil_water__brooks-corey_b_parameter': '1', 
+        'soil_water__brooks-corey_eta_parameter': '1',
+        'soil_water__brooks-corey_lambda_parameter': '1',
+        'soil_water__brooks-corey-smith_c_parameter': '1',
+        'soil_water__brooks-corey-smith_pressure_head_offset_parameter': 'm',     
         'soil_water__bubbling_pressure_head': 'm',
-        'soil_water__downward_volume_flux': 'm s-1',
-        # 'soil_water__field_capacity_volume_fraction': '1',
+        # 'soil_water__field-capacity_volume_fraction': '1',
         'soil_water__hydraulic_conductivity': 'm s-1',
         'soil_water__initial_hydraulic_conductivity': 'm s-1',
         'soil_water__initial_volume_fraction': '1',
         'soil_water__pressure_head': 'm',
         'soil_water__hygroscopic_volume_fraction': '1',
-        # 'soil_water__relative_hydraulic_conductivity',  # (or "ratio" ??)
+        # 'soil_water__normalized_volume_fraction': '1',
+        # 'soil_water__relative_hydraulic_conductivity': '1',
         'soil_water__residual_volume_fraction': '1',
         'soil_water__saturated_hydraulic_conductivity': 'm s-1',
         'soil_water__saturated_volume_fraction': '1',
-        'soil_water_table__area_time_integral_of_recharge_rate': 'm3',
-        'soil_water_table__recharge_rate': 'm s-1',
-        # 'soil_water__normalized_volume_fraction': '1',
         'soil_water__volume_fraction': '1',
-        # 'soil_water__wilting_point_volume_fraction': '1',
-        'soil_water__wetting_front_depth': 'm' }
-
+        # 'soil_water__wilting-point_volume_fraction': '1',
+        'soil_water_flow__z_component_of_darcy_velocity': 'm s-1',
+        'soil_water_sat-zone_top__domain_time_integral_of_recharge_volume_flux': 'm3',
+        'soil_water_sat-zone_top__recharge_volume_flux': 'm s-1',
+        'soil_water_wetting-front__depth': 'm' }
+        
     #------------------------------------------------    
     # Return NumPy string arrays vs. Python lists ?
     #------------------------------------------------
@@ -325,7 +314,7 @@ class infil_component(infil_base.infil_component):
 ##        # So far, all vars have type "double",
 ##        # but use the one in BMI_base instead.
 ##        #---------------------------------------
-##        return 'double'
+##        return 'float64'
 ##    
 ##    #   get_var_type()
     #-------------------------------------------------------------------
@@ -345,7 +334,7 @@ class infil_component(infil_base.infil_component):
         # Get arrays to store soil params for each layer
         #-------------------------------------------------
         self.soil_type = np.zeros(n_layers, dtype='|S100')
-        self.dz_val    = np.zeros(n_layers, dtype='Float64')    #### + dz3
+        self.dz_val    = np.zeros(n_layers, dtype='float64')    #### + dz3
         self.nz_val    = np.zeros(n_layers, dtype='Int16')      #### + nz3
         #--------------------------------------------------------
         self.Ks_type   = np.zeros(n_layers, dtype='|S100')
@@ -376,20 +365,20 @@ class infil_component(infil_base.infil_component):
         # (5/19/10) Seems we need Ks_val vs Ks here, since
         # we use these to build one big, 3D Ks array.
         #---------------------------------------------------------        
-        self.Ks_val  = list( np.zeros(n_layers, dtype='Float64') )
-        self.Ki_val  = list( np.zeros(n_layers, dtype='Float64') )
-        self.qs_val  = list( np.zeros(n_layers, dtype='Float64') )
-        self.qi_val  = list( np.zeros(n_layers, dtype='Float64') )
-        self.qr_val  = list( np.zeros(n_layers, dtype='Float64') )
-        self.pB_val  = list( np.zeros(n_layers, dtype='Float64') )
-        self.pA_val  = list( np.zeros(n_layers, dtype='Float64') )
-        self.lam_val = list( np.zeros(n_layers, dtype='Float64') )
-        self.c_val   = list( np.zeros(n_layers, dtype='Float64') )
+        self.Ks_val  = list( np.zeros(n_layers, dtype='float64') )
+        self.Ki_val  = list( np.zeros(n_layers, dtype='float64') )
+        self.qs_val  = list( np.zeros(n_layers, dtype='float64') )
+        self.qi_val  = list( np.zeros(n_layers, dtype='float64') )
+        self.qr_val  = list( np.zeros(n_layers, dtype='float64') )
+        self.pB_val  = list( np.zeros(n_layers, dtype='float64') )
+        self.pA_val  = list( np.zeros(n_layers, dtype='float64') )
+        self.lam_val = list( np.zeros(n_layers, dtype='float64') )
+        self.c_val   = list( np.zeros(n_layers, dtype='float64') )
         #------------------------------------------------
         # Note:  These two are computed from the others
         #------------------------------------------------
-        self.eta_val = list( np.zeros(n_layers, dtype='Float64') )
-        self.qH_val  = list( np.zeros(n_layers, dtype='Float64') )
+        self.eta_val = list( np.zeros(n_layers, dtype='float64') )
+        self.qH_val  = list( np.zeros(n_layers, dtype='float64') )
        
     #   initialize_layer_vars()
     #-------------------------------------------------------------------
@@ -440,7 +429,7 @@ class infil_component(infil_base.infil_component):
         #        in update_surface_influx().
         #----------------------------------------------------
         are_scalars = np.array([
-                         self.is_scalar('P'),
+                         self.is_scalar('P_rain'),
                          self.is_scalar('SM'),
                          self.is_scalar('ET'),  #########
                          #----------------------------------
@@ -463,11 +452,6 @@ class infil_component(infil_base.infil_component):
         # so it shouldn't appear in "infil_base.py".
         #---------------------------------------------
         self.SINGLE_PROFILE = self.ALL_SCALARS  # (3/19/07)
-
-##        print "#### self.mp.is_scalar('P')  =", self.mp.is_scalar('P')
-##        print "#### self.sp.is_scalar('SM') =", self.sp.is_scalar('SM')
-##        print "#### self.ep.is_scalar('ET') =", self.ep.is_scalar('ET')    
-##        print '#### In check_input_types(), ALL_SCALARS =', self.ALL_SCALARS
         
     #   check_input_types()
     #-------------------------------------------------------------------
@@ -477,7 +461,7 @@ class infil_component(infil_base.infil_component):
         #  NB! The "P" synonym for "rate" doesn't work here.
         #      Maybe defined in the wrong place ??
         ########################################################
-        dtype = 'Float64'
+        dtype = 'float64'
         
         #---------------------------------------
         # Get surface influx to initialize "v"
@@ -551,14 +535,14 @@ class infil_component(infil_base.infil_component):
             #--------------------------------------------------
             # Create array of indices.  See build_layered_var
             #--------------------------------------------------
-            i = concatenate(([int32(0)], int32(cumsum(self.nz_val))) )
+            i = np.concatenate(([np.int32(0)], np.int32(np.cumsum(self.nz_val))) )
             for j in xrange(self.n_layers):
                 self.dz[ i[j]: i[j+1]-1 ] = self.dz_val[j]
 
         #----------------------------------------------
         # Compute the z-vector, for plotting profiles
         #----------------------------------------------
-        dz = repeat(self.dz_val[0], self.nz_val[0])  # (1D ndarray)
+        dz = np.repeat(self.dz_val[0], self.nz_val[0])  # (1D ndarray)
         for j in xrange(1, self.n_layers):
             layer_dz = self.dz_val[j]
             layer_nz = self.nz_val[j]
@@ -581,10 +565,13 @@ class infil_component(infil_base.infil_component):
             self.p = np.zeros(self.nz, dtype=dtype)
             self.K = np.zeros(self.nz, dtype=dtype) + self.Ki
             self.v = np.zeros(self.nz, dtype=dtype)
-            #---------------------------------------------------
+            #---------------------------------------------------------
             self.IN = np.float64(0)   # (infil. rate at surface)
             self.I  = np.float64(0)   # (total infil. depth)
             self.Zw = np.float64(0)   # (wetting front depth)
+            #---------------------------------------------------------
+            # Initialize I to 1e-6 to avoid divide by zero at start?
+            #---------------------------------------------------------
 ##            self.I  = np.float64(1e-6)   # (total infil. depth)
 ##            self.Zw = np.float64(1e-6)   # (wetting front depth)
 
@@ -708,7 +695,7 @@ class infil_component(infil_base.infil_component):
                              self.qs, self.qr, \
                              self.pB, self.pA, \
                              self.c,  self.lam )
-        
+                                                
     #   initialize_theta_i()
     #-------------------------------------------------------------------
     def initialize_K_i(self):
@@ -765,7 +752,6 @@ class infil_component(infil_base.infil_component):
             # If we trust theta_r, then do this instead
             #--------------------------------------------
             theta_res = self.qr_val[k]
-            
 
             theta_hygro = Theta_TBC( self.psi_hygro,
                                      self.qs_val[k],
@@ -800,7 +786,7 @@ class infil_component(infil_base.infil_component):
             print '   theta_H =', theta_hygro, '  vs.', theta_r, ' (theta_r)'
             print ' '
             
-        print '====================================================='                                                
+        print '==========================================================='                                                
         
     #   print_suggested_values()
     #-------------------------------------------------------------------
@@ -875,21 +861,20 @@ class infil_component(infil_base.infil_component):
 
         if (self.DEBUG):
             print 'Calling update_surface_influx()...'
-            
-        # P  = self.get_port_data('P',  self.mp, 'METEOROLOGY')
-        # SM = self.get_port_data('SM', self.sp, 'SNOW')
-        # ET = self.get_port_data('ET', self.ep, 'EVAP')
 
         #------------------------------------        
         # These are now embedded references
         #------------------------------------
-        P  = self.P
-        SM = self.SM
-        ET = self.ET
+        P_rain = self.P_rain
+        SM     = self.SM
+        ET     = self.ET
         ## print 'min(ET), max(ET) =', ET.min(), ET.max()
-        
-        ### self.P_total = (P + SM)
-        self.P_total = (P + SM) - ET
+
+        ###############################        
+        # What if this is negative ?
+        ###############################
+        self.P_total = (P_rain + SM) - ET
+        ### self.P_total = (P_rain + SM)
 
     #   update_surface_influx()
     #-----------------------------------------------------------------------
@@ -924,33 +909,65 @@ class infil_component(infil_base.infil_component):
         # Set psi at the surface boundary
         #----------------------------------
         if (self.SINGLE_PROFILE):
+            r = self.P_total
             if (self.q[0] < self.qs[0]):
-            ## if (self.p[0] < 0):
-                r         = self.P_total
+                #------------------------------
+                # Top layer is not saturated.
+                #------------------------------
                 Kbar      = (self.K[0] + self.K[1]) / 2.0  ################
                 self.p[0] = ((r / Kbar) - 1) * dz + self.p[1]
             else:
+                #--------------------------
+                # Top layer is saturated.
+                #--------------------------
                 self.p[0] = 0.0
+                Kbar      = r   # (just for report at end)
         else:
-            w1 = np.where( self.q[0,:,:] <  self.qs[0,:,:] )
-            w2 = np.where( self.q[0,:,:] >= self.qs[0,:,:] )
-            ## w1 = np.where( self.p[0,:,:] <  0)
-            ## w2 = np.where( self.p[0,:,:] >= 0 )
-            n1 = w1[0].size
-            n2 = w2[0].size
-            ## n2 = (self.rti.n_pixels - n1)
-            
             p0   = self.p[0,:,:]
             p1   = self.p[1,:,:]
             Kbar = (self.K[0,:,:] + self.K[1,:,:]) / 2.0  ##############
 
-            if (n1 != 0):
-                r      = self.P_total[ w1 ]
-                p0[w1] = ((r / Kbar[w1]) - 1) * dz + p1[w1]
-            if (n2 != 0):
-                p0[w2] = 0.0
-            self.p[0,:,:] = p0
+            #-------------------------------------
+            # Where is top layer NOT saturated ?
+            #-------------------------------------
+            ## w1 = np.where( self.p[0,:,:] <  0)
+            #-----------------------------------------------------
+            # This makes w1 an array of True or False and should
+            # be faster.  Don't need to check if w1 is empty.
+            #-----------------------------------------------------
+            w1 = ( self.q[0,:,:] <  self.qs[0,:,:] )
+            r      = self.P_total[ w1 ]  ########
+            p0[w1] = ((r / Kbar[w1]) - 1) * dz + p1[w1]            
+            #----------------------------------- 
+            # This uses WHERE in the usual way
+            #-----------------------------------           
+#             w1 = np.where( self.q[0,:,:] <  self.qs[0,:,:] )
+#             n1 = w1[0].size     
+#             if (n1 != 0):
+#                 r      = self.P_total[ w1 ]  ########
+#                 p0[w1] = ((r / Kbar[w1]) - 1) * dz + p1[w1]
 
+            #---------------------------------
+            # Where is top layer saturated ?
+            #---------------------------------
+            ## w2 = np.where( self.p[0,:,:] >= 0 ) 
+            #-------------------------------------------------- 
+            w2 = ( self.q[0,:,:] >= self.qs[0,:,:] )
+            p0[w2] = 0.0
+            #----------------------------------- 
+            # This uses WHERE in the usual way
+            #-----------------------------------                 
+#             w2 = np.where( self.q[0,:,:] >= self.qs[0,:,:] )
+#             n2 = w2[0].size
+#             ## n2 = (self.rti.n_pixels - n1)                
+#             if (n2 != 0):
+#                 p0[w2] = 0.0
+
+            #----------------------------------                
+            # Set pressure head for top layer
+            #----------------------------------
+            self.p[0,:,:] = p0
+                                 
         #------------------------------------
         # Set theta at the surface boundary
         #------------------------------------
@@ -978,8 +995,8 @@ class infil_component(infil_base.infil_component):
         #----------------
         # For debugging
         #----------------
-        ## if (self.DEBUG and self.SINGLE_PROFILE):
-        if (True):
+        ## if (self.SINGLE_PROFILE):
+        if (self.DEBUG and self.SINGLE_PROFILE):
             print 'In update_surface_BC():'
             print 'psi[0], theta[0] =', self.p[0], ', ', self.q[0]
             print 'psi[1] =', self.p[1]
@@ -1075,8 +1092,8 @@ class infil_component(infil_base.infil_component):
         #----------------
         # For debugging
         #----------------
-        ## if (self.DEBUG and self.SINGLE_PROFILE):
-        if (True):
+        ## if (self.SINGLE_PROFILE):
+        if (self.DEBUG and self.SINGLE_PROFILE):
             print 'In update_bottom_BC():'
             print 'psi[m], theta[m] =', self.p[m], ', ', self.q[m]
             print ' '
@@ -1283,6 +1300,14 @@ class infil_component(infil_base.infil_component):
             cpow   = (-self.c / self.lam)
             arg    = ((S_eff ** cpow )- 1.0) ** (1.0 / self.c)
             self.p = (self.pB * arg) - self.pA
+            
+			#------------------------------------------------------
+			# S_eff = effective saturation or normalized vol frac
+			# Could be shared, but requires more storage.
+			# b = brooks-corey_b_parameter = 1 / lambda.
+			#------------------------------------------------------
+			## self.S_eff = S_eff
+			## self.b = 1 / self.lam
         else:    
             #--------------------------------------
             # Each var is either a 1D or 3D array
@@ -1330,6 +1355,14 @@ class infil_component(infil_base.infil_component):
                 arg   = ((S_eff ** cpow) - 1.0) ** (1.0 / c)  #(grid)
                 self.p[j,:,:] = (pB * arg) - pA               #(grid)
 
+				#------------------------------------------------------
+				# S_eff = effective saturation or normalized vol frac
+				# Could be shared, but requires more storage.
+				# b = brooks-corey_b_parameter = 1 / lambda.
+				#------------------------------------------------------
+				## self.S_eff = S_eff
+				## self.b = 1 / lam
+        
         if (self.DEBUG):
             print 'min(p), max(p) =', self.p.min(), self.p.max()
         
@@ -1341,8 +1374,8 @@ class infil_component(infil_base.infil_component):
             print 'psi   = ', self.p[0:3]
             #print,' '
 
-        ## if (self.DEBUG and self.SINGLE_PROFILE):
-        if (True):
+        ## if (self.SINGLE_PROFILE):
+        if (self.DEBUG and self.SINGLE_PROFILE):
             m = (self.nz - 1)
             print 'In update_psi():'
             print 'psi[0], theta[0] =', self.p[0], ', ', self.q[0]
@@ -1432,6 +1465,12 @@ class infil_component(infil_base.infil_component):
                 Kr = (1.0 + arg ** c) ** epow           #(grid)
                 Kr = np.maximum( np.minimum(Kr, 1.0), 0.0)   #(grid)
                 self.K[j,:,:] = (Ks * Kr)               #(grid)
+
+                #--------------------------------------------------                
+                # Kr = (K/Ks) = relative hydraulic conductivity
+                # This allows sharing, but requires more storage.
+                #--------------------------------------------------
+                ## self.Krel = Kr
 
         if (self.DEBUG):
             print 'min(K), max(K) =', self.K.min(), self.K.max()
@@ -1576,7 +1615,7 @@ class infil_component(infil_base.infil_component):
         if (self.SINGLE_PROFILE):    
             q_below = np.roll(self.q, -1, axis=0)
             diff = (self.q - q_below)
-            diff[self.nz - 1] = float64(0)
+            diff[self.nz - 1] = np.float64(0)
             indices = np.where(diff > 0)        # (must be > not >=)
             nd = indices[0].size    
             
@@ -1615,10 +1654,10 @@ class infil_component(infil_base.infil_component):
             
             q_below = np.roll( self.q, -1, axis=0 )
             diff = (self.q - q_below)
-            diff[self.nz - int32(1),:,:] = np.float64(0)
+            diff[self.nz - np.int32(1),:,:] = np.float64(0)
             n_dz = self.dz.size     #(either 1 or self.nz)
             
-            #--------0000---------------------
+            #--------------------------------
             # Zero out the 2D array self.Zw
             #------------------------------------------
             # Note: *self.Zw should have already been
@@ -1626,9 +1665,9 @@ class infil_component(infil_base.infil_component):
             #------------------------------------------
             self.Zw = np.minimum( np.maximum(self.Zw, np.float64(0)), np.float64(0) )
             
-            #-------------------------------------
-            #Loop over the z-levels to find Z_wet
-            #-------------------------------------
+            #---------------------------------------
+            # Loop over the z-levels to find Z_wet
+            #---------------------------------------
             for j in xrange(self.nz - 1):           #(nz-1) vs. nz
                 diff_j = diff[j,:,:]
                 next_diff_j = diff[j + 1,:,:]     #*******
@@ -1755,14 +1794,14 @@ class infil_component(infil_base.infil_component):
             if (self.SINGLE_PROFILE):    
                 matplotlib.pyplot.plot(self.z, self.q, marker='+')
                 matplotlib.pyplot.xlabel('Depth [meters]')
-                matplotlib.pyplot.ylim(array(ymin, ymax))
+                matplotlib.pyplot.ylim(np.array(ymin, ymax))
                 matplotlib.pyplot.axis('image')
                 matplotlib.pyplot.ylabel('Soil moisture')
                 matplotlib.pyplot.show()
             else:    
                 matplotlib.pyplot.plot(self.z, self.q[:,2,2], marker='+')
                 matplotlib.pyplot.xlabel('Depth [meters]')
-                matplotlib.pyplot.ylim(array(ymin, ymax))
+                matplotlib.pyplot.ylim(np.array(ymin, ymax))
                 matplotlib.pyplot.axis('image')
                 matplotlib.pyplot.ylabel('Soil moisture')
                 matplotlib.pyplot.show()
@@ -1840,27 +1879,26 @@ class infil_component(infil_base.infil_component):
         self.lam_unit = []
         self.c_unit   = []
         
-        for j in xrange(self.n_layers):
-
-            self.Ks_file[k] = self.in_directory + self.Ks_file[k]
-            self.Ki_file[k] = self.in_directory + self.Ki_file[k]
-            self.qs_file[k] = self.in_directory + self.qs_file[k]
-            self.qi_file[k] = self.in_directory + self.qi_file[k]
-            self.qr_file[k] = self.in_directory + self.qr_file[k]
-            self.pB_file[k] = self.in_directory + self.pB_file[k]
-            self.pA_file[k] = self.in_directory + self.pA_file[k]
+        for k in xrange(self.n_layers):
+            self.Ks_file[k]  = self.in_directory + self.Ks_file[k]
+            self.Ki_file[k]  = self.in_directory + self.Ki_file[k]
+            self.qs_file[k]  = self.in_directory + self.qs_file[k]
+            self.qi_file[k]  = self.in_directory + self.qi_file[k]
+            self.qr_file[k]  = self.in_directory + self.qr_file[k]
+            self.pB_file[k]  = self.in_directory + self.pB_file[k]
+            self.pA_file[k]  = self.in_directory + self.pA_file[k]
             self.lam_file[k] = self.in_directory + self.lam_file[k]
             self.c_file[k]   = self.in_directory + self.c_file[k]
 
-            self.Ks_unit.append(  model_input.open_file(self.Ks_type[j],  self.Ks_file[j]) )
-            self.Ki_unit.append(  model_input.open_file(self.Ki_type[j],  self.Ki_file[j]) )
-            self.qs_unit.append(  model_input.open_file(self.qs_type[j],  self.qs_file[j]) )
-            self.qi_unit.append(  model_input.open_file(self.qi_type[j],  self.qi_file[j]) )
-            self.qr_unit.append(  model_input.open_file(self.qr_type[j],  self.qr_file[j]) )
-            self.pB_unit.append(  model_input.open_file(self.pB_type[j],  self.pB_file[j]) )
-            self.pA_unit.append(  model_input.open_file(self.pA_type[j],  self.pA_file[j]) )
-            self.lam_unit.append( model_input.open_file(self.lam_type[j], self.lam_file[j]) )
-            self.c_unit.append(   model_input.open_file(self.c_type[j],   self.c_file[j]) )
+            self.Ks_unit.append(  model_input.open_file(self.Ks_type[k],  self.Ks_file[k]) )
+            self.Ki_unit.append(  model_input.open_file(self.Ki_type[k],  self.Ki_file[k]) )
+            self.qs_unit.append(  model_input.open_file(self.qs_type[k],  self.qs_file[k]) )
+            self.qi_unit.append(  model_input.open_file(self.qi_type[k],  self.qi_file[k]) )
+            self.qr_unit.append(  model_input.open_file(self.qr_type[k],  self.qr_file[k]) )
+            self.pB_unit.append(  model_input.open_file(self.pB_type[k],  self.pB_file[k]) )
+            self.pA_unit.append(  model_input.open_file(self.pA_type[k],  self.pA_file[k]) )
+            self.lam_unit.append( model_input.open_file(self.lam_type[k], self.lam_file[k]) )
+            self.c_unit.append(   model_input.open_file(self.c_type[k],   self.c_file[k]) )
 
     #   open_input_files()
     #-------------------------------------------------------------------  
@@ -1975,7 +2013,7 @@ class infil_component(infil_base.infil_component):
         # Do all layers have a scalar parameter
         # value for this particular variable ??
         #----------------------------------------
-        nmax = int16(1)
+        nmax = np.int16(1)
         for j in xrange(self.n_layers):
             nj = v_by_layer[j].size
             nmax = np.maximum( nmax, nj )
@@ -1988,7 +2026,7 @@ class infil_component(infil_base.infil_component):
             #----------------------------------------------
             # All layers have a scalar value for this var
             #----------------------------------------------
-            var = np.zeros([self.nz], dtype='Float64')
+            var = np.zeros([self.nz], dtype='float64')
             for j in xrange(self.n_layers):
                 var[i[j]: i[j + 1]] = v_by_layer[j]
         else:    
@@ -1996,7 +2034,7 @@ class infil_component(infil_base.infil_component):
             # Note that all nz "levels" in a given layer can be
             # initialized to a grid, but not yet to different grids
             #--------------------------------------------------------
-            var = np.zeros([self.nz, self.ny, self.nx], dtype='Float64')
+            var = np.zeros([self.nz, self.ny, self.nx], dtype='float64')
             for j in xrange(self.n_layers):
                 for k in xrange(i[j], i[j + 1]):
                     var[k,:,:] = v_by_layer[j]

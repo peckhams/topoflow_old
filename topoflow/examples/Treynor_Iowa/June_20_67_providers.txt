@@ -20,12 +20,12 @@
 # portname       component
 #----------------------------
 meteorology     tf_meteorology
+diversions      tf_diversions_fraction_method
 channels        tf_channels_kin_wave
 snow            tf_snow_degree_day
 satzone         tf_satzone_darcy_layers
 evap            tf_evap_priestley_taylor
 infil           tf_infil_green_ampt
-diversions      tf_diversions_fraction_method
 ice             tf_ice_gc2d
 hydro_model     topoflow_driver
   

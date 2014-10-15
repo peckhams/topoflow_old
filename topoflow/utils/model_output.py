@@ -10,8 +10,8 @@
 #-------------------------------------------------------------------
 #  Functions:
 #
-#      check_nio()          # test import of Nio package
-#      get_nio_type_map()   # map NumPy types to letter codes
+#      check_netcdf()       # test import of netCDF4 package
+#      get_dtype_map()      # map NumPy types to letter codes
 
 #      open_new_gs_file()   # open new grid stack file
 #      add_grid()
@@ -47,7 +47,7 @@ import text_ts_files
 # import text_ps_files  # (not written yet)
 
 #-------------------------------------------------------------------
-def check_nio():
+def check_netcdf():
 
     #---------------------------------------------------
     # Try to import the Nio module from PyNIO package.
@@ -58,50 +58,54 @@ def check_nio():
     # each component.
     #---------------------------------------------------
     try:
-        import Nio  # (a module in the PyNIO package) 
-        print 'Imported Nio version: ' + Nio.__version__
+        import netCDF4
+        print 'Imported netCDF4 version: ' + netCDF4.__version__
     except:
-        python_version = sys.version[:3]
         print ' '
         print 'SORRY, Cannot write netCDF files because'
-        print 'the "Nio" package cannot be imported.'
+        print 'the "netCDF4" package cannot be imported.'
         print ' '
-        if (python_version != '2.6'):
-            print 'Note that "PyNIO" is only installed for'
-            print 'Python version 2.6 on "beach".'
-            print 'The current Python version is:', python_version
+#         python_version = sys.version[:3]
+#         if (python_version != '2.6'):
+#             print 'Note that "PyNIO" is only installed for'
+#             print 'Python version 2.6 on "beach".'
+#             print 'The current Python version is:', python_version
 
-#   check_nio()
-#-------------------------------------------------------------------
-def get_nio_type_map():
+#   check_netcdf()
+    #----------------------------------------------------------
+    def get_dtype_map(self):
 
-    #----------------------------------------
-    # Possible settings for "nio_type_code"
-    #-------------------------------------------
-    # nio_type_code = "d"  # (double, Float64)
-    # nio_type_code = "f"  # (float,  Float32)
-    # nio_type_code = "l"  # (long,   Int64)
-    # nio_type_code = "i"  # (int,    Int32)
-    # nio_type_code = "h"  # (short,  Int16)
-    # nio_type_code = "b"  # (byte,   Int8)
-    # nio_type_code = "S1" # (char)
-    #---------------------------------------------
-    # Only unsigned 8-bit integers are supported
-    # in some versions of PyNio. See here:
-    #   http://www.pyngl.ucar.edu/User_forum/
-    #   Archives/2010/0129.html  (1/26/12)
-    # But that is what we want for D8 codes.
-    #---------------------------------------------
-    nio_type_map = {'float64':'d', 'float32':'f',
-                    'int64':'l', 'int32':'i',
-                    'int16':'s',
-                    'int8':'b',    ## (may not work, 1/26/12)
-                    'uint8':'b',   ## (see notes above) 
-                    'S|100':'S1'}  ## (check this)                      
+        #----------------------------------------
+        # Possible settings for "dtype_code"
+        #----------------------------------------------------
+        # These two-char codes are used for netCDF4 package
+        #----------------------------------------------------
+        # See:  http://unidata.github.io/netcdf4-python/
+        #----------------------------------------------------
+        dtype_map = {'float64':'f8', 'float32':'f4',
+                        'int64':'i8', 'int32':'i4',
+                        'int16':'i2', 'int8':'i',
+                        'S|100':'S1'}  # ( ????? )       
+        
+        #-------------------------------------------------
+        # These one-char codes are used for Nio in PyNIO
+        #-------------------------------------------------
+        # dtype_code = "d"  # (double, Float64)
+        # dtype_code = "f"  # (float,  Float32)
+        # dtype_code = "l"  # (long,   Int64)
+        # dtype_code = "i"  # (int,    Int32)
+        # dtype_code = "h"  # (short,  Int16)
+        # dtype_code = "b"  # (byte,   Int8)
+        # dtype_code = "S1" # (char)
+        #-------------------------------------------
+#         dtype_map = {'float64':'d', 'float32':'f',
+#                         'int64':'l', 'int32':'i',
+#                         'int16':'s', 'int8':'b',
+#                         'S|100':'S1'}  # (check last entry)                      
 
-    return nio_type_map
-
-#   get_nio_type_map()
+        return dtype_map
+    
+    #   get_dtype_map()
 #-------------------------------------------------------------------
 def open_new_gs_file(self, file_name, info=None,
                      var_name='X',
@@ -130,7 +134,14 @@ def open_new_gs_file(self, file_name, info=None,
             print '      Grid info not provided.'
             print ' '
             ## return -1
-        
+
+    #---------------------------------------------
+    # Get long_name and units_name from var_name
+    #---------------------------------------------
+#     long_name  = self.get_var_long_name( var_name )
+#     units_name = self.get_var_units( var_name )
+#     dtype      = self.get_var_type( var_name )  
+           
     #---------------------------------
     # Build strings to be used below 
     #---------------------------------
@@ -222,8 +233,10 @@ def add_grid(self, var, var_name, time=None, SILENT=True):
     #--------------------------------------------------------
 ##    ncgs_unit_str = "self." + var_name + "_ncgs_unit"
 ##    exec( ncgs_unit_str + ".add_grid( var, var_name, time )")
-    
-    ## if (USE_NC):
+
+    #--------------------------------
+    # Add the grid to a netCDF file
+    #--------------------------------
     try:
         ncgs_unit_str = "self." + var_name + "_ncgs_unit"
         exec( ncgs_unit_str + ".add_grid( var, var_name, time )")
@@ -231,7 +244,9 @@ def add_grid(self, var, var_name, time=None, SILENT=True):
         if not(SILENT):
             print 'ERROR: Unable to add grid to netCDF file.'
 
-    ## if (USE_RTS):
+    #------------------------------
+    # Add the grid to an RTS file
+    #------------------------------
     try:
         rts_unit_str = "self." + var_name + "_rts_unit"
         exec( rts_unit_str + ".add_grid( var )" )
@@ -288,7 +303,7 @@ def open_new_ts_file(self, file_name, IDs, ####
         var_names.append( vname )
         long_names.append( long_name )
         units_names.append( units_name )
-    
+            	  
     #--------------------------------------------
     # Open new netCDF file to write time series
     # using var_name to build variable names
@@ -302,7 +317,7 @@ def open_new_ts_file(self, file_name, IDs, ####
         exec( ncts_unit_str + "=" + "ncts_files.ncts_file()" )
         exec( ncts_unit_str + ".open_new_file(" + ncts_file_str +
               ", var_names, long_names, units_names," +
-              "dtype=dtype, " +  ## (11/5/13)
+              "dtypes=[dtype], "
               "time_units=time_units)" )
         MAKE_TTS = False
     except:
@@ -323,16 +338,16 @@ def open_new_ts_file(self, file_name, IDs, ####
     #------------------------------------------
     if (MAKE_TTS):
         try:
-            tts_unit_str = "self." + var_name + "_tts_unit"
-            tts_file_str = "self." + var_name + "_tts_file"
-            ts_file_str  = "self." + var_name + "_ts_file"
-            exec( tts_file_str + "= file_utils.replace_extension(" +
-                  ts_file_str + ", '.txt')" )
-            exec( tts_unit_str + " = text_ts_files.ts_file()" )
-            exec( tts_unit_str + ".open_new_file(" + tts_file_str +
-                  ", var_names, " +
-                  "dtype=dtype, " +  ## 11/5/13)
-                  "time_units=time_units)" )
+			tts_unit_str = "self." + var_name + "_tts_unit"
+			tts_file_str = "self." + var_name + "_tts_file"
+			ts_file_str  = "self." + var_name + "_ts_file"
+			exec( tts_file_str + "= file_utils.replace_extension(" +
+				  ts_file_str + ", '.txt')" )
+			exec( tts_unit_str + " = text_ts_files.ts_file()" )
+			exec( tts_unit_str + ".open_new_file(" + tts_file_str +
+				  ", var_names, " +
+				  "dtype=dtype, " +  ## (11/5/13)
+				  "time_units=time_units)" )
         except:
             print 'ERROR: Unable to open new text file:'
             exec( "print '      ', self." + var_name + "_tts_file" )

@@ -19,8 +19,6 @@
 #      get_output_var_names()     # (5/15/12)
 #      get_var_name()             # (5/15/12)
 #      get_var_units()            # (5/15/12)
-#      get_input_items()          # (COMMENTED)
-#      get_output_items()         # (COMMENTED)
 #      --------------------------
 #      set_constants()
 #      initialize_vars_matlab()
@@ -102,21 +100,22 @@ class ice_component( BMI_base.BMI_component ):
     # Note that GC2D uses "conserveIce" to check
     # mass balance.  There is a line in the code:
     #    iceVolumeLast = conserveIce * dx * dy
-    # that shows it is (volume / area).
+    # that shows it is "grid_sum_of_thickness", or
+    # the sum of the thickness in every grid cell.
     #------------------------------------------------
     # GC2D computes many other vars that could be
     # included here; see gc2d.py.
     #---------------------------------------------------
-    # NB! "area_time_integral_of_melt_rate"
+    # NB! "domain_time_integral_of_melt_volume_flux"
     #     vs. "basin_cumulative_ice_meltwater_volume".
     #     But new name doesn't connote "over basin".
     #---------------------------------------------------   
     _output_var_names = [
-        'glacier__area_time_integral_of_melt_rate', # vol_MR
-        'glacier__melt_rate',         # MR
-        'glacier_surface__elevation', # Zi
-        'glacier__thickness',         # H
-        ## 'glacier__unit_area_volume',  # conserveIce
+        'glacier_ice__domain_time_integral_of_melt_volume_flux', # vol_MR
+        'glacier_ice__melt_volume_flux',     # MR
+        'glacier_top_surface__elevation',    # Zi
+        'glacier_ice__thickness',            # H
+        ## 'glacier_ice__grid_sum_of_thickness', # conserveIce
         'model_grid_cell__x_length',  # dx
         'model_grid_cell__y_length',  # dy
         'model__time_step' ]          # dt
@@ -125,11 +124,11 @@ class ice_component( BMI_base.BMI_component ):
         # 'bedrock_surface__elevation': 'Zb',  # (provide under 2 names?)
         'land_surface__elevation': 'Zb',
         #---------------------------------------------------------------
-        'glacier__area_time_integral_of_melt_rate': 'vol_MR',
-        'glacier__melt_rate': 'MR',
-        'glacier_surface__elevation': 'Zi',
-        ## 'glacier__unit_area_volume': 'conserveIce',
-        'glacier__thickness': 'H',
+        'glacier_ice__domain_time_integral_of_melt_volume_flux': 'vol_MR',
+        'glacier_ice__melt_volume_flux': 'MR',
+        'glacier_top_surface__elevation': 'Zi',
+        ## 'glacier_ice__grid_sum_of_thickness': 'conserveIce',
+        'glacier_ice__thickness': 'H',
         'model_grid_cell__x_length': 'dx',
         'model_grid_cell__y_length': 'dy',
         'model__time_step': 'dt' }
@@ -138,21 +137,20 @@ class ice_component( BMI_base.BMI_component ):
         # 'bedrock_surface__elevation': 'm',  # (provide under 2 names?)
         'land_surface__elevation': 'm',
         #---------------------------------------------------------------
-        'glacier__area_time_integral_of_melt_rate': 'm3',
-        'glacier__melt_rate': 'm s-1',
-        'glacier_surface__elevation': 'm',
-        'glacier__thickness': 'm',
-        ## 'glacier__unit_area_volume': 'm',
+        'glacier_ice__domain_time_integral_of_melt_volume_flux': 'm3',
+        'glacier_ice__melt_volume_flux': 'm s-1',
+        'glacier_top_surface__elevation': 'm',
+        'glacier_ice__thickness': 'm',
+        ## 'glacier_ice__grid_sum_of_thickness': 'm',
         'model_grid_cell__x_length': 'm',
         'model_grid_cell__y_length': 'm',
-        'model__time_step': 's' }
+        'model__time_step': 'yr' }   ### (changed from 's' on 9/11/14.)
 
     #------------------------------------------------    
     # Return NumPy string arrays vs. Python lists ?
     #------------------------------------------------
     ## _input_var_names  = np.array( _input_var_names )
     ## _output_var_names = np.array( _output_var_names )
-
         
     #-------------------------------------------------------------------
     def get_attribute(self, att_name):
@@ -201,7 +199,7 @@ class ice_component( BMI_base.BMI_component ):
 ##        # So far, all vars have type "double",
 ##        # but use the one in BMI_base instead.
 ##        #---------------------------------------
-##        return 'double'
+##        return 'float64'
 ##    
 ##    #   get_var_type()
     #-------------------------------------------------------------------
@@ -370,7 +368,7 @@ class ice_component( BMI_base.BMI_component ):
         
     #   save_matlab_dem_as_rtg()    
     #-------------------------------------------------------------------
-    def initialize(self, cfg_prefix=None, mode="nondriver",
+    def initialize(self, cfg_file=None, mode="nondriver",
                    SILENT=False):
 
         #---------------------------------------------------
@@ -391,7 +389,7 @@ class ice_component( BMI_base.BMI_component ):
 
         self.status     = 'initializing'  # (OpenMI 2.0 convention)
         self.mode       = mode
-        self.cfg_prefix = cfg_prefix
+        self.cfg_file   = cfg_file
 
         #--------------------------------
         # Valley glacier or ice sheet ?
@@ -433,11 +431,6 @@ class ice_component( BMI_base.BMI_component ):
             self.DONE     = True
             self.status   = 'initialized'
             return
-
-        ############################################
-        # Not needed by new framework, 5/17/12.
-        ############################################     
-        # self.initialize_required_components(mode)
   
 ##        #---------------------------------------------
 ##        # Open input files needed to initialize vars 
@@ -693,7 +686,7 @@ class ice_component( BMI_base.BMI_component ):
     #-------------------------------------------------------------------  
     def open_output_files(self):
 
-        model_output.check_nio()
+        model_output.check_netcdf()
         self.update_outfile_names()
         
         #----------------------------------

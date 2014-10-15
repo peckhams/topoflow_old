@@ -1,9 +1,17 @@
-
-## Copyright (c) 2001-2013, Scott D. Peckham
-## January 2009  (converted from IDL)
-## May, July, August 2009
-## May 2010 (changes to initialize() and read_cfg_file()
-
+#
+#  Copyright (c) 2001-2014, Scott D. Peckham
+#
+#  Sep 2014.  Bug fix: enforce_max_meltrate() was called after update_SM_integral().
+#             Moved open_input_files(), read_input_files() and close_input_files()
+#             as special versions into degree-day and energy-balance components.
+#  Aug 2014.  Cleaned up enforce_max_meltrate().
+#  Nov 2013.  Converted TopoFlow to Python package.
+#  May 2010.  Changes to initialize() and read_cfg_file().
+#  Aug 2009.  Updates.
+#  Jul 2009.  Updates.
+#  May 2009.  Updates.
+#  Jan 2009,  Converted from IDL.
+#
 #-----------------------------------------------------------------------
 #  NOTES:  This file defines a "base class" for snowmelt
 #          components as well as functions used by most or
@@ -14,7 +22,7 @@
 #          update_snow_vars() in precip.py sets values here.
 #-----------------------------------------------------------------------
 #
-#  class snow_component    (inherits from CSDMS_base.py)
+#  class snow_component    (inherits from BMI_base.py)
 #
 #      set_constants()
 #      -----------------------
@@ -27,9 +35,10 @@
 #      initialize_computed_vars()
 #      ----------------------------
 #      update_meltrate()
+#      enforce_max_meltrate()
 #      update_SM_integral()
-#      update_depth()
 #      update_swe()
+#      update_depth()
 #      -----------------------
 #      open_input_files()
 #      read_input_files()
@@ -41,10 +50,6 @@
 #      close_output_files()
 #      save_grids()
 #      save_pixel_values()
-
-#  Functions:
-#      Initial_Cold_Content()
-#      Max_Meltrate()
 #
 #-----------------------------------------------------------------------
 
@@ -52,7 +57,7 @@ import numpy as np
 import os
 
 from topoflow.utils import BMI_base
-from topoflow.utils import model_input
+# from topoflow.utils import model_input  # (not used here)
 from topoflow.utils import model_output
 
 #-----------------------------------------------------------------------
@@ -62,32 +67,48 @@ class snow_component( BMI_base.BMI_component ):
     #------------------------------------------------------------
     # Notes: rho_H2O, Cp_snow, rho_air and Cp_air are currently
     #        hardwired (not adjustable with GUI).
-
-    #        Cp_snow is from NCAR CSM Flux Coupler web page
-
-    #        h_snow = snow depth, h0_snow = initial depth
-    
-    #        hs = snow depth
-    #        sw = snow water equivalent (depth)
-    #        mr = snow melt rate
-    #        cc = cold content
-    #-------------------------------------------------------------------
+    #------------------------------------------------------------
     def set_constants(self):
 
         #-----------------------------------
         # Constants not changeable by user
-        #-----------------------------------
-        self.Cp_snow  = np.float64( 2090.0 )
+        #---------------------------------------------------------
+        # Cp_snow = mass-specific isobaric heat capacity of snow
+        #           value from:  NCAR CSM Flux Coupler web page
+        #---------------------------------------------------------
+        # Lf = latent heat of fusion for water [J kg -1]
+        #---------------------------------------------------------        
+        self.Cp_snow  = np.float64( 2090.0 )  # [J kg-1 K-1]
+        self.Lf       = np.float64( 334000 )  # [J kg-1]
 
         #--------------------------------------
         # Not a constant; read from CFG file.
         #--------------------------------------
         ## self.rho_snow = np.float64(300)
         ## self.rho_H2O  = np.float64(1000)  # (See initialize() method.)
-        
-    #   set_constants()         
+                
+    #   set_constants()  
     #-------------------------------------------------------------------
-    def initialize(self, cfg_prefix=None, mode="nondriver",
+    def latent_heat_of_sublimation(self):
+
+        #----------------------------------------------------------    
+        # Notes:  See:  http://en.wikipedia.org/wiki/Latent_heat
+        #         Valid for T in [-40, 0] deg C.
+        #----------------------------------------------------------
+        # sublimation/deposition.  What about fusion/melting?
+        # deposition, desublimation and resublimation are synonyms
+        #----------------------------------------------------------
+        a = np.float64( 2834.1 )
+        b = np.float64( -0.29 )
+        c = np.float64( -0.004 )
+        T = self.T_air
+        
+        self.Lf = a + (b * T) + (c * (T**2))  # [J g-1]
+        self.Lf *= np.float64( 1000 ) # [J kg-1]
+        
+    #   latent_heat_of_sublimation()       
+    #-------------------------------------------------------------------
+    def initialize(self, cfg_file=None, mode="nondriver",
                    SILENT=False):
 
         #---------------------------------------------------------
@@ -105,7 +126,7 @@ class snow_component( BMI_base.BMI_component ):
             
         self.status     = 'initializing'  # (OpenMI 2.0 convention)
         self.mode       = mode
-        self.cfg_prefix = cfg_prefix
+        self.cfg_file   = cfg_file
         
         #-----------------------------------------------
         # Load component parameters from a config file
@@ -118,15 +139,6 @@ class snow_component( BMI_base.BMI_component ):
         # This must come before "Disabled" test.
         #-----------------------------------------
         self.initialize_time_vars()
-
-        ############################################
-        # Commented out for new method, 3/15/12.
-        ############################################
-        #-----------------------------------------------------------
-        # Need this, even if (method==0) for mp.update_snow_vars()
-        #-----------------------------------------------------------
-##        self.initialize_required_components(mode)  # (NEED BEFORE NEXT LINE)
-##        self.rho_H2O = self.mp.get_scalar_double('rho_H2O')
    
         if (self.comp_status == 'Disabled'):
             #########################################
@@ -184,11 +196,15 @@ class snow_component( BMI_base.BMI_component ):
         #-------------------------
         # Update computed values 
         #-------------------------
-        self.update_meltrate()    # (meltrate = SM)
+        self.update_meltrate()       # (meltrate = SM)
+        self.enforce_max_meltrate()  # (before SM integral!)
         self.update_SM_integral()
-        self.enforce_max_meltrate()
-        self.update_depth()
+
+        #------------------------------------------
+        # Call update_swe() before update_depth()
+        #------------------------------------------
         self.update_swe()
+        self.update_depth()
         
         #-----------------------------------------
         # Read next snow vars from input files ?
@@ -260,15 +276,7 @@ class snow_component( BMI_base.BMI_component ):
         #        currently always scalars.
         #----------------------------------------------------        
         are_scalars = np.array([
-##                          self.pp.is_scalar('rate'),
-##                          self.pp.is_scalar('duration'),
-                          #----------------------------------
-##                          self.mp.is_scalar('P'),
-##                          self.mp.is_scalar('rho_H2O'),
-##                          self.mp.is_scalar('rho_air'),
-##                          self.mp.is_scalar('Cp_air'),
-                          #----------------------------------
-                          self.is_scalar('P'),
+                          self.is_scalar('P_snow'),
                           self.is_scalar('rho_H2O'),
                           self.is_scalar('rho_air'),
                           self.is_scalar('Cp_air'),
@@ -289,12 +297,7 @@ class snow_component( BMI_base.BMI_component ):
         # sure that h_snow and h_swe are grids
         #------------------------------------------
         T_IS_GRID = self.is_grid('T_air')
-        P_IS_GRID = self.is_grid('P')
-        ## P_IS_GRID = self.is_grid('rate')
-##        T_IS_GRID = self.mp.is_grid('T_air')
-##        P_IS_GRID = self.mp.is_grid('P')
-##        ## P_IS_GRID = self.pp.is_grid('rate')
-
+        P_IS_GRID = self.is_grid('P_snow')
         H0_SNOW_IS_SCALAR = self.is_scalar('h0_snow')
         H0_SWE_IS_SCALAR  = self.is_scalar('h0_swe') 
 
@@ -307,47 +310,84 @@ class snow_component( BMI_base.BMI_component ):
         h_swe  = self.h0_swe.copy()     # [meters]
         
         if (T_IS_GRID or P_IS_GRID):
+            self.SM = np.zeros([self.ny, self.nx], dtype='float64')
+            #-----------------------------------------
+            # Convert both h_snow and h_swe to grids
+            # if not already grids.
+            #-----------------------------------------
             if (H0_SNOW_IS_SCALAR):
-                self.h_snow = h_snow + zeros([self.ny, self.nx], dtype='Float64')
+                self.h_snow = h_snow + np.zeros([self.ny, self.nx], dtype='float64')
             else:
                 self.h_snow = h_snow  # (is already a grid)
             #------------------------------------------------
             if (H0_SWE_IS_SCALAR):
-                self.h_swe = h_swe + zeros([self.ny, self.nx], dtype='Float64')
+                self.h_swe = h_swe + np.zeros([self.ny, self.nx], dtype='float64')
             else:
                 self.h_swe = h_swe    # (is already a grid)              
         else:
-            self.h_snow = h_snow      # (both are scalars and that's OK)
-            self.h_swe  = h_swe
+            #----------------------------------
+            # Both are scalars and that's OK.
+            #----------------------------------
+            self.SM     = self.initialize_scalar( 0, dtype='float64')
+            self.h_snow = self.initialize_scalar( h_snow, dtype='float64')
+            self.h_swe  = self.initialize_scalar( h_swe,  dtype='float64')
 
-        self.SM     = self.initialize_scalar( 0, dtype='float64')
         self.vol_SM = self.initialize_scalar( 0, dtype='float64') # (m3)
-        
+
+        #----------------------------------------------------
+        # Compute density ratio for water to snow.
+        # rho_H2O is for liquid water close to 0 degrees C.
+        # Water is denser than snow, so density_ratio > 1.
+        #----------------------------------------------------
+        self.density_ratio = (self.rho_H2O / self.rho_snow)
+                
         #----------------------------------------------------
         # Initialize the cold content of snowpack (2/21/07)
-        #----------------------------------------------------
-        # Should we rename T_surf to T_snow for clarity ??
-        #----------------------------------------------------
-        T_surf   = self.T_surf  # (2/3/13, new framework)
-        #----------------------------------------------------
-##        T_surf   = self.get_port_data('T_surf', self.mp)
-        self.Ecc = Initial_Cold_Content(self.h0_snow, T_surf, \
-                                        self.rho_snow, self.Cp_snow)
+        #------------------------------------------------------
+        # This is done in the snow_energy_balance.py version.
+        #------------------------------------------------------
+        ## T_surf   = self.T_surf  # (2/3/13, new framework)
+        ## self.Ecc = Initial_Cold_Content(self.h0_snow, T_surf, \
+        ##                                 self.rho_snow, self.Cp_snow)
         
     #   initialize_computed_vars()
     #-------------------------------------------------------------------
     def update_meltrate(self):
-    
-        #--------------------------------------------------
+ 
+         #---------------------------------------------------------
+        # Notes: This is for a "potential" meltrate, which can't
+        #        be realized unless there is enough snow.
+        #        See snow_base.enforce_max_meltrate().   
+        #---------------------------------------------------------
         # Note: We don't need to update any variables if
         #       the snowmelt method is None.  But we need
         #       to make sure that self.SM = 0.0.
         #       This "method" will be over-ridden by a
         #       particular snowmelt method.
         #--------------------------------------------------
-        print "WARNING: 'update_meltrate' method is inactive."
+        print 'ERROR: update_meltrate() method for Snow component'
+        print '       has not been implemented.'
        
     #   update_meltrate()
+    #-------------------------------------------------------------------
+    def enforce_max_meltrate(self):
+    
+        #-------------------------------------------------------
+        # The max possible meltrate would be if all snow (given
+        # by snow depth, h_snow, were to melt in the one time
+        # step, dt.  Meltrate should never exceed this value.
+        #------------------------------------------------------- 
+        density_ratio =  (self.rho_H2O / self.rho_snow)  
+        SM_max = (density_ratio / self.dt) * self.h_snow 
+        self.SM = np.minimum(self.SM, SM_max)  # [m s-1]
+
+        #------------------------------------------------------
+        # Make sure meltrate is positive, while we're at it ?
+        # Is already done by "Energy-Balance" component.
+        #------------------------------------------------------
+        self.SM = np.maximum(self.SM, np.float64(0))
+   
+    #   enforce_max_meltrate()
     #-------------------------------------------------------------------
     def update_SM_integral(self):
 
@@ -362,142 +402,125 @@ class snow_component( BMI_base.BMI_component ):
             
     #   update_SM_integral()
     #-------------------------------------------------------------------
-    def enforce_max_meltrate(self):
+    def update_swe(self):
 
-        #-----------------------------------
-        # Make sure that meltrate does not
-        # exceed max possible meltrate
-        #-----------------------------------     
-        SM_max  = Max_Meltrate(self.h_snow, self.rho_H2O,
-                               self.rho_snow, self.dt)
-        self.SM = np.minimum(self.SM, SM_max)
-
-        #------------------------------------------------------
-        # Make sure meltrate is positive, while we're at it ?
-        # Is already done by "Energy-Balance" component.
-        #------------------------------------------------------
-        self.SM = np.maximum(self.SM, np.float64(0))
-   
-    #   enforce_max_meltrate()
-    #-------------------------------------------------------------------
-##    def update_depth_from_snowfall(self):
-##
-##        #---------------------------------------------------
-##        # Note:  See update_snow_vars() in precip_base.py.
-##        #---------------------------------------------------
-##        
-##    #   update_depth_from_snowfall()     
+        #--------------------------------------------------------
+        # Note: The Meteorology component uses air temperature
+        # to compute P_rain (precip that falls as liquid) and
+        # P_snow (precip that falls as snow or ice) separately.
+        # P_snow = (self.P * (self.T_air <= 0)) 
+        #----------------------------------------------------------
+        # Note: This method must be written to work regardless
+        # of whether P_rain and T are scalars or grids. (3/14/07)
+        #------------------------------------------------------------
+        # If P or T_air is a grid, then h_swe and h_snow are grids.
+        # This is set up in initialize_computed_vars().
+        #------------------------------------------------------------
+      
+        #------------------------------------------------
+        # Increase snow water equivalent due to snowfall
+        #------------------------------------------------
+        # Meteorology and Channel components may have
+        # different time steps, but then self.P_snow
+        # will be a time-interpolated value.
+        #------------------------------------------------
+        dh1_swe  = (self.P_snow * self.dt)
+        self.h_swe  += dh1_swe
+                
+        #------------------------------------------------
+        # Decrease snow water equivalent due to melting
+        # Note that SM depends partly on h_snow.
+        #------------------------------------------------
+        dh2_swe    = self.SM * self.dt
+        self.h_swe -= dh2_swe
+        np.maximum(self.h_swe, np.float64(0), self.h_swe)  # (in place)
+        
+    #   update_swe()   
     #-------------------------------------------------------------------
     def update_depth(self):
 
         #--------------------------------------------------------
-        # Note: When precipitation falls as snow, then we need
-        #       to update the snow depth at the precipitation
-        #       timestep.  However, the snow depth, h_snow, is
-        #       maintained and updated as part of the "snow
-        #       process" component, using the "snow process"
-        #       timestep.  What is the best solution?
-        #--------------------------------------------------------
+        # Note: The Meteorology component uses air temperature
+        # to compute P_rain (precip that falls as liquid) and
+        # P_snow (precip that falls as snow or ice) separately.
+        # P_snow = (self.P * (self.T_air <= 0)) 
+        #----------------------------------------------------------
+        # Note: This method must be written to work regardless
+        # of whether P_rain and T are scalars or grids. (3/14/07)
+        #------------------------------------------------------------
+        # If P or T_air is a grid, then h_swe and h_snow are grids.
+        # This is set up in initialize_computed_vars().
+        #------------------------------------------------------------
+        # Note that for a region of area, A:
+        #     rho_snow = (mass_snow / (h_snow * A))
+        #     rho_H2O  = (mass_H20  / (h_swe * A))
+        # Since mass_snow = mass_H20 (for SWE):
+        #     rho_snow * h_snow = rho_H2O * h_swe
+        #     (h_snow / h_swe)  = (rho_H2O / rho_snow)
+        #      h_snow = h_swe * density_ratio
+        # Since liquid water is denser than snow:
+        #      density_ratio > 1 and
+        #      h_snow > h_swe
+        # self.density_ratio = (self.rho_H2O / self.rho_snow)
+        # rho_H2O is for liquid water close to 0 degrees C.
+        #------------------------------------------------------------
 
-        #------------------------------------------
+        #------------------------------------------        
         # Increase snow depth due to falling snow
-        #---------------------------------------------
-        # This is currently done by pp.update() at
-        # the precip timestep vs. the snow timestep.
-        #---------------------------------------------
+        #-------------------------------------------
+        # This assumes that update_swe() is called
+        # before update_depth().
+        #-------------------------------------------
+        h_snow = self.h_swe * self.density_ratio
         
         #-------------------------------------
         # Decrease snow depth due to melting
         #-------------------------------------   
-        ratio = (self.rho_H2O / self.rho_snow)
-        dh    = self.SM * ratio * self.dt
-        self.h_snow = np.maximum((self.h_snow - dh), np.float64(0))
+#         dh     = self.SM * (self.density_ratio * self.dt)
+#         h_snow = np.maximum((h_snow - dh), np.float64(0))
+
+        #--------------
+        # For testing
+        #--------------
+#         print 'type(density_ratio) =', type(self.density_ratio)
+#         print 'type(self.h_swe) =', type(self.h_swe)
+#         print 'type(h_snow) =', type(h_snow)
+#         print 'type(self.SM) =', type(self.SM)
+#         print 'rank(self.SM) =', np.rank(self.SM)
+        
+        #----------------------------------             
+        # Save updated snow depth in self
+        #----------------------------------
+        if (np.rank( self.h_snow ) == 0):
+            h_snow = np.float64( h_snow )  ### (from 0D array to scalar)
+            self.h_snow.fill( h_snow )     ### (mutable scalar)
+        else:
+            self.h_snow[:] = h_snow
         
     #   update_depth() 
-    #-------------------------------------------------------------------
-    def update_swe(self):
-
-        #---------------------------------------------
-        # If P or T_air is a grid, then we must have
-        # h_swe and h_snow be grids.  This is set
-        # up at start of Route_Flow.
-        #---------------------------------------------
-##        P = self.P          # (2/3/13, new framework)
-##        T_air = self.T_air  # (2/3/13, new framework)
-        #---------------------------------------------       
-##        P     = self.get_port_data('P',     self.pp)
-##        T_air = self.get_port_data('T_air', self.mp)
-##        
-##        #------------------------------------------------
-##        # Increase snow water equivalent due to snowfall
-##        #------------------------------------------------
-##        # (3/14/07) New method that works regardless
-##        # of whether P and T are scalars or grids.
-##        #---------------------------------------------
-##        dh1_swe     = (P * (T_air <= 0)) * self.main_dt
-##        self.h_swe += dh1_swe
-        
-        #------------------------------------------------
-        # Decrease snow water equivalent due to melting
-        #------------------------------------------------
-        dh2_swe    = self.SM * self.dt
-        self.h_swe = np.maximum((self.h_swe - dh2_swe), np.float64(0))
-        
-    #   update_swe()
     #-------------------------------------------------------------------  
     def open_input_files(self):
 
-        self.c0_file       = self.in_directory + self.c0_file
-        self.T0_file       = self.in_directory + self.T0_file
-        self.rho_snow_file = self.in_directory + self.rho_snow_file
-        self.h0_snow_file  = self.in_directory + self.h0_snow_file
-        self.h0_swe_file   = self.in_directory + self.h0_swe_file
-
-        self.c0_unit       = model_input.open_file(self.c0_type,       self.c0_file)
-        self.T0_unit       = model_input.open_file(self.T0_type,       self.T0_file)
-        self.rho_snow_unit = model_input.open_file(self.rho_snow_type, self.rho_snow_file)
-        self.h0_snow_unit  = model_input.open_file(self.h0_snow_type,  self.h0_snow_file)
-        self.h0_swe_unit   = model_input.open_file(self.h0_swe_type,   self.h0_swe_file)
+        #------------------------------------------------------
+        # Each component that inherits from snow_base.py must
+        # implement its own versions of these.
+        #------------------------------------------------------
+        print 'ERROR: open_input_files() for Snow component'
+        print '       has not been implemented.'
 
     #   open_input_files()
     #-------------------------------------------------------------------  
     def read_input_files(self):
 
-        rti = self.rti
-
-        #-------------------------------------------------------
-        # All grids are assumed to have a data type of Float32.
-        #-------------------------------------------------------
-        c0 = model_input.read_next(self.c0_unit, self.c0_type, rti)
-        if (c0 != None): self.c0 = c0
-
-        T0 = model_input.read_next(self.T0_unit, self.T0_type, rti)
-        if (T0 != None): self.T0 = T0
-
-        rho_snow = model_input.read_next(self.rho_snow_unit, self.rho_snow_type, rti)
-        if (rho_snow != None): self.rho_snow = rho_snow
-
-        h0_snow = model_input.read_next(self.h0_snow_unit, self.h0_snow_type, rti)
-        if (h0_snow != None): self.h0_snow = h0_snow
-        
-        h0_swe = model_input.read_next(self.h0_swe_unit, self.h0_swe_type, rti)
-        if (h0_swe != None): self.h0_swe = h0_swe
+        print 'ERROR: read_input_files() for Snow component'
+        print '       has not been implemented.'
         
     #   read_input_files()       
     #-------------------------------------------------------------------  
     def close_input_files(self):
 
-        if (self.c0_type       != 'Scalar'): self.c0_unit.close()        
-        if (self.T0_type       != 'Scalar'): self.T0_unit.close()
-        if (self.rho_snow_type != 'Scalar'): self.rho_snow_unit.close()
-        if (self.h0_snow_type  != 'Scalar'): self.h0_snow_unit.close()
-        if (self.h0_swe_type   != 'Scalar'): self.h0_swe_unit.close()
-        
-##        if (self.c0_file       != ''): self.c0_unit.close()        
-##        if (self.T0_file       != ''): self.T0_unit.close()
-##        if (self.rho_snow_file != ''): self.rho_snow_unit.close()
-##        if (self.h0_snow_file  != ''): self.h0_snow_unit.close()
-##        if (self.h0_swe_file   != ''): self.h0_swe_unit.close()
+        print 'ERROR: close_input_files() for Snow component'
+        print '       has not been implemented.'
 
     #   close_input_files()
     #-------------------------------------------------------------------  
@@ -531,7 +554,7 @@ class snow_component( BMI_base.BMI_component ):
     #-------------------------------------------------------------------  
     def open_output_files(self):
 
-        model_output.check_nio()
+        model_output.check_netcdf()
         self.update_outfile_names()
         
         #----------------------------------
@@ -673,53 +696,4 @@ class snow_component( BMI_base.BMI_component ):
             model_output.add_values_at_IDs( self, time, self.Ecc, 'cc', IDs )
 
     #   save_pixel_values()
-#---------------------------------------------------------------------
-#---------------------------------------------------------------------
-def Initial_Cold_Content(h_snow, T_snow, rho_snow, Cp_snow):
-
-    #----------------------------------------------------------------
-    #NOTES:  This function is used to initialize the cold content
-    #        of a snow pack (in Initialize_Snow_Vars in route.pro).
-    #        The cold content has units of [J/m^2] (_NOT_ [W/m^2]).
-    #        It is an energy (per unit area) threshold (or deficit)
-    #        that must be overcome before melting of snow can occur.
-    #        Cold content changes over time as the snowpack warms or
-    #        cools, but must always be non-negative.  See the Notes
-    #        for the Energy_Balance_Meltrate function.
-
-    #        Caller sets T_snow argument to T_surf.
-
-    #        K_snow is between 0.063 and 0.71  [W/m/deg_C]
-    #        All of the Q's have units of W/m^2 = J/(m^2 s).
-
-    #        12/22/05.  Removed T0 from argument list and
-    #        set to zero here.
-    #---------------------------------------------------------------
-  
-    #-------------------------------------------
-    # Compute initial cold content of snowpack
-    #-------------------------------------------
-    T0   = np.float64(0)
-    Ecc0 = (rho_snow * Cp_snow) * h_snow * (T0 - T_snow)
-    
-    return Ecc0
-
-#   Initial_Cold_Content
-#---------------------------------------------------------------------
-def Max_Meltrate(h_snow, rho_H2O, rho_snow, snow_dt):
-
-    #--------------------------------------------------------
-    #NOTES:  This function returns the max possible meltrate
-    #        for snow, assuming that all snow (given by snow
-    #        depth) is melted in the time interval, snow_dt.
-    #        Snow meltrates should never exceed this value.
-
-    #        h_snow, rho_H2O, and rho_snow are pointers.
-    #        snow_dt is real-valued.
-    #--------------------------------------------------------  
-    M_max = h_snow * (rho_H2O / rho_snow) / snow_dt    #[m/s]
-    
-    return M_max
-
-#   Max_Meltrate
-#---------------------------------------------------------------------
+    #------------------------------------------------------------------- 

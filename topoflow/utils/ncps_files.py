@@ -6,11 +6,11 @@ import os
 import sys
 import time
 
-import numpy
-
+import numpy as np
 import file_utils
+# import rti_files   # (not used)
 
-# import Nio    # (a module in the PyNIO package) 
+import netCDF4 as nc
 
 #---------------------------------------------------------------------
 # This class is for I/O of time-indexed 1D profiles to netCDF files.
@@ -22,9 +22,9 @@ import file_utils
 #
 #   class ncps_file():
 #
-#       import_nio()
+#       import_netCDF4()
 #       open_file()
-#       get_nio_type_map()
+#       get_dtype_map()
 #       open_new_file()
 #       update_time_index()
 #-------------------------------
@@ -56,7 +56,7 @@ def unit_test(n_times=5, nz=10, VERBOSE=False,
     #-------------------------------------
     ncps = ncps_file()
     var_names = ['theta']
-    z_values = numpy.arange( nz, dtype='Float64' )
+    z_values = np.arange( nz, dtype='Float64' )
     z_units  = 'm'
     
     OK = ncps.open_new_file( file_name,
@@ -77,8 +77,8 @@ def unit_test(n_times=5, nz=10, VERBOSE=False,
         print 'ERROR during open_new_file().'
         return
 
-    profile  = numpy.exp(-0.1 * z_values)
-    times    = numpy.arange( n_times, dtype='Float64') * 0.1
+    profile  = np.exp(-0.1 * z_values)
+    times    = np.arange( n_times, dtype='Float64') * 0.1
     
     #-----------------------------------
     # Add a series of profiles to file
@@ -140,7 +140,7 @@ def unit_test2(n_times=5, nz=10, VERBOSE=False,
     ncps = ncps_file()
 
     var_name   = 'theta'
-    z_values   = numpy.arange( nz, dtype='Float64' )
+    z_values   = np.arange( nz, dtype='Float64' )
     z_units    = 'm'
     IDs        = ([1,2,3], [1,2,3])
     var_names  = ['theta_1_1', 'theta_2_2', 'theta_3_3']
@@ -169,8 +169,8 @@ def unit_test2(n_times=5, nz=10, VERBOSE=False,
         print 'ERROR during open_new_file().'
         return
 
-    profile = numpy.exp(-0.1 * z_values)
-    times   = numpy.arange( n_times, dtype='Float64') * 0.1
+    profile = np.exp(-0.1 * z_values)
+    times   = np.arange( n_times, dtype='Float64') * 0.1
     print 'z_values =', z_values
     print 'profile  =', profile
     print 'times    =', times
@@ -178,7 +178,7 @@ def unit_test2(n_times=5, nz=10, VERBOSE=False,
     
     ny = 5
     nx = 5
-    var = numpy.zeros([nz,ny,nx], dtype='float64')
+    var = np.zeros([nz,ny,nx], dtype='float64')
     for k in xrange(nz):
         var[k,:,:] = profile[k]
     
@@ -235,7 +235,7 @@ def save_as_text(ncps_file_name=None, text_file_name=None):
     data = ncps.get_profile( var_name )
     ncps.close()
     
-    data = numpy.array( data )
+    data = np.array( data )
     print 'min(data), max(data) =', data.min(), data.max()
 
     text_unit = open( text_file_name, 'w' )
@@ -249,18 +249,18 @@ class ncps_file():
     #----------------------------------------------------------
     # Note:  ncps = NetCDF Time Series (used by CSDMS)
     #----------------------------------------------------------
-    def import_nio(self):
+    def import_netCDF4(self):
 
         try:
-            import Nio  # (a module in the PyNIO package) 
-            # print 'Imported Nio version: ' + Nio.__version__
-            return Nio
+            import netCDF4
+            # print 'Imported netCDF4 version: ' + netCDF4.__version__
+            return netCDF4
         except:
-##            python_version = sys.version[:3]
 ##            print ' '
 ##            print 'SORRY, Cannot write netCDF files because'
-##            print 'the "Nio" package cannot be imported.'
+##            print 'the "netCDF4" package cannot be imported.'
 ##            print ' '
+##            python_version = sys.version[:3]
 ##            if (python_version != '2.6'):
 ##                print 'Note that "PyNIO" is only installed for'
 ##                print 'Python version 2.6 on "beach".'
@@ -268,21 +268,15 @@ class ncps_file():
 ##                print ' '
             return False
         
-    #   import_nio()
+    #   import_netCDF4()
     #----------------------------------------------------------
     def open_file(self, file_name):
-
-        #--------------------------------------------------
-        # Try to import the Nio module from PyNIO package
-        #--------------------------------------------------
-        Nio = self.import_nio()
-        if not(Nio): return
-        
+      
         #-------------------------
         # Open file to read only
         #-------------------------
         try:
-            ncps_unit = Nio.open_file(file_name, mode="r")
+            ncps_unit = nc.Dataset(file_name, mode='r')
             self.ncps_unit = ncps_unit
             ### return ncps_unit
             return True
@@ -291,30 +285,42 @@ class ncps_file():
     
     #   open_file()
     #----------------------------------------------------------
-    def get_nio_type_map(self):
+    def get_dtype_map(self):
 
         #----------------------------------------
-        # Possible settings for "nio_type_code"
+        # Possible settings for "dtype_code"
+        #----------------------------------------------------
+        # These two-char codes are used for netCDF4 package
+        #----------------------------------------------------
+        # See:  http://unidata.github.io/netcdf4-python/
+        #----------------------------------------------------
+        dtype_map = {'float64':'f8', 'float32':'f4',
+                     'int64':'i8', 'int32':'i4',
+                     'int16':'i2', 'int8':'i1',
+                     'S|100':'S1'}  # ( ????? )       
+        
+        #-------------------------------------------------
+        # These one-char codes are used for Nio in PyNIO
+        #-------------------------------------------------
+        # dtype_code = "d"  # (double, Float64)
+        # dtype_code = "f"  # (float,  Float32)
+        # dtype_code = "l"  # (long,   Int64)
+        # dtype_code = "i"  # (int,    Int32)
+        # dtype_code = "h"  # (short,  Int16)
+        # dtype_code = "b"  # (byte,   Int8)
+        # dtype_code = "S1" # (char)
         #-------------------------------------------
-        # nio_type_code = "d"  # (double, Float64)
-        # nio_type_code = "f"  # (float,  Float32)
-        # nio_type_code = "l"  # (long,   Int64)
-        # nio_type_code = "i"  # (int,    Int32)
-        # nio_type_code = "h"  # (short,  Int16)
-        # nio_type_code = "b"  # (byte,   Int8)
-        # nio_type_code = "S1" # (char)
-        #-------------------------------------------
-        nio_type_map = {'float64':'d', 'float32':'f',
-                        'int64':'l', 'int32':'i',
-                        'int16':'s', 'int8':'b',
-                        'S|100':'S1'}  # (check last entry)                      
+#         dtype_map = {'float64':'d', 'float32':'f',
+#                         'int64':'l', 'int32':'i',
+#                         'int16':'s', 'int8':'b',
+#                         'S|100':'S1'}  # (check last entry)                      
 
-        return nio_type_map
+        return dtype_map
     
-    #   get_nio_type_map()
+    #   get_dtype_map()
     #----------------------------------------------------------
     def open_new_file(self, file_name,
-                      z_values=numpy.arange(10),
+                      z_values=np.arange(10),
                       z_units='m',
                       var_names=['X'],
                       long_names=[None],
@@ -329,12 +335,6 @@ class ncps_file():
         #        would mean replacing "int(profile_length)"
         #        with "None".
         #----------------------------------------------------
-        
-        #--------------------------------------------------
-        # Try to import the Nio module from PyNIO package
-        #--------------------------------------------------
-        Nio = self.import_nio()
-        if not(Nio): return False
 
         #----------------------------
         # Does file already exist ?
@@ -353,7 +353,7 @@ class ncps_file():
         #-------------------------------------------            
         self.z_values  = z_values
         self.z_units   = z_units
-        nz             = numpy.size(z_values)
+        nz             = np.size(z_values)
         #-------------------------------------------
         # We may not need to save these in self.
         # I don't think they're used anywhere yet.
@@ -366,48 +366,59 @@ class ncps_file():
         #---------------------------------------------
         # Create array of Nio type codes from dtypes
         #---------------------------------------------
-        nio_type_map   = self.get_nio_type_map()
-        nio_type_codes = []
+        dtype_map   = self.get_dtype_map()
+        dtype_codes = []
         if (len(dtypes) == len(var_names)):
             for dtype in dtypes:
-               nio_type_code = nio_type_map[ dtype.lower() ]
-               nio_type_codes.append( nio_type_code )
+               dtype_code = dtype_map[ dtype.lower() ]
+               dtype_codes.append( dtype_code )
         else:
             dtype = dtypes[0]
-            nio_type_code = nio_type_map[ dtype.lower() ]
+            dtype_code = dtype_map[ dtype.lower() ]
             for k in xrange(len(var_names)):
-                nio_type_codes.append( nio_type_code )                
-        self.nio_type_codes = nio_type_codes        
+                dtype_codes.append( dtype_code )                
+        self.dtype_codes = dtype_codes        
             
         #-------------------------------------
         # Open a new netCDF file for writing
         #-------------------------------------
-        # Sample output from time.asctime():
-        #     "Thu Oct  8 17:10:18 2009"
-        #-------------------------------------
-        opt = Nio.options()
-        opt.PreFill = False            # (for efficiency)
-        opt.HeaderReserveSpace = 4000  # (4000 bytes, for efficiency)
-        history = "Created using PyNIO " + Nio.__version__ + " on "
-        history = history + time.asctime() + ". " 
-        history = history + comment
-
         try:
-            ncps_unit = Nio.open_file(file_name, mode="w",
-                                      options=opt, history=history )
+            ## format = 'NETCDF4'
+            format = 'NETCDF4_CLASSIC'
+            ncps_unit = nc.Dataset(file_name, mode='w', format=format)
             OK = True
         except:
             OK = False
             return OK
+
+        #------------------------------------------------------------
+        # Option to pre-fill with fill values
+        # Set fill_value for a var with "var._Fill_Value = number"
+        # For Nio was:  opt.PreFill = False # (for efficiency)
+        #------------------------------------------------------------
+        ncgs_unit.set_fill_off()
+        # ncgs_unit.set_fill_on()
         
+        #-------------------------------------
+        # Prepare and save a history string
+        #-------------------------------------
+        # Sample output from time.asctime():
+        #     "Thu Oct  8 17:10:18 2009"
+        #-------------------------------------
+        history = "Created using netCDF4 " + nc.__version__ + " on "
+        history = history + time.asctime() + ". " 
+        history = history + comment
+        ncps_unit.history = history
+        # print 'MADE IT PAST history BLOCK'
+       
         #------------------------------------------------
         # Create an unlimited time dimension (via None)
         #------------------------------------------------
         # Without using "int()" here, we get this:
         #     TypeError: size must be None or integer
         #------------------------------------------------
-        ncps_unit.create_dimension("nz", int(nz))
-        ncps_unit.create_dimension("time", None)
+        ncps_unit.createDimension('nz', int(nz))
+        ncps_unit.createDimension('time', None)
 
         #-------------------------
         # Create a time variable
@@ -417,13 +428,13 @@ class ncps_file():
         # NB! Can't use "time" vs. "tvar" here unless we
         #     add "import time" inside this function.
         #---------------------------------------------------
-        tvar = ncps_unit.create_variable('time', 'd', ("time",))
+        tvar = ncps_unit.createVariable('time', 'f8', ('time',))
         ncps_unit.variables['time'].units = time_units
 
         #--------------------------------------
         # Create a distance/depth variable, z
         #--------------------------------------
-        zvar = ncps_unit.create_variable('z', 'd', ("nz",))
+        zvar = ncps_unit.createVariable('z', 'd', ('z',))
         zvar[ : ] = z_values  # (store the z-values)
         ncps_unit.variables['z'].units = z_units
         
@@ -438,7 +449,7 @@ class ncps_file():
         #---------------------------------------------------
         for k in xrange(len(var_names)):
             var_name = var_names[k]
-            var = ncps_unit.create_variable(var_name, nio_type_codes[k],
+            var = ncps_unit.create_variable(var_name, dtype_codes[k],
                                             ("time", "nz"))
         
             #------------------------------------
@@ -447,10 +458,10 @@ class ncps_file():
             ncps_unit.variables[var_name].long_name = long_names[k]
             ncps_unit.variables[var_name].units     = units_names[k]        
 
-            #----------------------------------
-            # Specify a "nodata" fill value ?
-            #----------------------------------
-            var._FillValue = -9999.0    ## Does this jive with Prefill above ??
+			#----------------------------------
+			# Specify a "nodata" fill value ?
+			#----------------------------------
+			# var._Fill_Value = -9999.0    ## Used for pre-fill above ?
             
         self.ncps_unit = ncps_unit
         return OK
@@ -491,7 +502,7 @@ class ncps_file():
         if (time_index == -1):
             time_index = self.time_index
         if (time == None):
-            time = numpy.float64( time_index )
+            time = np.float64( time_index )
 
         #---------------------------------------------
         # Write a data value to existing netCDF file
@@ -510,7 +521,7 @@ class ncps_file():
         #------------------------------------
         # Increment the internal time index
         #------------------------------------
-        # self.time_index += numpy.size(values)
+        # self.time_index += np.size(values)
         
     #   add_profile()
     #----------------------------------------------------------
@@ -527,12 +538,12 @@ class ncps_file():
         #---------------------------
         # Get the dimensions, etc.
         #---------------------------
-        ndims = numpy.ndim(var)
+        ndims = np.ndim(var)
         dtype = self.dtypes[0]
         nz    = var.shape[0]
-        # nz  = numpy.size(var, 0)   # (also works)
-        n_IDs = numpy.size(IDs[0])
-        profiles = numpy.zeros([n_IDs, nz], dtype=dtype)
+        # nz  = np.size(var, 0)   # (also works)
+        n_IDs = np.size(IDs[0])
+        profiles = np.zeros([n_IDs, nz], dtype=dtype)
  
         if (ndims == 1):    
             #------------------------------
@@ -564,7 +575,7 @@ class ncps_file():
         if (time_index == -1):
             time_index = self.time_index
         if (time == None):
-            time = numpy.float64( time_index )
+            time = np.float64( time_index )
             
         #---------------------------------------------
         # Write current time to existing netCDF file
@@ -578,7 +589,7 @@ class ncps_file():
         profiles = self.profiles_at_IDs( var, IDs )
         rows     = IDs[0]
         cols     = IDs[1]
-        n_IDs    = numpy.size(rows)
+        n_IDs    = np.size(rows)
         for k in xrange(n_IDs):
             #----------------------------------------
             # Construct var_name of form:  Q[24,32]
@@ -607,12 +618,14 @@ class ncps_file():
     #-------------------------------------------------------------------
     def close_file(self):
 
+        # self.ncts_unit.sync()  ## (netCDF4 has no "flush")
         self.ncps_unit.close()
 
     #   close_file()
     #-------------------------------------------------------------------
     def close(self):
 
+        # self.ncts_unit.sync()  ## (netCDF4 has no "flush")
         self.ncps_unit.close()
 
     #   close()

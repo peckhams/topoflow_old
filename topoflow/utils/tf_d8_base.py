@@ -68,8 +68,11 @@ def unit_test():
 
     cfg_prefix     = 'Case5'
     d8.site_prefix = 'Treynor'
-    
-    d8.initialize( cfg_prefix=cfg_prefix, mode="driver" )
+
+    #-----------------------------------------------    
+    # This method will build its own cfg filename.
+    #-----------------------------------------------
+    d8.initialize( mode="driver" )
 
     print ' '
     print 'size(flow_grid) =', size(d8.flow_grid)
@@ -124,7 +127,7 @@ class d8_component(BMI_base.BMI_component):
 
     #   get_status()
     #-----------------------------------------------------------------
-    def initialize(self, cfg_prefix='Case1', mode="nondriver",
+    def initialize(self, cfg_file=None, mode="nondriver",
                    SILENT=True, REPORT=False):
 
         #--------------------------------------------------------
@@ -150,18 +153,21 @@ class d8_component(BMI_base.BMI_component):
         #       initialize_config_vars(), then they will
         #       default to CWD and cfg_prefix.
         #------------------------------------------------------
-        cfg_extension   = self.get_attribute( 'cfg_extension' )
-        filename        = cfg_prefix + cfg_extension
-        self.cfg_file   = os.path.join( os.getcwd(), filename )
-        self.cfg_prefix = cfg_prefix
-        
+        if (cfg_file == None):
+			cfg_extension = self.get_attribute( 'cfg_extension' )
+			filename      = self.site_prefix + cfg_extension
+			cfg_file      = self.in_directory + filename
+			## self.cfg_file   = os.path.join( os.getcwd(), filename )
+			## self.cfg_prefix = self.site_prefix
+        self.cfg_file = cfg_file
+
         #-----------------------------------------------
         # Load component parameters from a config file
         #-----------------------------------------------
         ## self.set_constants()
         self.initialize_config_vars() 
         
-        print '##### tf_d8_base.initialize() is calling read_grid_info'
+        ## print '##### tf_d8_base.initialize() is calling read_grid_info'
         self.read_grid_info()
         
         self.read_flow_grid()

@@ -1,5 +1,5 @@
 
-## Copyright (c) 2010, Scott D. Peckham
+## Copyright (c) 2010-2014, Scott D. Peckham
 ## June 2010  (collected here from model_output.py)
 
 #-------------------------------------------------------------------
@@ -83,8 +83,14 @@ class ts_file():
     #-------------------------------------------------------------------   
     def open_new_file( self, file_name,
                        var_names=['X'],
+                       dtype='float64',
                        time_units='minutes' ):
 
+        #-----------------------------------------------------------
+        # Note:  The "dtype" argument is included to match similar
+        #        routines, but is not currently used. (9/18/14)
+        #-----------------------------------------------------------
+        
         #----------------------------
         # Does file already exist ?
         #----------------------------

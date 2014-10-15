@@ -4,17 +4,17 @@
 #---------------------------------------------------
 
 # S.D. Peckham
+# Sept 2014 (new version to use netCDF4)
 # May, June 2010
 
 import os
 import sys
 import time
 
-import numpy
-
+import numpy as np
 import file_utils
 
-# import Nio    # (a module in the PyNIO package) 
+import netCDF4 as nc
 
 #-------------------------------------------------------------------
 # This class is for I/O of time series data to netCDF files.
@@ -26,9 +26,9 @@ import file_utils
 #
 #   class ncts_file():
 #
-#       import_nio()
+#       import_netCDF4()
 #       open_file()
-#       get_nio_type_map()
+#       get_dtype_map()
 #       open_new_file()
 #       update_time_index()
 #-----------------------------
@@ -79,8 +79,8 @@ def unit_test1(n_values=10, VERBOSE=False,
         print 'ERROR during open_new_file().'
         return
 
-    series = numpy.sqrt(numpy.arange( n_values, dtype='Float32'))
-    times  = numpy.arange( n_values, dtype='Float32') * 60.0
+    series = np.sqrt(np.arange( n_values, dtype='Float32'))
+    times  = np.arange( n_values, dtype='Float32') * 60.0
     
     #--------------------------
     # Add time series to file
@@ -156,8 +156,8 @@ def unit_test2(n_values=10, VERBOSE=False,
         print 'ERROR during open_new_file().'
         return
 
-    series = numpy.sqrt(numpy.arange( n_values, dtype='Float32'))
-    times  = numpy.arange( n_values, dtype='Float32') * 60.0
+    series = np.sqrt(np.arange( n_values, dtype='Float32'))
+    times  = np.arange( n_values, dtype='Float32') * 60.0
     
     #--------------------------
     # Add time series to file
@@ -210,7 +210,7 @@ def save_as_text(ncts_file_name=None, text_file_name=None):
     data = ncts.get_series( var_name )
     ncts.close()
     
-    data = numpy.array( data )
+    data = np.array( data )
     print 'min(data), max(data) =', data.min(), data.max()
 
     text_unit = open( text_file_name, 'w' )
@@ -224,18 +224,18 @@ class ncts_file():
     #----------------------------------------------------------
     # Note:  ncts = NetCDF Time Series (used by CSDMS)
     #----------------------------------------------------------
-    def import_nio(self):
+    def import_netCDF4(self):
 
         try:
-            import Nio  # (a module in the PyNIO package) 
-            ## print 'Imported Nio version: ' + Nio.__version__
-            return Nio
+            import netCDF4
+            # print 'Imported netCDF4 version: ' + netCDF4.__version__
+            return netCDF4
         except:
-##            python_version = sys.version[:3]
 ##            print ' '
 ##            print 'SORRY, Cannot write netCDF files because'
-##            print 'the "Nio" package cannot be imported.'
+##            print 'the "netCDF4" package cannot be imported.'
 ##            print ' '
+##            python_version = sys.version[:3]
 ##            if (python_version != '2.6'):
 ##                print 'Note that "PyNIO" is only installed for'
 ##                print 'Python version 2.6 on "beach".'
@@ -243,21 +243,15 @@ class ncts_file():
 ##                print ' '
             return False
         
-    #   import_nio()
+    #   import_netCDF4()
     #----------------------------------------------------------
     def open_file(self, file_name):
-
-        #--------------------------------------------------
-        # Try to import the Nio module from PyNIO package
-        #--------------------------------------------------
-        Nio = self.import_nio()
-        if not(Nio): return
         
         #-------------------------
         # Open file to read only
         #-------------------------
         try:
-            ncts_unit = Nio.open_file(file_name, mode="r")
+            ncts_unit = nc.Dataset(file_name, mode='r')
             self.ncts_unit = ncts_unit
             ### return ncts_unit
             return True
@@ -266,27 +260,39 @@ class ncts_file():
     
     #   open_file()
     #----------------------------------------------------------
-    def get_nio_type_map(self):
+    def get_dtype_map(self):
 
         #----------------------------------------
-        # Possible settings for "nio_type_code"
+        # Possible settings for "dtype_code"
+        #----------------------------------------------------
+        # These two-char codes are used for netCDF4 package
+        #----------------------------------------------------
+        # See:  http://unidata.github.io/netcdf4-python/
+        #----------------------------------------------------
+        dtype_map = {'float64':'f8', 'float32':'f4',
+                     'int64':'i8', 'int32':'i4',
+                     'int16':'i2', 'int8':'i1',
+                     'S|100':'S1'}  # ( ????? )       
+        
+        #-------------------------------------------------
+        # These one-char codes are used for Nio in PyNIO
+        #-------------------------------------------------
+        # dtype_code = "d"  # (double, Float64)
+        # dtype_code = "f"  # (float,  Float32)
+        # dtype_code = "l"  # (long,   Int64)
+        # dtype_code = "i"  # (int,    Int32)
+        # dtype_code = "h"  # (short,  Int16)
+        # dtype_code = "b"  # (byte,   Int8)
+        # dtype_code = "S1" # (char)
         #-------------------------------------------
-        # nio_type_code = "d"  # (double, Float64)
-        # nio_type_code = "f"  # (float,  Float32)
-        # nio_type_code = "l"  # (long,   Int64)
-        # nio_type_code = "i"  # (int,    Int32)
-        # nio_type_code = "h"  # (short,  Int16)
-        # nio_type_code = "b"  # (byte,   Int8)
-        # nio_type_code = "S1" # (char)
-        #-------------------------------------------
-        nio_type_map = {'float64':'d', 'float32':'f',
-                        'int64':'l', 'int32':'i',
-                        'int16':'s', 'int8':'b',
-                        'S|100':'S1'}  # (check last entry)                      
+#         dtype_map = {'float64':'d', 'float32':'f',
+#                         'int64':'l', 'int32':'i',
+#                         'int16':'s', 'int8':'b',
+#                         'S|100':'S1'}  # (check last entry)                      
 
-        return nio_type_map
+        return dtype_map
     
-    #   get_nio_type_map()
+    #   get_dtype_map()
     #----------------------------------------------------------
     def open_new_file(self, file_name,
                       var_names=['X'],
@@ -296,12 +302,6 @@ class ncts_file():
                       ### dtypes=['float64'],
                       time_units='minutes',
                       comment=''):
-          
-        #--------------------------------------------------
-        # Try to import the Nio module from PyNIO package
-        #--------------------------------------------------
-        Nio = self.import_nio()
-        if not(Nio): return False
 
         #----------------------------
         # Does file already exist ?
@@ -327,49 +327,60 @@ class ncts_file():
         self.dtypes      = dtypes
 
         #---------------------------------------------
-        # Create array of Nio type codes from dtypes
+        # Create array of dtype codes from dtypes
+        # for multiple time series (i.e. columns).
         #---------------------------------------------
-        nio_type_map   = self.get_nio_type_map()
-        nio_type_codes = []
+        dtype_map   = self.get_dtype_map()
+        dtype_codes = []
         if (len(dtypes) == len(var_names)):
             for dtype in dtypes:
-               nio_type_code = nio_type_map[ dtype.lower() ]
-               nio_type_codes.append( nio_type_code )
+               dtype_code = dtype_map[ dtype.lower() ]
+               dtype_codes.append( dtype_code )
         else:
             dtype = dtypes[0]
-            nio_type_code = nio_type_map[ dtype.lower() ]
+            dtype_code = dtype_map[ dtype.lower() ]
             for k in xrange(len(var_names)):
-                nio_type_codes.append( nio_type_code )                
-        self.nio_type_codes = nio_type_codes
+                dtype_codes.append( dtype_code )                
+        self.dtype_codes = dtype_codes
             
         #-------------------------------------
         # Open a new netCDF file for writing
         #-------------------------------------
-        # Sample output from time.asctime():
-        #     "Thu Oct  8 17:10:18 2009"
-        #-------------------------------------
-        opt = Nio.options()
-        opt.PreFill = False            # (for efficiency)
-        opt.HeaderReserveSpace = 4000  # (4000 bytes, for efficiency)
-        history = "Created using PyNIO " + Nio.__version__ + " on "
-        history = history + time.asctime() + ". " 
-        history = history + comment
-
         try:
-            ncts_unit = Nio.open_file(file_name, mode="w",
-                                      options=opt, history=history )
+            ## format = 'NETCDF4'
+            format = 'NETCDF4_CLASSIC'
+            ncts_unit = nc.Dataset(file_name, mode='w', format=format)
             OK = True
         except:
             OK = False
             return OK
-        
+
+        #------------------------------------------------------------
+        # Option to pre-fill with fill values
+        # Set fill_value for a var with "var._Fill_Value = number"
+        # For Nio was:  opt.PreFill = False # (for efficiency)
+        #------------------------------------------------------------
+        ncts_unit.set_fill_off()
+        # ncts_unit.set_fill_on()
+         
+        #-------------------------------------
+        # Prepare and save a history string
+        #-------------------------------------
+        # Sample output from time.asctime():
+        #     "Thu Oct  8 17:10:18 2009"
+        #-------------------------------------
+        history = "Created using netCDF4 " + nc.__version__ + " on "
+        history = history + time.asctime() + ". " 
+        history = history + comment
+        ncts_unit.history = history
+                
         #------------------------------------------------
         # Create an unlimited time dimension (via None)
         #------------------------------------------------
         # Without using "int()" for length, we get this:
         #     TypeError: size must be None or integer
         #------------------------------------------------
-        ncts_unit.create_dimension("time", None)
+        ncts_unit.createDimension("time", None)
 
         #-------------------------
         # Create a time variable
@@ -379,7 +390,7 @@ class ncts_file():
         # NB! Can't use "time" vs. "tvar" here unless we
         #     add "import time" inside this function.
         #---------------------------------------------------
-        tvar = ncts_unit.create_variable('time', 'd', ("time",))
+        tvar = ncts_unit.createVariable('time', 'f8', ("time",))
         ncts_unit.variables['time'].units = time_units
         
         #-----------------------------------
@@ -393,8 +404,7 @@ class ncts_file():
         #---------------------------------------------------
         for k in xrange(len(var_names)):
             var_name = var_names[k]
-            var = ncts_unit.create_variable(var_name, nio_type_codes[k],
-                                            ("time",))
+            var = ncts_unit.createVariable(var_name, dtype_codes[k], ("time",))
         
             #------------------------------------
             # Create attributes of the variable
@@ -402,10 +412,10 @@ class ncts_file():
             ncts_unit.variables[var_name].long_name = long_names[k]
             ncts_unit.variables[var_name].units     = units_names[k]        
 
-            #----------------------------------
-            # Specify a "nodata" fill value ?
-            #----------------------------------
-            var._FillValue = -9999.0    ## Does this jive with Prefill above ??
+			#----------------------------------
+			# Specify a "nodata" fill value ?
+			#----------------------------------
+			# var._Fill_Value = -9999.0    ## Used for pre-fill above ?
             
         self.ncts_unit = ncts_unit
         return OK
@@ -445,7 +455,7 @@ class ncts_file():
         if (time_index == -1):
             time_index = self.time_index
         if (time == None):
-            time = numpy.float64( time_index )
+            time = np.float64( time_index )
             
         #---------------------------------------
         # Write a time to existing netCDF file
@@ -505,17 +515,17 @@ class ncts_file():
         #---------------------------------
         # Is variable a grid or scalar ?
         #---------------------------------
-        if (numpy.rank(var) > 0):
-            return numpy.float32( var[ IDs ] )
+        if (np.rank(var) > 0):
+            return np.float32( var[ IDs ] )
         else:
             #-----------------------------------------------------
             # (3/16/07) Bug fix.  This gets used in case of q0,
             # which is a scalar when INFIL_ALL_SCALARS is true.
             # Without this, don't get a value for every ID.
             #-----------------------------------------------------
-            n_IDs  = numpy.size(IDs[0])
-            vector = numpy.zeros( n_IDs, dtype='Float32')
-            return (vector + numpy.float32(var)) 
+            n_IDs  = np.size(IDs[0])
+            vector = np.zeros( n_IDs, dtype='Float32')
+            return (vector + np.float32(var)) 
         
     #   values_at_IDs()
     #-------------------------------------------------------------------
@@ -557,7 +567,7 @@ class ncts_file():
         vals  = self.values_at_IDs( var, IDs )
         rows  = IDs[0]
         cols  = IDs[1]
-        n_IDs = numpy.size(rows)
+        n_IDs = np.size(rows)
         for k in xrange(n_IDs):
             #----------------------------------------
             # Construct var_name of form:  Q[24,32]
@@ -615,7 +625,7 @@ class ncts_file():
         #------------------------------------
         # Increment the internal time index
         #------------------------------------
-        # self.time_index += numpy.size(values)
+        # self.time_index += np.size(values)
         
     #   add_series()
     #----------------------------------------------------------
@@ -629,12 +639,14 @@ class ncts_file():
     #-------------------------------------------------------------------
     def close_file(self):
 
+        # self.ncts_unit.sync()  ## (netCDF4 has no "flush")
         self.ncts_unit.close()
 
     #   close_file()
     #-------------------------------------------------------------------
     def close(self):
 
+        # self.ncts_unit.sync()  ## (netCDF4 has no "flush")
         self.ncts_unit.close()
 
     #   close()

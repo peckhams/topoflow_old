@@ -1,5 +1,5 @@
 
-## Copyright (c) 2001-2013, Scott D. Peckham
+## Copyright (c) 2001-2014, Scott D. Peckham
 
 ## January 2013  (Removed "get_port_data" calls, etc.)
 ## January 2009  (converted from IDL)
@@ -134,7 +134,7 @@ class infil_component( BMI_base.BMI_component):
         
     #   set_constants()
     #-------------------------------------------------------------------
-    def initialize(self, cfg_prefix=None, mode="nondriver",
+    def initialize(self, cfg_file=None, mode="nondriver",
                    SILENT=False):
 
         #---------------------------------------------------------
@@ -152,7 +152,7 @@ class infil_component( BMI_base.BMI_component):
             
         self.status     = 'initializing'  # (OpenMI 2.0 convention)
         self.mode       = mode
-        self.cfg_prefix = cfg_prefix
+        self.cfg_file   = cfg_file
 
         #-------------------------------------------------
         # Richards' method is special, so check for it
@@ -200,11 +200,6 @@ class infil_component( BMI_base.BMI_component):
         # Must come before initialize_computed_vars()
         # because it uses ALL_SCALARS.
         #----------------------------------------------
-        self.initialize_required_components(mode)
-        #------------------------------------------
-        # Next line must come after previous line
-        #------------------------------------------
-        ## self.compute_update_steps()  # (10/7/10)
         self.check_input_types()
         self.initialize_computed_vars()
         
@@ -212,35 +207,6 @@ class infil_component( BMI_base.BMI_component):
         self.status = 'initialized'  # (OpenMI 2.0 convention)
         
     #   initialize()
-    #-------------------------------------------------------------------
-##    def compute_update_steps(self):
-##
-##        #---------------------------------------------
-##        # NB! This uses infil process dt as main dt.
-##        #---------------------------------------------------
-##        # Compute an "update step" for each process [secs]
-##        #---------------------------------------------------
-##        mp_dt  = self.mp.get_scalar_double('dt')
-##        sp_dt  = self.sp.get_scalar_double('dt')
-##        ep_dt  = self.ep.get_scalar_double('dt')
-##        gp_dt  = self.gp.get_scalar_double('dt')
-##        cp_dt  = self.cp.get_scalar_double('dt')
-##        
-####        ip_dt  = self.ip.get_scalar_double('dt')
-####        dp_dt  = self.dp.get_scalar_double('dt')
-####        iip_dt = self.iip.get_scalar_double('dt')  ## VARIABLE DT POSSIBLE
-##               
-##        self.mp_update_step = ceil(mp_dt / self.dt).astype('Int32')
-##        self.sp_update_step = ceil(sp_dt / self.dt).astype('Int32')
-##        self.ep_update_step = ceil(ep_dt / self.dt).astype('Int32')
-##        self.gp_update_step = ceil(gp_dt / self.dt).astype('Int32')
-##        self.cp_update_step = ceil(cp_dt / self.dt).astype('Int32')
-##        
-####        self.ip_update_step = ceil(ip_dt / self.dt).astype('Int32')
-####        self.dp_update_step = ceil(dp_dt / self.dt).astype('Int32')
-####        self.iip_update_step= ceil(iip_dt /self.dt).astype('Int32')
-##
-##    #   compute_update_steps()
     #-------------------------------------------------------------------
     ## def update(self, dt=-1.0, time_seconds=None):
     def update(self, dt=-1.0):
@@ -414,16 +380,15 @@ class infil_component( BMI_base.BMI_component):
         #        work for Green-Ampt and Smith-Parlange.
         #------------------------------------------------------
         are_scalars = np.array([
-                         self.mp.is_scalar('P'),
-                         self.sp.is_scalar('SM'),
-                         self.gp.is_scalar('h_table'),
-                         #------------------------------
+                         self.is_scalar('P_rain'),
+                         self.is_scalar('SM'),
+                         self.is_scalar('h_table'),
+                         #----------------------------
                          self.is_scalar('Ks'),
                          self.is_scalar('Ki'),
                          self.is_scalar('qs'),
                          self.is_scalar('qi'),
-                         self.is_scalar('G'),
-                         self.is_scalar('gam')  ])
+                         self.is_scalar('G')  ])
 
         self.ALL_SCALARS = np.all(are_scalars)
         
@@ -453,17 +418,24 @@ class infil_component( BMI_base.BMI_component):
             return
         
         if (self.ALL_SCALARS):
-            self.IN     = np.float64(0)
-            self.I      = np.float64(0)   # (was 1e-6 in TF 1.5b)
-            self.tp     = np.float64(-1)
-            self.fp     = np.float64(0)
-            self.r_last = np.float64(0)    # (P+SM at previous step)
+            #-----------------------------------------------------
+            # Note: "I" is initialized to 1e-6 to avoid a divide
+            #       by zero when first computing fc, which does
+            #       have a singularity at the origin.
+            #-----------------------------------------------------
+            self.IN     = self.initialize_scalar( 0, dtype='float64')
+            self.Rg     = self.initialize_scalar( 0, dtype='float64') 
+            self.I      = self.initialize_scalar( 1e-6, dtype='float64')
+            self.tp     = self.initialize_scalar( -1, dtype='float64')
+            self.fp     = self.initialize_scalar( 0, dtype='float64')
+            self.r_last = self.initialize_scalar( 0, dtype='float64') # (P+SM at prev step)
         else:
-            self.IN     = np.zeros([self.ny, self.nx], dtype='Float64')
-            self.I      = np.zeros([self.ny, self.nx], dtype='Float64')
-            self.tp     = np.zeros([self.ny, self.nx], dtype='Float64') - 1
-            self.fp     = np.zeros([self.ny, self.nx], dtype='Float64')
-            self.r_last = np.zeros([self.ny, self.nx], dtype='Float64')
+            self.IN     = np.zeros([self.ny, self.nx], dtype='float64')
+            self.Rg     = np.zeros([self.ny, self.nx], dtype='float64')
+            self.I      = np.zeros([self.ny, self.nx], dtype='float64') + 1e-6
+            self.tp     = np.zeros([self.ny, self.nx], dtype='float64') - 1
+            self.fp     = np.zeros([self.ny, self.nx], dtype='float64')
+            self.r_last = np.zeros([self.ny, self.nx], dtype='float64')
       
     #   initialize_computed_vars()
     #-------------------------------------------------------------------
@@ -472,16 +444,12 @@ class infil_component( BMI_base.BMI_component):
         if (self.DEBUG):
             print 'Calling update_surface_influx()...'
 
-        P  = self.P     # (2/3/13, new framework)
-        SM = self.SM    # (2/3/13, new framework)
-##        ET = self.ET    # (2/3/13, new framework)
-        #--------------------------------------------
-##        P  = self.get_port_data('P',  self.mp)
-##        SM = self.get_port_data('SM', self.sp)
-####        ET = self.get_port_data('ET', self.ep)
+        P_rain = self.P_rain    # (2/3/13, new framework)
+        SM     = self.SM        # (2/3/13, new framework)
+        ## ET  = self.ET        # (2/3/13, new framework)
 
-        self.P_total = (P + SM)
-##        self.P_total = (P + SM) - ET
+        self.P_total = (P_rain + SM)
+        ## self.P_total = (P_rain + SM) - ET
         
     #   update_surface_influx()
     #-------------------------------------------------------------------
@@ -533,7 +501,7 @@ class infil_component( BMI_base.BMI_component):
 ##            #** 3 : IN = Smith_Parlange_Infil_Rate_v2(self, r, r_last, n)
 ##            #------------------------------------------------------------
 ##        elif (self.method == 4):
-##            P  = self.mp.P
+##            P  = self.mp.P_rain
 ##            SM = self.sp.SM
 ##            ET = self.ep.ET
 ##            self.IN = Richards_Infil_Rate(self, P, SM, ET, self.Rg)
@@ -592,12 +560,6 @@ class infil_component( BMI_base.BMI_component):
         
         h = self.h_table  # (2/3/13, new framework)
         z = self.elev     # (2/3/13, new framework)
-        #-----------------------------------------------
-##        h = self.get_port_data('h_table', self.gp)  # (9/24/09)
-##        z = self.get_port_data('elev',    self.gp)
-        #-----------------------------------------------
-##        h = self.gp.get_grid_double('h_table')
-##        z = self.gp.get_grid_double('elev')
         
         ##### if (h or z is undefined): return
         
@@ -654,13 +616,10 @@ class infil_component( BMI_base.BMI_component):
         # Save last value of r for next time.
         #----------------------------------------   
         self.Rg = self.IN
-        P       = self.P   # (2/3/13, new framework)
-        SM      = self.SM  # (2/3/13, new framework)
-        #----------------------------------------------
-##        P       = self.get_port_data('P',  self.mp)
-##        SM      = self.get_port_data('SM', self.sp)
-        #----------------------------------------------
-        self.r_last = (P + SM)
+        P_rain  = self.P_rain   # (2/3/13, new framework)
+        SM      = self.SM       # (2/3/13, new framework)
+        #---------------------
+        self.r_last = (P_rain + SM)
 
     #   update_Rg()
     #-------------------------------------------------------------------
@@ -748,9 +707,9 @@ class infil_component( BMI_base.BMI_component):
         #------------------------------------------
         # Issue warning message and abort the run
         #------------------------------------------
-        msg = array(['ERROR:  Aborting model run.', \
-                     '        NaNs found in infiltration rates.', \
-                     '        Number of NaN values = ' + str(nbad) ])
+        msg = np.array(['ERROR:  Aborting model run.', \
+                        '        NaNs found in infiltration rates.', \
+                        '        Number of NaN values = ' + str(nbad) ])
         ## GUI_Error_Message(msg)  #########
 
         print '##############################################'
@@ -780,9 +739,9 @@ class infil_component( BMI_base.BMI_component):
         # Is P_total less than Ks anywhere ?
         # If so, set IN = P_total there.
         #--------------------------------------
-        np = np.size( self.P_total )
-        nK = np.size( self.Ks[0] )
-        if ((np == 1) and (nK == 1)):    
+        nPt = np.size( self.P_total )
+        nK  = np.size( self.Ks[0] )
+        if ((nPt == 1) and (nK == 1)):    
             #----------------------------------
             # P_total and Ks are both scalars
             #----------------------------------
@@ -797,7 +756,7 @@ class infil_component( BMI_base.BMI_component):
             nw = np.size( w[0] )
             
             if (nw != 0):    
-                if (np > 1):    
+                if (nPt > 1):    
                     self.IN[w] = self.P_total[w]
                 else:    
                     self.IN[w] = self.P_total
@@ -960,7 +919,7 @@ class infil_component( BMI_base.BMI_component):
         #          K = hydraulic conductivity
         #          v = vertical flow rate (see v0)
         #-------------------------------------------------
-        model_output.check_nio()
+        model_output.check_netcdf()
         self.update_outfile_names()
         
         #--------------------------------------

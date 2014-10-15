@@ -7,7 +7,7 @@ from setuptools import setup
 ## from distutils.core import setup
 
 setup(name='topoflow',
-      version='3.3',
+      version='3.4',
       description='d8-based, spatial hydrologic model',
       author='Scott D. Peckham',
       author_email='Scott.Peckham@colorado.edu',
@@ -22,7 +22,7 @@ setup(name='topoflow',
                 'topoflow.gui',         # (11/8/13)
                 'topoflow.utils',       # (later in REQUIRES)
                 'topoflow.utils.tests'], 
-      # requires=['csdms_py_utils(>3.2],
+      install_requires=['numpy', 'scipy', 'h5py', 'netCDF4'],
       entry_points={
           'console_scripts': [
               'topoflow = topoflow.components.topoflow:main',

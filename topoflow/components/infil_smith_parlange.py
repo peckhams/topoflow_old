@@ -71,40 +71,27 @@ class infil_component(infil_base.infil_component):
         'time_units':         'seconds' }
 
     _input_var_names = [
-        'atmosphere_water__liquid_equivalent_precipitation_rate',  # P
-        'glacier__melt_rate',                     # (MR)
-        'land_surface__elevation',                # (elev)
-        'land_water__evaporation_rate',           # (ET)
-        'snow__melt_rate',                        # (SM)
-        'soil_water_table_surface__elevation' ]   # (h_table)
+        'atmosphere_water__rainfall_volume_flux',           # (P_rain)  
+        'glacier_ice__melt_volume_flux',                    # (MR)
+        'land_surface__elevation',                          # (elev)  ##### IS THIS USED?
+        'land_surface_water__evaporation_volume_flux',      # (ET)
+        'snowpack__melt_volume_flux',                       # (SM)
+        'soil_water_sat-zone_top_surface__elevation' ]      # (h_table)
 
-##  'land_subsurface_to_surface_water__baseflow_seepage_rate',  # (GW)
-
-
-    #########################################################
-    #########################################################
-    # Note that:  "area_time_integral_of__"
-    # doesn't indicate that integral is over just
-    # the pixels in the watershed/basin.
-    #
-    # Maybe just insert "watershed_" before "land_water" ??
-    # Or: "land_water_in_watershed_" ?
-    #########################################################
-    #########################################################
-    
+        ##  'land_surface_water__baseflow_volume_flux',     # (GW)
 
     #-----------------------------------------------------------------
     # These are input vars provided by the user, but can also
     # be retrieved by other components as "output_vars".
     #-----------------------------------------------------------------
-    #    'soil_capillary__length_scale',                 # G
+    #    'soil_water__green-ampt_capillary_length',      # G
     #    'soil_water__initial_hydraulic_conductivity',   # Ki
     #    'soil_water__initial_volume_fraction',          # qi
     #    'soil_water__saturated_hydraulic_conductivity', # Ks
     #    'soil_water__saturated_volume_fraction',        # qs
     #
     #-----------------------------------------------------------------
-    # 'land_water__area_time_integral_of__infiltration_rate'
+    # 'land_water__domain_time_integral_of__infiltration_rate'
     # vs. 'basin_cumulative_infiltrated_water_volume'.
     #-----------------------------------------------------------------
     # Does "ground water" connote the "saturated zone" ?
@@ -116,75 +103,70 @@ class infil_component(infil_base.infil_component):
     # The parameter G appears in Green-Ampt but seems to be much
     # older, according to Smith's book, p. 69.
     #-----------------------------------------------------------------
-    # soil_water__ponding_time
-    # soil_water__cumulative_infiltrated_depth
-    #    land_water__time_integral_of_infiltration_rate
-    # soil_water__green_ampt_infiltrability   ### (potential_infiltration_rate ?)
-    #----------------------------------------------------------------- 
     _output_var_names = [
-        'land_water__cumulative_infiltrated_depth', # I
-        'land_water__infiltration_rate',  # IN
-        'land_water__area_time_integral_of_infiltration_rate', # vol_IN
-        ## 'model_grid_cell__area',           # da
         'model__time_step',                   # dt
-        'soil_capillary__length_scale',       # G
-        'soil_water__downward_volume_flux',   # v
-        ## 'soil_water__green_ampt_infiltrability',     # fc
-        'soil_water__initial_hydraulic_conductivity',   # Ki
-        'soil_water__initial_volume_fraction',          # qi
-        'soil_water__saturated_hydraulic_conductivity', # Ks
-        'soil_water__saturated_volume_fraction',        # qs
-        'soil_water__smith_parlange_gamma_parameter',   # gam  #####
-        'soil_water_table__area_time_integral_of_recharge_rate',  # vol_Rg
-        'soil_water_table__recharge_rate' ]    # Rg
+         # 'model_grid_cell__area',          # da
+        'soil_surface_water__domain_time_integral_of_infiltration_volume_flux', # vol_IN
+        'soil_surface_water__infiltration_volume_flux',                   # IN
+        'soil_surface_water__time_integral_of_infiltration_volume_flux',  # I
+        'soil_water__green-ampt_capillary_length',         # G (Also used for S-P.)
+        'soil_water__potential_infiltration_volume_flux',  # fc
+        'soil_water__initial_hydraulic_conductivity',      # Ki
+        'soil_water__initial_volume_fraction',             # qi
+        'soil_water__saturated_hydraulic_conductivity',    # Ks
+        'soil_water__saturated_volume_fraction',           # qs
+        'soil_water__smith-parlange_gamma_parameter',      # gam  #### NOT IN G-A.
+        'soil_water_flow__z_component_of_darcy_velocity',  # v
+        'soil_water_sat-zone_top__domain_time_integral_of_recharge_volume_flux',  # vol_Rg
+        'soil_water_sat-zone_top__recharge_volume_flux' ]  # Rg
 
     _var_name_map = {
-        'atmosphere_water__liquid_equivalent_precipitation_rate': 'P',
-        'glacier__melt_rate':                  'MR',
-        'land_surface__elevation':             'elev',
-        'land_water__evaporation_rate':        'ET',
-        'snow__melt_rate':                     'SM',
-        'soil_water_table_surface__elevation': 'h_table',
-        #---------------------------------------------------------
-        'land_water__cumulative_infiltrated_depth': 'I',
-        'land_water__infiltration_rate': 'IN',
-        'land_water__area_time_integral_of_infiltration_rate': 'vol_IN',
-        ## 'model_grid_cell__area': 'da', 
+        'atmosphere_water__rainfall_volume_flux':          'P_rain',   
+        'glacier_ice__melt_volume_flux':                   'MR',
+        'land_surface__elevation':                         'elev',
+        'land_surface_water__evaporation_volume_flux':     'ET',
+        'snowpack__melt_volume_flux':                      'SM',
+        'soil_water_sat-zone_top_surface__elevation':      'h_table',
+        #--------------------------------------------------------------
         'model__time_step': 'dt',
-        'soil_capillary__length_scale': 'G',
-        'soil_water__downward_volume_flux': 'v',
-        ## 'soil_water__green_ampt_infiltrability': 'fc',
-        'soil_water__initial_hydraulic_conductivity': 'Ki',
-        'soil_water__initial_volume_fraction': 'qi',
-        'soil_water__saturated_hydraulic_conductivity': 'Ks',
-        'soil_water__saturated_volume_fraction': 'qs',
-        'soil_water__smith_parlange_gamma_parameter': 'gam', #####
-        'soil_water_table__area_time_integral_of_recharge_rate': 'vol_Rg',
-        'soil_water_table__recharge_rate': 'Rg' }
+        # 'model_grid_cell__area': 'da', 
+        'soil_surface_water__domain_time_integral_of_infiltration_volume_flux': 'vol_IN',
+        'soil_surface_water__infiltration_volume_flux':   'IN',
+        'soil_surface_water__time_integral_of_infiltration_volume_flux': 'I',
+        'soil_water__green-ampt_capillary_length':        'G',  # (Also used for S-P.)
+        'soil_water__initial_hydraulic_conductivity':     'Ki',
+        'soil_water__initial_volume_fraction':            'qi',
+        'soil_water__potential_infiltration_volume_flux': 'fc',
+        'soil_water__saturated_hydraulic_conductivity':   'Ks',
+        'soil_water__saturated_volume_fraction':          'qs',
+        'soil_water__smith-parlange_gamma_parameter':     'gam', ##### NOT IN G-A.
+        'soil_water_flow__z_component_of_darcy_velocity': 'v',
+        'soil_water_sat-zone_top__domain_time_integral_of_recharge_volume_flux': 'vol_Rg',
+        'soil_water_sat-zone_top__recharge_volume_flux':  'Rg' }
 
     _var_units_map = {
-        'atmosphere_water__liquid_equivalent_precipitation_rate': 'm s-1',
-        'glacier__melt_rate':                  'm s-1',
-        'land_surface__elevation':             'm',
-        'land_water__evaporation_rate':        'm s-1',
-        'snow__melt_rate':                     'm s-1',
-        'soil_water_table_surface__elevation': 'm',
-        #---------------------------------------------------------
-        'land_water__cumulative_infiltrated_depth': 'm',
-        'land_water__infiltration_rate': 'm s-1',
-        'land_water__area_time_integral_of_infiltration_rate': 'm3',
-        ## 'model_grid_cell__area': 'm2', 
+        'atmosphere_water__rainfall_volume_flux':          'm s-1',   
+        'glacier_ice__melt_volume_flux':                   'm s-1',
+        'land_surface__elevation':                         'm',
+        'land_surface_water__evaporation_volume_flux':     'm s-1',
+        'snowpack__melt_volume_flux':                      'm s-1',
+        'soil_water_sat-zone_top_surface__elevation':      'm',
+        #------------------------------------------------------------
         'model__time_step': 's',
-        'soil_capillary__length_scale': 'm',
-        'soil_water__downward_volume_flux': 'm s-1',
-        ## 'soil_water__green_ampt_infiltrability': 'm s-1',
+        # 'model_grid_cell__area': 'm2', 
+        'soil_surface_water__time_integral_of_infiltration_volume_flux': 'm',
+        'soil_surface_water__infiltration_volume_flux': 'm s-1',
+        'soil_surface_water__domain_time_integral_of_infiltration_volume_flux': 'm3',
+        'soil_water__green-ampt_capillary_length': 'm',  # (Also used for S-P.)
         'soil_water__initial_hydraulic_conductivity': 'm s-1',
         'soil_water__initial_volume_fraction': '1',
+        'soil_water__potential_infiltration_volume_flux': 'm s-1',
         'soil_water__saturated_hydraulic_conductivity': 'm s-1',
         'soil_water__saturated_volume_fraction': '1',
-        'soil_water__smith_parlange_gamma_parameter': '1',  #####
-        'soil_water_table__area_time_integral_of_recharge_rate': 'm3',
-        'soil_water_table__recharge_rate': 'm s-1' }
+        'soil_water__smith-parlange_gamma_parameter': '1',  ##### NOT IN G-A.
+        'soil_water_flow__z_component_of_darcy_velocity': 'm s-1',
+        'soil_water_sat-zone_top__domain_time_integral_of_recharge_volume_flux': 'm3',
+        'soil_water_sat-zone_top__recharge_volume_flux': 'm s-1' }
 
     #------------------------------------------------    
     # Return NumPy string arrays vs. Python lists ?
@@ -239,7 +221,7 @@ class infil_component(infil_base.infil_component):
 ##        # So far, all vars have type "double",
 ##        # but use the one in BMI_base instead.
 ##        #---------------------------------------
-##        return 'double'
+##        return 'float64'
 ##    
 ##    #   get_var_type()
     #-------------------------------------------------------------------
@@ -321,7 +303,7 @@ class infil_component(infil_base.infil_component):
         #        work for Green-Ampt and Smith-Parlange.
         #------------------------------------------------------
         are_scalars = np.array([
-                         self.is_scalar('P'),
+                         self.is_scalar('P_rain'),
                          self.is_scalar('SM'),
                          self.is_scalar('h_table'),
                          #-----------------------------

@@ -283,7 +283,7 @@ class soil_base( BMI_base.BMI_component ):
         
     #   theta_max()
     #-----------------------------------------------------------------------
-    def initialize(self, cfg_prefix='Case1', REPORT=False):
+    def initialize(self, cfg_file=None, REPORT=False):
 
         #----------------------------------------------------------
         # Notes:  The values here are from Table 6.1 (p. 235) in

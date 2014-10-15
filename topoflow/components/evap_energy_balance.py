@@ -1,11 +1,21 @@
-
-## Copyright (c) 2009-2013, Scott D. Peckham
-##
-## January 2013   (Revised handling of input/output names).
-## October 2012   (CSDMS Standard Names and BMI)
-## May, July, August 2009
-## May 2010 (changes to unit_test() and read_cfg_file()
-
+#
+#  Copyright (c) 2001-2014, Scott D. Peckham
+#
+#  Sep 2014.  New standard names and BMI updates and testing.
+#  Aug 2014.  Updates to standard names and BMI.
+#             Wrote latent_heat_of_evaporation(); not used yet.
+#             Moved update_water_balance() to satzone_base.py.
+#  Nov 2013.  Converted TopoFlow to Python package.
+#  Feb 2013.  Adapted to use EMELI framework.
+#  Jan 2013.  Revised handling of input/output names.
+#  Oct 2012.  CSDMS Standard Names and BMI.
+#  May 2010.  Changes to unit_test() and read_cfg_file().
+#  Aug 2009.  Updates.
+#  Jul 2009.  Updates.
+#  May 2009.  Updates.
+#  Apr 2009.  Updates.
+#  Jan 2009.  Converted from IDL to Python with I2PY.
+#
 #-----------------------------------------------------------------------
 #  NOTES:  This file defines an Energy-Balance ET component
 #          and related functions.  It inherits from the ET
@@ -68,31 +78,19 @@ class evap_component(evap_base.evap_component):
     # compute Q_sum and Qe, but they aren't needed directly here:
     #     uz, z, z0_air, rho_air, Cp_air, Qn_SW, Qn_LW 
     #-----------------------------------------------------------------
-    # TopoFlow currently assumes that "soil_model_layer_0__porosity"
-    # is the same as "soil_model_layer_0__saturated_water_content".
-    #-----------------------------------------------------------------
-    
-    #############################################################
-    # We need to add "porosity" as a reference to theta_sat in
-    # the approprate place.
-    #
-    # Check algorithms that add or remove water from the soil;
-    # make sure to account for the *current* water content.
-    #############################################################
-    # Note that evap_base.py is inherited and contains additional
-    # methods that need vars for top soil layer.  Note that
-    # "model_top_layer" = "model_layer_0".
-    #############################################################
     _input_var_names = [
-        'air__temperature',                         # (@meteorology)
-        'channel_water__depth',                     # (@channels)
-        'land_surface_air__latent_heat_flux',       # (@meteorology, Qe)
-        'land_surface__net_irradiation_flux',       # (@meteorology)
-        'land_surface__temperature',                # (@meteorology)
-        'soil_model_top_layer__porosity',           # (@satzone)
-        'soil_model_top_layer__wetted_thickness',   # (@satzone)
-        'soil_water_table_surface__elevation',      # (@satzone)
-        'snow__depth' ]                             # (@snow)
+        'atmosphere_bottom_air__temperature',            # (@meteorology)
+        'atmosphere_bottom_air_land_net-latent-heat__energy_flux',   # (@meteorology, Qe)
+        'land_surface_net-total-energy__energy_flux',    # (@meteorology)
+        'land_surface__temperature',                     # (@meteorology)
+        'snowpack__depth' ]                              # (@snow)
+        #----------------------------------------------
+        # These are no longer needed here. (9/25/14)
+        #----------------------------------------------        
+#         'channel_water_x-section__mean_depth',           # (@channels)       
+#         'soil_top-layer__porosity',                      # (@satzone)
+#         'soil_top-layer__saturated_thickness',           # (@satzone)
+#         'soil_water_sat-zone_top_surface__elevation' ]   # (@satzone)
     
         #-------------------------------------------------
         # These are currently obtained from the GUI/file
@@ -108,19 +106,20 @@ class evap_component(evap_base.evap_component):
         # These could be added in the future; not used yet.
         #----------------------------------------------------
 ##        'soil_model_top_layer__saturated_water_content', # (satzone comp)
-##        'land_surface_water_potential_evaporation_rate':'PET' }
+##        'land_surface_water__potential_evaporation_rate':'PET' }
     
     _output_var_names = [
-        'land_water__evaporation_rate',  # (ET)
-        'land_water__area_time_integral_of_evaporation_rate',  # (vol_ET)
-        'model__time_step', # (dt)
-        'soil_surface__conduction_energy_flux' ]  # (Qc)
+        'land_surface_soil__conduction_heat_flux',      # (Qc)
+        'land_surface_water__evaporation_volume_flux',  # (ET)
+        'land_surface_water__domain_time_integral_of_evaporation_volume_flux',  # (vol_ET)
+        'model__time_step' ] # (dt)
+
         #-----------------------------------------------------
         # These are read from GUI/file, but can be returned.
         #-----------------------------------------------------       
         #'land_surface__elevation',
         #'soil__reference_depth_temperature',
-        ## 'soil_surface__temperature',
+        #'soil_surface__temperature',
         #'soil__temperature_reference_depth',
         #'soil__thermal_conductivity' ]
         
@@ -130,23 +129,18 @@ class evap_component(evap_base.evap_component):
     #----------------------------------------------------------------
     # Should we use "soil_surface__temperature" or
     # "land_surface__temperature" here ?   (Both, for now.)
-    # "net_irradiaiton_flux" or "net_energy_flux" ?
     #----------------------------------------------------------------   
     _var_name_map = {
-        'air__temperature' :                            'T_air',
-        'channel_water__depth' :                        'depth',
-        'land_surface_air__latent_heat_flux' :          'Qe',      ### CHECK
-        'land_surface__net_irradiation_flux' :          'Q_sum',
-        'land_surface__temperature':                    'T_surf',
-        'soil_model_top_layer__porosity':               'p0',
-        'soil_model_top_layer__wetted_thickness' :      'y0',
-        'soil_water_table_surface__elevation' :         'h_table',
-        'snow__depth' :                                 'h_snow',
+        'atmosphere_bottom_air__temperature' :            'T_air',
+        'atmosphere_bottom_air_land_net-latent-heat__energy_flux' : 'Qe',  # (Qh = sensible)
+        'land_surface_net-total-energy__energy_flux' :    'Q_sum',
+        'land_surface__temperature':                      'T_surf',
+        'snowpack__depth' :                               'h_snow',
         #----------------------------------------------------------------
-        'land_water__evaporation_rate' :                      'ET',
-        'land_water__area_time_integral_of_evaporation_rate': 'vol_ET',
+        'land_surface_soil__conduction_heat_flux' :           'Qc',   # (computed)
+        'land_surface_water__domain_time_integral_of_evaporation_volume_flux': 'vol_ET',
+        'land_surface_water__evaporation_volume_flux' :       'ET',
         'model__time_step':                                   'dt',
-        'soil_surface__conduction_energy_flux' :              'Qc',   # (computed)
         #-----------------------------------------------------
         # These are read from GUI/file, but can be returned.
         #-----------------------------------------------------       
@@ -155,25 +149,29 @@ class evap_component(evap_base.evap_component):
         # 'soil_surface__temperature' :                   'T_surf',    # (from met)
         'soil__temperature_reference_depth':              'soil_x',
         'soil__thermal_conductivity' :                    'K_soil' }   # (thermal !)
-        
+        #----------------------------------------------
+        # These are no longer needed here. (9/25/14)
+        #---------------------------------------------- 
+#         'channel_water_x-section__mean_depth' :           'depth', 
+#         'soil_top-layer__porosity':                       'p0',
+#         'soil_top-layer__saturated_thickness' :           'y0',
+#         'soil_water_sat-zone_top_surface__elevation' :    'h_table' }       
+                
     #------------------------------------------------
     # What is the correct unit string for "deg_C" ?
+    # Note that "C" = Coulombs in SI units.
     #------------------------------------------------
     _var_units_map = {
-        'air__temperature' :                            'deg_C',
-        'channel_water__depth' :                        'm',
-        'land_surface_air__latent_heat_flux' :          'W m-2',   ### CHECK
-        'land_surface__net_irradiation_flux' :          'W m-2',
-        'land_surface__temperature':                    'deg_C',
-        'soil_model_top_layer__porosity':               '1',       ### CHECK
-        'soil_model_top_layer__wetted_thickness' :      'm',
-        'soil_water_table_surface__elevation' :         'm',
-        'snow__depth' :                                 'm',
-        #------------------------------------------------------------ 
-        'land_water__evaporation_rate' :         'm s-1',
-        'land_water__area_time_integral_of_evaporation_rate': 'm3',
-        'model__time_step' :                     's',
-        'soil_surface__conduction_energy_flux' : 'W m-2',
+        'atmosphere_bottom_air__temperature' :            'deg_C',
+        'atmosphere_bottom_air_land_net-latent-heat__energy_flux' : 'W m-2',
+        'land_surface_net-total-energy__energy_flux' :    'W m-2',
+        'land_surface__temperature':                      'deg_C',
+        'snowpack__depth' :                               'm',
+        #------------------------------------------------------------
+        'land_surface_soil__conduction_heat_flux' :           'W m-2', 
+        'land_surface_water__domain_time_integral_of_evaporation_volume_flux': 'm3',
+        'land_surface_water__evaporation_volume_flux' :       'm s-1',
+        'model__time_step' :                                  's',
         #-----------------------------------------------------
         # These are read from GUI/file, but can be returned.
         #-----------------------------------------------------
@@ -181,8 +179,15 @@ class evap_component(evap_base.evap_component):
         'soil__reference_depth_temperature' :             'deg_C',
         # 'soil_surface__temperature' :                   'deg_C',
         'soil__temperature_reference_depth':              'm',
-        'soil__thermal_conductivity' :                    'W m-1 deg_C-1]' }
-    
+        'soil__thermal_conductivity' :                    'W m-1 K-1]' }
+        #----------------------------------------------
+        # These are no longer needed here. (9/25/14)
+        #---------------------------------------------- 
+#         'channel_water_x-section__mean_depth' :           'm',
+#         'soil_top-layer__porosity':                       '1',
+#         'soil_top-layer__saturated_thickness' :           'm',
+#         'soil_water_sat-zone_top_surface__elevation' :    'm' }                
+            
     #------------------------------------------------    
     # Return NumPy string arrays vs. Python lists ?
     #------------------------------------------------
@@ -236,7 +241,7 @@ class evap_component(evap_base.evap_component):
 ##        # So far, all vars have type "double",
 ##        # but use the one in BMI_base instead.
 ##        #---------------------------------------
-##        return 'double'
+##        return 'float64'
 ##    
 ##    #   get_var_type()
     #-------------------------------------------------------------------
@@ -251,22 +256,7 @@ class evap_component(evap_base.evap_component):
         # from other vars, including slope and aspect grids.
         # So they'll always be grids and so will self.ET
         # unless PRECIP_ONLY = True.
-        #--------------------------------------------------------
-        # Need to get a boolean value, PRECIP_ONLY from the
-        # "meteorology" component.  This doesn't work:
-        # PRECIP_ONLY = self.get_port_data('PRECIP_ONLY', 'mp')
-        # But the method just below does work.  Should we add
-        # a new IRF port method called "get_boolean()" ??
-        # Note that "self.mp" here is an embedded CCA port.
-        #--------------------------------------------------------
-        # (2/5/13) Modified for use with new framework.
-        #-------------------------------------------------------- 
-##        PRECIP_ONLY = self.mp.get_scalar_long('PRECIP_ONLY')
-##        Q_sum_IS_SCALAR = (PRECIP_ONLY == 1)
-##        if (self.DEBUG):
-##            print 'In ET component: PRECIP_ONLY =', PRECIP_ONLY
-##        ## Q_sum_IS_SCALAR = self.mp.is_scalar('Q_sum')
-                         
+        #--------------------------------------------------------                    
         are_scalars = np.array([
                          self.is_scalar('T_soil_x'),
                          self.is_scalar('soil_x'),
@@ -275,7 +265,7 @@ class evap_component(evap_base.evap_component):
                          self.is_scalar('h_snow'),     # @snow
                          #----------------------------
                          self.is_scalar('Q_sum'),      # @met
-                         self.is_scalar('Qe'),         # @met
+                         self.is_scalar('Qe'),         # @met    ####### Needed ?
                          self.is_scalar('T_air') ])    # @met
                          #----------------------------
 ##                         self.sp.is_scalar('h_snow'),
@@ -304,10 +294,10 @@ class evap_component(evap_base.evap_component):
         #        T_surf   = soil temp at the surface [deg_C]
         #        T_soil_x = soil temp at depth of x meters [deg_C]
 
-        #        K_soil = thermal conductivity of soil [W/m/deg_C]
-        #        K_soil = 0.45   ;[W/m/deg_C] (thawed soil; moisture
+        #        K_soil = thermal conductivity of soil [W m-1 K-1]
+        #        K_soil = 0.45   ;[W m-1 K-1] (thawed soil; moisture
         #                     content near field capacity)
-        #        K_soil = 1.0    ;[W/m/deg_C] (frozen soil)
+        #        K_soil = 1.0    ;[W m-1 K-1] (frozen soil)
 
         #        z0_air = roughness length scale [m]
         #        h_snow = snow depth [m]
@@ -318,10 +308,6 @@ class evap_component(evap_base.evap_component):
         Q_sum  = self.Q_sum   # (2/3/13, new framework)
         Qe     = self.Qe      # (2/3/13, new framework)
         T_surf = self.T_surf  # (2/3/13, new framework)
-        #------------------------------------------------
-##        Q_sum  = self.get_port_data('Q_sum',  self.mp)
-##        Qe     = self.get_port_data('Qe',     self.mp)
-##        T_surf = self.get_port_data('T_surf', self.mp)
 
         ################################################
         #  START USING "update_Qc" in "evap_base.py" ??
@@ -435,10 +421,10 @@ class evap_component(evap_base.evap_component):
 ##    #        T_surf   = soil temp at the surface [deg_C]
 ##    #        T_soil_x = soil temp at depth of x meters [deg_C]
 ##
-##    #        K_soil = thermal conductivity of soil [W/m/deg_C]
-##    #        K_soil = 0.45   ;[W/m/deg_C] (thawed soil; moisture
+##    #        K_soil = thermal conductivity of soil [W m-1 K-1]
+##    #        K_soil = 0.45   ;[W m-1 K-1] (thawed soil; moisture
 ##    #                     content near field capacity)
-##    #        K_soil = 1.0    ;[W/m/deg_C] (frozen soil)
+##    #        K_soil = 1.0    ;[W m-1 K-1] (frozen soil)
 ##
 ##    #        z0_air = roughness length scale [m]
 ##    #        h_snow = snow depth [m]

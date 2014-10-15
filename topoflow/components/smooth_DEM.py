@@ -50,7 +50,6 @@ import rti_files
 #   class DEM_smoother
 #
 #       get_attribute()
-#       get_cca_port_info()
 #       set_constants()
 #       initialize()
 #       update()
@@ -208,7 +207,7 @@ def curve_fit_test():
     
 #   curve_fit_test()
 #-------------------------------------------------------------------------
-class DEM_smoother(CSDMS_base.CSDMS_component):
+class DEM_smoother( BMI_base.BMI_component ):
 
     #-----------------------------------------------------------------
     # Note: Do not define an __init__() method here.  It will
@@ -240,18 +239,6 @@ class DEM_smoother(CSDMS_base.CSDMS_component):
 
     #   get_attribute()
     #-------------------------------------------------------------------
-    def get_cca_port_info(self):
-
-        # self.cca_port_names = ['meteorology']
-        # self.cca_port_short = ['mp']
-
-        self.cca_port_names = ['']
-        self.cca_port_short=['']
-        self.cca_port_type  = "IRFPort"
-        self.cca_project    = "edu.csdms.models"
-
-    #   get_cca_port_info()
-    #-------------------------------------------------------------------
     def set_constants(self):
        
         self.nodata = numpy.float32(-9999)
@@ -265,7 +252,7 @@ class DEM_smoother(CSDMS_base.CSDMS_component):
 
     #   set_constants()   
     #-------------------------------------------------------------------
-    def initialize(self, cfg_prefix=None, mode="nondriver",
+    def initialize(self, cfg_file=None, mode="nondriver",
                    SILENT=False):
 
         self.comp_name  = 'DEM Smoother component'
@@ -273,9 +260,9 @@ class DEM_smoother(CSDMS_base.CSDMS_component):
             print ' '
             print self.comp_name + ': Initializing...'
         
-        self.status     = 'initializing'  # (OpenMI 2.0 convention)
-        self.mode       = mode
-        self.cfg_prefix = cfg_prefix
+        self.status   = 'initializing'  # (OpenMI 2.0 convention)
+        self.mode     = mode
+        self.cfg_file = cfg_file
         
         #-----------------------------------------------
         # Load component parameters from a config file
@@ -332,7 +319,6 @@ class DEM_smoother(CSDMS_base.CSDMS_component):
         #-----------------------
         self.initialize_d8_vars()  # (depend on D8 flow grid)
         # self.initialize_computed_vars()
-        # self.initialize_required_components( mode )
         
         self.open_output_files()
         self.status = 'initialized'  # (OpenMI 2.0 convention)
@@ -498,13 +484,16 @@ class DEM_smoother(CSDMS_base.CSDMS_component):
         # where there is no "*_d8_global.cfg" file.
         # It is called in d8.initialize().
         ################################################
-        self.d8.in_directory    = self.in_directory   # (1/17/12)
         self.d8.DEM_file        = self.DEM_file       # (1/17/12) in_directory already prepended?
         self.d8.FILL_PITS_IN_Z0 = 0                   # (1/17/12)
         self.d8.A_units         = 'km^2'              # (1/17/12) May be needed.
-        self.d8.site_prefix     = self.site_prefix
-  
-        self.d8.initialize( cfg_prefix=self.cfg_prefix, 
+
+        #--------------------------------------------------         
+        # D8 component builds its cfg filename from these  
+        #--------------------------------------------------      
+        self.d8.site_prefix  = self.site_prefix
+        self.d8.in_directory = self.in_directory
+        self.d8.initialize( cfg_file=None,  
                             SILENT=self.SILENT,
                             REPORT=self.REPORT )
 
@@ -1485,7 +1474,7 @@ class DEM_smoother(CSDMS_base.CSDMS_component):
     #-------------------------------------------------------------------  
     def open_output_files(self):
 
-        model_output.check_nio()    # (test import and info message)
+        model_output.check_netcdf()    # (test import and info message)
         self.update_outfile_names()
 
         #--------------------------------------

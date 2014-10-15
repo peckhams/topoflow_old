@@ -1,12 +1,18 @@
-
-## Copyright (c) 2001-2013, Scott D. Peckham
-##
-## January 2013   (Revised handling of input/output names).
-## October 2012   (CSDMS Standard Names and BMI)
-## January 2009  (converted from IDL)
-## July, August 2009
-## May 2010 (changes to unit_test() and read_cfg_file()
-
+#
+#  Copyright (c) 2001-2014, Scott D. Peckham
+#
+#  Sep 2014.  Cleanup and testing.
+#             Own versions of input file routines, at end.
+#  Aug 2014.  Customized initialize_computed_vars(). 
+#             Updates to standard names and BMI.
+#  Nov 2013.  Converted TopoFlow to Python package.
+#  Jan 2013.  Revised handling of input/output names.
+#  Oct 2012.  CSDMS Standard Names and BMI.
+#  Aug 2009.  Updates.
+#  Jul 2009.  Updates.
+#  May 2010.  Changes to unit_test() and read_cfg_file().
+#  Jan 2009.  Converted from IDL.
+#
 #-----------------------------------------------------------------------
 #  NOTES:  This file defines a Degree-Day snowmelt component
 #          and related functions.  It inherits from the snowmelt
@@ -20,14 +26,19 @@
 #      get_output_var_names()   # (5/14/12)
 #      get_var_name()           # (5/16/12, Bolton)
 #      get_var_units()          # (5/16/12, Bolton)
-#      -----------------------
+#      ----------------------
 #      check_input_types()
 #      update_meltrate()
+#      ----------------------
+#      open_input_files()
+#      read_input_files()
+#      close_input_files()
 #
 #-----------------------------------------------------------------------
 
 import numpy as np
 
+from topoflow.utils import model_input
 from topoflow.components import snow_base
 
 #-----------------------------------------------------------------------
@@ -60,23 +71,25 @@ class snow_component( snow_base.snow_component ):
     # Some input vars, like c0 and T0 are read from the CFG
     # file and not from other components.  They are therefore
     # included with the output_vars.
-    #----------------------------------------------------------
+    #------------------------------------------------------------
+    # Note: snowfall_leq-volume_flux *must* be nonliquid precip.
+    #------------------------------------------------------------   
     _input_var_names = [
-        'air__density',
-        'air__relative_humidity',
-        'air__temperature',
-        'air__thermal_capacity',
-        'atmosphere_turbulent_boundary_layer__roughness_length',
-        'atmosphere_water__liquid_equivalent_precipitation_rate',
-        # 'land_surface_air__pressure',
-        'land_surface__net_irradiation_flux',
-        'land_surface__net_longwave_irradiation_flux',
-        'land_surface__net_shortwave_irradiation_flux',
+        'atmosphere_bottom_air__temperature',
+        'atmosphere_water__snowfall_leq-volume_flux',
         'land_surface__temperature',        
-        'water__density',
-        'wind__speed_reference_height',
-        'wind__reference_height_speed' ]
-
+        'water-liquid__mass-per-volume_density' ]
+        #------------------------------------------------------------        
+        # None of these should be needed for the Degree-Day method.
+        #------------------------------------------------------------
+        # 'atmosphere_bottom_air__mass-per-volume_density',
+        # 'atmosphere_bottom_air__mass-specific_isobaric_heat_capacity',
+        # 'atmosphere_bottom_air__pressure',  # (not needed)
+        # 'atmosphere_bottom_air_flow__log_law_roughness_length',
+        # 'atmosphere_bottom_air_flow__speed_reference_height',
+        # 'atmosphere_bottom_air_flow__reference-height_speed',        
+        # 'atmosphere_bottom_air_water-vapor__relative_saturation',
+                        
     #------------------------------------------------------------
     # Note: The main output of the Degree-Day method is SM.
     #       Functions in snow_base.py compute additional output
@@ -90,78 +103,84 @@ class snow_component( snow_base.snow_component ):
     #       vol_SM was "basin_cumulative_snow_meltwater_volume"
     #------------------------------------------------------------
     _output_var_names = [
-        'model__time_step',                        # dt        
-        'snow__area_time_integral_of_melt_rate',   # vol_SM
-        'snow__degree_day_coefficient',            # c0   (read from CFG)
-        'snow__degree_day_threshold_temperature',  # T0   (read from CFG)
-        'snow__density',                           # rho_snow
-        'snow__depth',                             # h_snow
-        'snow__initial_depth',                     # h0_snow
-        'snow__initial_liquid_equivalent_depth',   # h0_swe
-        'snow__liquid_equivalent_depth',           # h_swe
-        'snow__melt_rate',                         # SM   (MR is used for ice)
-        'snow__thermal_capacity' ]                 # Cp_snow
-    
+        'model__time_step',                                   # dt 
+        'snowpack__degree-day_coefficient',                   # c0   (read from CFG)
+        'snowpack__degree-day_threshold_temperature',         # T0   (read from CFG)
+        'snowpack__domain_time_integral_of_melt_volume_flux', # vol_SM
+        'snowpack__depth',                                    # h_snow
+        'snowpack__initial_depth',                            # h0_snow
+        'snowpack__initial_liquid-equivalent_depth',          # h0_swe
+        'snowpack__liquid-equivalent_depth',                  # h_swe
+        'snowpack__melt_volume_flux',                         # SM (MR is used for ice)
+        'snowpack__z_mean_of_mass-per-volume_density' ]       # rho_snow
+        #------------------------------------------------------------        
+        # None of these should be needed for the Degree-Day method.
+        #------------------------------------------------------------
+        # 'snowpack__z_mean_of_mass-specific_isobaric_heat_capacity',       # Cp_snow 
+                    
     _var_name_map = {
-        'air__density': 'rho_air',
-        'air__relative_humidity': 'RH',
-        'air__temperature': 'T_air',
-        'air__thermal_capacity': 'Cp_air',
-        'atmosphere_turbulent_boundary_layer__roughness_length': 'z0_air',
-        'atmosphere_water__liquid_equivalent_precipitation_rate': 'P',
-        # 'land_surface_air__pressure': 'p0',   # (check if needed)
-        'land_surface__net_irradiation_flux': 'Q_sum',
-        'land_surface__net_longwave_irradiation_flux': 'Qn_LW',
-        'land_surface__net_shortwave_irradiation_flux': 'Qn_SW',
-        'land_surface__temperature': 'T_surf',        
-        'water__density': 'rho_H2O',
-        'wind__speed_reference_height': 'z',
-        'wind__reference_height_speed': 'uz',
-        #----------------------------------------------------------
-        'model__time_step': 'dt',
-        'snow__area_time_integral_of_melt_rate': 'vol_SM',
-        'snow__degree_day_coefficient': 'c0',                  ########
-        'snow__degree_day_threshold_temperature': 'T0',        ########
-        'snow__density': 'rho_snow',
-        'snow__depth': 'h_snow',
-        'snow__initial_depth': 'h0_snow',
-        'snow__initial_liquid_equivalent_depth': 'h0_swe',
-        'snow__liquid_equivalent_depth': 'h_swe',
-        'snow__melt_rate': 'SM',                # (MR is used for ice)
-        'snow__thermal_capacity': 'Cp_snow' }
-    
-    #-----------------------------------------------------------------
+        'atmosphere_bottom_air__temperature':                 'T_air',
+        'atmosphere_water__snowfall_leq-volume_flux':         'P_snow',
+        'land_surface__temperature':                          'T_surf',        
+        'water-liquid__mass-per-volume_density':              'rho_H2O',
+        #------------------------------------------------------------------
+        'model__time_step':                                   'dt',
+        'snowpack__domain_time_integral_of_melt_volume_flux': 'vol_SM',
+        'snowpack__degree-day_coefficient':                   'c0',
+        'snowpack__degree-day_threshold_temperature':         'T0',
+        'snowpack__depth':                                    'h_snow',
+        'snowpack__initial_depth':                            'h0_snow',
+        'snowpack__initial_liquid-equivalent_depth':          'h0_swe',
+        'snowpack__liquid-equivalent_depth':                  'h_swe',
+        'snowpack__melt_volume_flux':                         'SM',
+        'snowpack__z_mean_of_mass-per-volume_density':        'rho_snow' }
+        #------------------------------------------------------------        
+        # None of these should be needed for the Degree-Day method.
+        #------------------------------------------------------------
+        # 'atmosphere_bottom_air__mass-per-volume_density':              'rho_air',
+        # 'atmosphere_bottom_air__mass-specific_isobaric_heat_capacity': 'Cp_air',
+        # 'atmosphere_bottom_air__pressure':                             'p0',
+        # 'atmosphere_bottom_air_flow__log_law_roughness_length':        'z0_air',
+        # 'atmosphere_bottom_air_flow__speed_reference_height':          'z',
+        # 'atmosphere_bottom_air_flow__reference-height_speed':          'uz',
+        # 'atmosphere_bottom_air_water-vapor__relative_saturation':      'RH',                
+        # 'snowpack__z_mean_of_mass-specific_isobaric_heat_capacity':    'Cp_snow',
+                    
+    #-------------------------------------------------------------------
     # Note: We need to be careful with whether units are C or K,
     #       for all "thermal" quantities (e.g. thermal_capacity).
-    #-----------------------------------------------------------------       
+    #       Use [deg C] for actual temperatures and K everywhere else.
+    #       This will usually be K-1, and a degree C or K is same size.
+    #       Use "deg_C" because "C" = Coulombs in SI units.
+    #-------------------------------------------------------------------       
     _var_units_map = {
-        'air__density': 'kg m-3',
-        'air__relative_humidity': '1',
-        'air__temperature': 'C',                                  # (see Notes above)
-        'air__thermal_capacity': 'J kg-1 C-1',                    # (see Notes above)
-        'atmosphere_turbulent_boundary_layer__roughness_length': 'm',
-        'atmosphere_water__liquid_equivalent_precipitation_rate': 'm s-1',
-        # 'land_surface_air__pressure': 'mbar',
-        'land_surface__net_irradiation_flux': 'W m-2',
-        'land_surface__net_longwave_irradiation_flux': 'W m-2',
-        'land_surface__net_shortwave_irradiation_flux': 'W m-2',
-        'land_surface__temperature': 'C',        
-        'water__density': 'kg m-3',
-        'wind__speed_reference_height': 'm',
-        'wind__reference_height_speed': 'm s-1',
-        #----------------------------------------------------------
-        'model__time_step': 's',
-        'snow__area_time_integral_of_melt_rate': 'm3',
-        'snow__degree_day_coefficient': 'mm day-1 C-1',     ##########
-        'snow__degree_day_threshold_temperature': 'C',      ##########
-        'snow__density': 'kg m-3',
-        'snow__depth': 'm',
-        'snow__initial_depth': 'm',
-        'snow__initial_liquid_equivalent_depth': 'm',
-        'snow__liquid_equivalent_depth': 'm',
-        'snow__melt_rate': 'm s-1',
-        'snow__thermal_capacity': 'J kg-1 C-1' }
-
+        'atmosphere_bottom_air__temperature':                 'deg_C',  # (see Notes above)
+        'atmosphere_water__snowfall_leq-volume_flux':         'm s-1',
+        'land_surface__temperature':                          'deg_C',        
+        'water-liquid__mass-per-volume_density':              'kg m-3',
+        #----------------------------------------------------------------
+        'model__time_step':                                   's',
+        'snowpack__domain_time_integral_of_melt_volume_flux': 'm3',
+        'snowpack__degree-day_coefficient':                   'mm day-1 K-1 ',
+        'snowpack__degree-day_threshold_temperature':         'deg_C',
+        'snowpack__depth':                                    'm',
+        'snowpack__initial_depth':                            'm',
+        'snowpack__initial_liquid-equivalent_depth':          'm',
+        'snowpack__liquid-equivalent_depth':                  'm',
+        'snowpack__melt_volume_flux':                         'm s-1',
+        'snowpack__z_mean_of_mass-per-volume_density':        'kg m-3' }
+        #------------------------------------------------------------        
+        # None of these should be needed for the Degree-Day method.
+        #------------------------------------------------------------
+        # 'atmosphere_bottom_air__mass-per-volume_density':              'kg m-3',
+        # 'atmosphere_bottom_air__mass-specific_isobaric_heat_capacity': 'J kg-1 K-1 ', # (see Notes above)
+        # 'atmosphere_bottom_air__pressure':                             'mbar',
+        # 'atmosphere_bottom_air_flow__log_law_roughness_length':        'm',
+        # 'atmosphere_bottom_air_flow__speed_reference_height':          'm',
+        # 'atmosphere_bottom_air_flow__reference-height_speed':          'm s-1',
+        # 'atmosphere_bottom_air_water-vapor__relative_saturation':      '1',
+        # 'snowpack__z_mean_of_mass-specific_isobaric_heat_capacity':    'J kg-1 K-1 ',
+                                
     #------------------------------------------------    
     # Return NumPy string arrays vs. Python lists ?
     #------------------------------------------------
@@ -215,7 +234,7 @@ class snow_component( snow_base.snow_component ):
 ##        # So far, all vars have type "double",
 ##        # but use the one in BMI_base instead.
 ##        #---------------------------------------
-##        return 'double'
+##        return 'float64'
 ##    
 ##    #   get_var_type()
     #-------------------------------------------------------------------
@@ -226,23 +245,14 @@ class snow_component( snow_base.snow_component ):
         #        currently always scalars.
         #--------------------------------------------------        
         are_scalars = np.array([
-##                          self.pp.is_scalar('rate'),   # (not "rates")
-##                          self.pp.is_scalar('duration'),
-                          #-------------------------------
-##                          self.mp.is_scalar('P'),
-##                          self.mp.is_scalar('rho_H2O'),
-##                          self.mp.is_scalar('rho_air'),
-##                          self.mp.is_scalar('T_air'),
-##                          self.mp.is_scalar('Cp_air'),
-                          #-------------------------------
-                          self.is_scalar('P'),
+                          self.is_scalar('P_snow'),
                           self.is_scalar('rho_H2O'),
-                          self.is_scalar('rho_air'),
                           self.is_scalar('T_air'),
-                          self.is_scalar('Cp_air'),
+                          ## self.is_scalar('rho_air'),  # (not needed)
+                          ## self.is_scalar('Cp_air'),   # (not needed)
                           #-------------------------------
                           self.is_scalar('rho_snow'),
-                          self.is_scalar('Cp_snow'),
+                          ## self.is_scalar('Cp_snow'),  # (not needed)
                           self.is_scalar('h0_snow'),
                           self.is_scalar('h0_swe'),
                           self.is_scalar('c0'),
@@ -255,7 +265,11 @@ class snow_component( snow_base.snow_component ):
     def update_meltrate(self):
 
         #------------------------------------------------------------
-        #Notes:  Arguments are assumed to be references to a scalar
+        # Notes: This computes a "potential" meltrate, which can't
+        #        be realized unless there is enough snow.
+        #        See snow_base.enforce_max_meltrate().
+        #------------------------------------------------------------
+        # Notes: Arguments are assumed to be references to a scalar
         #        or grid so that:
         #        c0     = degree-day melt factor [mm/day/deg_C]
         #        T0     = threshold temperature [deg_C]
@@ -281,8 +295,6 @@ class snow_component( snow_base.snow_component ):
         #        equivalent (swe) in update_swe() in "snow_base.py".
         #-------------------------------------------------------------
         T_air = self.T_air  # (2/3/13, new framework)
-        #-----------------------------------------------
-##        T_air = self.get_port_data('T_air', self.mp)
         
         #------------------------------
         # Compute degree-day meltrate
@@ -300,5 +312,60 @@ class snow_component( snow_base.snow_component ):
         #  self.enforce_max_meltrate()
         
     #   update_meltrate()
+    #------------------------------------------------------------------- 
+    def open_input_files(self):
+
+        self.c0_file       = self.in_directory + self.c0_file
+        self.T0_file       = self.in_directory + self.T0_file
+        self.rho_snow_file = self.in_directory + self.rho_snow_file
+        self.h0_snow_file  = self.in_directory + self.h0_snow_file
+        self.h0_swe_file   = self.in_directory + self.h0_swe_file
+
+        self.c0_unit       = model_input.open_file(self.c0_type,       self.c0_file)
+        self.T0_unit       = model_input.open_file(self.T0_type,       self.T0_file)
+        self.rho_snow_unit = model_input.open_file(self.rho_snow_type, self.rho_snow_file)
+        self.h0_snow_unit  = model_input.open_file(self.h0_snow_type,  self.h0_snow_file)
+        self.h0_swe_unit   = model_input.open_file(self.h0_swe_type,   self.h0_swe_file)
+
+    #   open_input_files()
+    #-------------------------------------------------------------------  
+    def read_input_files(self):
+
+        rti = self.rti
+
+        #-------------------------------------------------------
+        # All grids are assumed to have a data type of Float32.
+        #-------------------------------------------------------
+        c0 = model_input.read_next(self.c0_unit, self.c0_type, rti)
+        if (c0 != None): self.c0 = c0
+
+        T0 = model_input.read_next(self.T0_unit, self.T0_type, rti)
+        if (T0 != None): self.T0 = T0
+
+        rho_snow = model_input.read_next(self.rho_snow_unit, self.rho_snow_type, rti)
+        if (rho_snow != None): self.rho_snow = rho_snow
+
+        h0_snow = model_input.read_next(self.h0_snow_unit, self.h0_snow_type, rti)
+        if (h0_snow != None): self.h0_snow = h0_snow
+        
+        h0_swe = model_input.read_next(self.h0_swe_unit, self.h0_swe_type, rti)
+        if (h0_swe != None): self.h0_swe = h0_swe
+        
+    #   read_input_files()       
+    #-------------------------------------------------------------------  
+    def close_input_files(self):
+
+        if (self.c0_type       != 'Scalar'): self.c0_unit.close()        
+        if (self.T0_type       != 'Scalar'): self.T0_unit.close()
+        if (self.rho_snow_type != 'Scalar'): self.rho_snow_unit.close()
+        if (self.h0_snow_type  != 'Scalar'): self.h0_snow_unit.close()
+        if (self.h0_swe_type   != 'Scalar'): self.h0_swe_unit.close()
+        
+##        if (self.c0_file       != ''): self.c0_unit.close()        
+##        if (self.T0_file       != ''): self.T0_unit.close()
+##        if (self.rho_snow_file != ''): self.rho_snow_unit.close()
+##        if (self.h0_snow_file  != ''): self.h0_snow_unit.close()
+##        if (self.h0_swe_file   != ''): self.h0_swe_unit.close()
+
+    #   close_input_files()    
     #-------------------------------------------------------------------
-    

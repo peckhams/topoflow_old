@@ -1,0 +1,5 @@
+n_canals:      1
+canal_in_ID:   216
+canal_out_ID:  203            
+Q_fraction:    0.4
+travel_time:   130.0  [seconds]

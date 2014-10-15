@@ -54,16 +54,13 @@ import time
 #----------------------
 # from numpy import where, logical_and, logical_or
 
-from topoflow.components import d8_global
-from topoflow.components import erode_base
-from topoflow.utils      import rtg_files
+import d8_global   ### (9/19/14.  Attempt to fix issue.)
+import erode_base
+from topoflow.utils import rtg_files
 
-#-------------------------------------------
-# For use outside of the TopoFlow package.
-#-------------------------------------------
-##import d8_global
-##import erode_base
-##import rtg_files
+# from topoflow.components import d8_global
+# from topoflow.components import erode_base
+# from topoflow.utils      import rtg_files
 
 #-----------------------------------------------------------------------
 class erosion_component( erode_base.erosion_component ):
@@ -91,41 +88,45 @@ class erosion_component( erode_base.erosion_component ):
     # (U) and geomorphic rain rate (R) from another component.
     #-------------------------------------------------------------
     _input_var_names = []
+#         'atmosphere_water__geomorphic_precipitation_leq-volume_flux', 
+#         'bedrock_uplift_rate',
+#         'land_surface__initial_elevation']
 
     #-------------------------------------------------------------
     # Later, maybe add: nx, ny, codes, time_sec, time_min.
     #-------------------------------------------------------------
     _output_var_names = [
-        'atmosphere_water__geomorphic_liquid_equivalent_precipitation_rate', # R
-        'bedrock__uplift_rate',                                       # U
-        'channel_water__discharge',                                   # Q
-        'channel_water__discharge_law_area_exponent',                 # p
-        'channel_water_total_sediment__discharge',                    # Qs
-        'channel_water_total_sediment__discharge_law_area_exponent',  # m
-        'channel_water_total_sediment__discharge_law_coefficient',    # K
-        'channel_water_total_sediment__discharge_law_slope_exponent', # n
-        'domain_boundary__lowering_rate',     # BLR
-        'land_surface__elevation',            # z
-        'land_surface__elevation_increment',  # dz
-        'land_surface__initial_elevation',    # z0
-        'land_surface__max_of_elevation_increment', # dz_max
-        'land_surface__slope',              # S
-        'land_surface__time_derivative_of_elevation', # dz_dt
+        'atmosphere_water__geomorphic_precipitation_leq-volume_flux',  # R
+        'bedrock__uplift_rate',                                        # U
+        'channel_water_x-section__volume_flow_rate',                   # Q
+        'channel_water_x-section__volume_flow_rate_law_area_exponent', # p
+        ##'channel_water_x-section__volume_flow_rate_law_coefficient', # R
+        'channel_water_total-sediment__volume_flow_rate',                    # Qs
+        'channel_water_total-sediment__volume_flow_rate_law_area_exponent',  # m
+        'channel_water_total-sediment__volume_flow_rate_law_coefficient',    # K
+        'channel_water_total-sediment__volume_flow_rate_law_slope_exponent', # n
+        'land_surface__elevation',               # z
+        'land_surface__increment_of_elevation',  # dz
+        'land_surface__initial_elevation',       # z0
+        'land_surface__domain_max_of_increment_of_elevation',     # dz_max
+        'land_surface__slope',                                    # S
+        'land_surface__time_derivative_of_elevation',             # dz_dt
+        'land_surface_contour-segment__total_contributing_area',  # A
+        'model__time_step',                 # dt
+        'model_domain_boundary__lowering_rate', # BLR
         'model_grid_cell__area',            # da
         'model_grid_cell__d8_flow_width',   # dw
         'model_grid_cell__d8_flow_length',  # ds
-        'model_grid_cell__diagonal_length', # dd
+        'model_grid_cell__diameter',        # dd
         'model_grid_cell__x_length',        # dx
-        'model_grid_cell__y_length',        # dy
-        'model__time_step',                 # dt
-        'watershed__contributing_area' ]    # A
+        'model_grid_cell__y_length' ]       # dy
 
     #-------------------------------------------------------
     # Qs = annual sed. discharge [m^3/ yr]
     # Q  = annual discharge [m^3 / yr]
     # A  = contributing area [meters^2]
     # S  = slope [unitless]
-    # R = geomorphically effective rainrate [meters / yr]
+    # R  = geomorphically effective rainrate [meters / yr]
     #         (unless p ne 0, then R = coefficient)
     #-------------------------------------------------------    
     # K = coefficient [(m^3 / yr)^(1 - m)]
@@ -133,29 +134,30 @@ class erosion_component( erode_base.erosion_component ):
     # n = slope exponent (usually in [1,2])
     #-------------------------------------------------------
     _var_name_map = {
-        'atmosphere_water__geomorphic_liquid_equivalent_precipitation_rate': 'R',
-        'bedrock__uplift_rate':                                       'U',
-        'channel_water__discharge':                                   'Q',
-        'channel_water__discharge_law_area_exponent':                 'p',
-        'channel_water_total_sediment__discharge':                    'Qs',
-        'channel_water_total_sediment__discharge_law_area_exponent':  'm',
-        'channel_water_total_sediment__discharge_law_coefficient':    'K',
-        'channel_water_total_sediment__discharge_law_slope_exponent': 'n',
-        'domain_boundary__lowering_rate':           'BLR',
-        'land_surface__elevation':                  'z',
-        'land_surface__elevation_increment':        'dz',
-        'land_surface__initial_elevation':          'z0',
-        'land_surface__max_of_elevation_increment': 'dz_max',
-        'land_surface__slope':               'S',
-        'land_surface__time_derivative_of_elevation': 'dz_dt',
+        'atmosphere_water__geomorphic_precipitation_leq-volume_flux':  'R',
+        'bedrock__uplift_rate':                                        'U',
+        'channel_water_x-section__volume_flow_rate':                   'Q',
+        'channel_water_x-section__volume_flow_rate_law_area_exponent': 'p',
+        ##'channel_water_x-section__volume_flow_rate_law_coefficient': 'R',
+        'channel_water_total-sediment__volume_flow_rate':                    'Qs',
+        'channel_water_total-sediment__volume_flow_rate_law_area_exponent':  'm',
+        'channel_water_total-sediment__volume_flow_rate_law_coefficient':    'K',
+        'channel_water_total-sediment__volume_flow_rate_law_slope_exponent': 'n',
+        'land_surface__elevation':                               'z',
+        'land_surface__increment_of_elevation':                  'dz',
+        'land_surface__initial_elevation':                       'z0',
+        'land_surface__domain_max_of_increment_of_elevation':    'dz_max',
+        'land_surface__slope':                                   'S',
+        'land_surface__time_derivative_of_elevation':            'dz_dt',
+        'land_surface_contour-segment__total_contributing_area': 'A',
+        'model__time_step':                 'dt',
+        'model_domain_boundary__lowering_rate':                  'BLR',
         'model_grid_cell__area':            'da',
         'model_grid_cell__d8_flow_width':   'dw',
         'model_grid_cell__d8_flow_length':  'ds',
-        'model_grid_cell__diagonal_length': 'dd',
+        'model_grid_cell__diameter':        'dd',
         'model_grid_cell__x_length':        'dx',
-        'model_grid_cell__y_length':        'dy',
-        'model__time_step':                 'dt',
-        'watershed__contributing_area':     'A' }
+        'model_grid_cell__y_length':        'dy' }
 
     #---------------------------------------------------------
     # Note that the units of "K" depend on the exponent "m".
@@ -165,30 +167,33 @@ class erosion_component( erode_base.erosion_component ):
     # self.U_mpyr has units of [m/yr].
     # self.BLR_mpyr has units of [m/yr].
     #---------------------------------------------------------
+    # Maybe:  geomorphic -> domain_long-time_average_of
+    #---------------------------------------------------------    
     _var_units_map = {
-        'atmosphere_water__geomorphic_liquid_equivalent_precipitation_rate': 'm yr-1',
-        'bedrock__uplift_rate':                                       'mm yr-1',
-        'channel_water__discharge':                                   'm3 yr-1',
-        'channel_water__discharge_law_area_exponent':                 '1',
-        'channel_water_total_sediment__discharge':                    'm3 yr-1',
-        'channel_water_total_sediment__discharge_law_area_exponent':  '1',
-        'channel_water_total_sediment__discharge_law_coefficient':    'm3(1-m) yr(m-1)',
-        'channel_water_total_sediment__discharge_law_slope_exponent': '1',
-        'domain_boundary__lowering_rate':           'mm yr-1',
+        'atmosphere_water__geomorphic_precipitation_leq-volume_flux':  'm yr-1',
+        'bedrock__uplift_rate':                                        'mm yr-1',
+        'channel_water_x-section__volume_flow_rate':                   'm3 yr-1',
+        'channel_water_x-section__volume_flow_rate_law_area_exponent': '1',
+        ##'channel_water_x-section__volume_flow_rate_law_coefficient': 'm(1-p) yr(p-1)',        
+        'channel_water_total-sediment__volume_flow_rate':              'm3 yr-1',
+        'channel_water_total-sediment__volume_flow_rate_law_area_exponent':  '1',
+        'channel_water_total-sediment__volume_flow_rate_law_coefficient':    'm3(1-m) yr(m-1)',
+        'channel_water_total-sediment__volume_flow_rate_law_slope_exponent': '1',
+        'land_surface__domain_max_of_increment_of_elevation': 'm',
         'land_surface__elevation':                  'm',
-        'land_surface__elevation_increment':        'm',
+        'land_surface__increment_of_elevation':     'm',
         'land_surface__initial_elevation':          'm',
-        'land_surface__max_of_elevation_increment': 'm',
-        'land_surface__slope':              '1',
+        'land_surface__slope':                      '1',
         'land_surface__time_derivative_of_elevation': 'm yr-1',
+        'land_surface_contour-segment__total_contributing_area':   'm2',
+        'model__time_step':                 'yr', 
+        'model_domain_boundary__lowering_rate': 'mm yr-1',
         'model_grid_cell__area':            'm2',
         'model_grid_cell__d8_flow_width':   'm',
         'model_grid_cell__d8_flow_length':  'm',
-        'model_grid_cell__diagonal_length': 'm',
+        'model_grid_cell__diameter':        'm',
         'model_grid_cell__x_length':        'm',
-        'model_grid_cell__y_length':        'm',
-        'model__time_step':                 'yr',
-        'watershed__contributing_area':     'm2' }       
+        'model_grid_cell__y_length':        'm' }
         
     #------------------------------------------------    
     # Return NumPy string arrays vs. Python lists ?
@@ -243,7 +248,7 @@ class erosion_component( erode_base.erosion_component ):
 ##        # So far, all vars have type "double",
 ##        # but use the one in BMI_base instead.
 ##        #---------------------------------------
-##        return 'double'
+##        return 'float64'
 ##    
 ##    #   get_var_type()
     #-------------------------------------------------------------------
@@ -516,8 +521,12 @@ class erosion_component( erode_base.erosion_component ):
         #-------------------------------------------
         self.d8.FILL_PITS_IN_Z0 = 0                   # (1/23/12)
         self.d8.A_units         = 'm^2'               # (1/23/12) May be needed.
-        
-        self.d8.initialize( cfg_prefix=self.cfg_prefix,
+
+        #---------------------------------------------         
+        # D8 component builds its cfg filename from
+        # in_directory, site_prefix and extension. 
+        #---------------------------------------------     
+        self.d8.initialize( cfg_file=None,
                             SILENT=self.SILENT,
                             REPORT=self.REPORT )
 ##                            SILENT=not(self.DEBUG),
@@ -1037,7 +1046,12 @@ class erosion_component( erode_base.erosion_component ):
         #---------------------------------------------
         # NOTE: CFL_factor is set in set_constants()
         #       function within erode_base.py.
-        #---------------------------------------------
+        #--------------------------------------------------
+        # See the Wikipedia article for Courant number;
+        # it differs between 1D and 2D models.
+        # CFL condition is necessary, but not sufficient.
+        # Also, this is actually something different.
+        #--------------------------------------------------
         self.dt_grid = np.zeros( [self.ny, self.nx], dtype='float64' )
  
         w1 = np.where( self.Qs > 0 )

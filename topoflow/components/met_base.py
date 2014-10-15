@@ -1,17 +1,22 @@
 
 ## Does "land_surface_air__latent_heat_flux" make sense? (2/5/13)
 
-## Copyright (c) 2001-2013, Scott D. Peckham
-##
-## January 2013   (Revised handling of input/output names).
-## October 2012   (CSDMS Standard Names and BMI)
-## January 2009  (converted from IDL)
-## August 2009
-## May 2010 (changes to initialize() and read_cfg_file()
-## June 2010 (update_net_shortwave_radiation, etc.)  
-## (5/19/12) P is now a 1D array with one element and mutable,
-##           so any comp with ref to it can see it change.
-
+# Copyright (c) 2001-2014, Scott D. Peckham
+#
+#  Sep 2014.  Fixed sign error in update_bulk_richardson_number().
+#             Ability to compute separate P_snow and P_rain.
+#  Aug 2014.  New CSDMS Standard Names and clean up.
+#  Nov 2013.  Converted TopoFlow to a Python package.
+#
+#  Jan 2013. Revised handling of input/output names.
+#  Oct 2012. CSDMS Standard Names (version 0.7.9) and BMI.
+#  May 2012. P is now a 1D array with one element and mutable,
+#            so any comp with ref to it can see it change.
+#  Jun 2010. update_net_shortwave_radiation(), etc.  
+#  May 2010. Changes to initialize() and read_cfg_file().
+#  Aug 2009
+#  Jan 2009. Converted from IDL.
+#
 #-----------------------------------------------------------------------
 # NOTES: This file defines a "base class" for meteorology
 #        components as well as any functions used by most or
@@ -48,10 +53,11 @@
 #      ----------------------------
 #      update_P_integral()
 #      update_P_max()
-#      update_snow_vars()
+#      update_P_rain()    # (9/14/14, new method)
+#      update_P_snow()    # (9/14/14, new method)
 #      ------------------------------------
-#      update_richardson_number()
-#      update_bulk_exchange_coeff()
+#      update_bulk_richardson_number()
+#      update_bulk_aero_conductance()
 #      update_sensible_heat_flux()
 #      update_saturation_vapor_pressure()
 #      update_vapor_pressure()
@@ -118,40 +124,17 @@ class met_component( BMI_base.BMI_component ):
     #---------------------------------------------------------
     # Note that SWE = "snow water equivalent", but it really
     # just means "liquid_equivalent".
-    #---------------------------------------------------------
-    # Use "snow_as_liquid__depth" or "liquified_depth" ?
-    #---------------------------------------------------------
-    # Use "air_at_land_surface__pressure" ??
-    #---------------------------------------------------------    
+    #---------------------------------------------------------   
     _input_var_names = [
-        'snow__density',                           # rho_snow
-        'snow__depth',                             # h_snow
-        'snow__liquid_equivalent_depth',           # h_swe
-        'snow__melt_rate' ]                        # SM   (MR used for ice?)
+        'snowpack__z_mean_of_mass-per-volume_density', # rho_snow
+        'snowpack__depth',                             # h_snow
+        'snowpack__liquid-equivalent_depth',           # h_swe
+        'snowpack__melt_volume_flux' ]                 # SM   (MR used for ice?)
 
-    #########################################################
-    #########################################################
-    # Note that:  "area_time_integral_of_"
-    # doesn't indicate that integral is over just
-    # the pixels in the watershed/basin.
-    #
-    # Maybe just insert "watershed_" before "land_water" ??
-    # Or: "land_water_in_watershed_" ?
-    #########################################################
-    #########################################################
-     #  'basin_cumulative_lwe_precipitated_water_volume', # vol_P
-
-    #-----------------------------------------------------------
-    # Consider "wind__roughness_length" for z0 instead of:
-    # "atmosphere_turbulent_boundary_layer__roughness_length".
     #-----------------------------------------------------------
     # albedo, emissivity and transmittance are dimensionless.
     #-----------------------------------------------------------
-    # "atmosphere_dust" or "dust_in_atmosphere" ??
-    #-----------------------------------------------------------
-    # "atmosphere_dust__transmittance_reduction" vs.
-    # "atmosphere_dust__transmittance_correction" vs.
-    # "atmosphere_dust__beer_lambert_attenuation_coefficient"
+    # "atmosphere_aerosol_dust__reduction_of_transmittance" vs.
     # This TF parameter comes from Dingman, App. E, p. 604.
     #-----------------------------------------------------------
     # There is an Optical_Air_Mass function in solar_funcs.py.
@@ -161,15 +144,6 @@ class met_component( BMI_base.BMI_component ):
     # "airmass_factor" OR "relative_airmass" OR
     # "relative_optical_path_length"
     #-----------------------------------------------------------
-    # "earth_surface" vs. "land_surface"
-    #
-    # "land_air" vs. "land_surface_air" ???
-    #
-    # "surface" can indicate a mathematical surface or a part
-    # (the outer part) of an object.
-    #
-    # Define "land" to be a surface of the 2nd type ??
-    #-----------------------------------------------------------
     # Our term "liquid_equivalent_precipitation" is widely
     # used on the Internet, with 374,000 Google hits.
     #--------------------------------------------------------------
@@ -178,93 +152,69 @@ class met_component( BMI_base.BMI_component ):
     #       for mass, momentum or heat.  There are no CF
     #       Standard Names with "bulk", "exchange" or "transfer".
     #
+    # Zhang et al. (2000) use "bulk exchange coefficient" in a
+    # nonstandard way, with units of velocity vs. unitless.
+    #
     # Dn = bulk exchange coeff for the conditions of
     #      neutral atmospheric stability [m/s]
     # Dh = bulk exchange coeff for heat  [m/s]
     # De = bulk exchange coeff for vapor [m/s]
     #---------------------------------------------------------------
-    # "land_to_snow__conduction_heat_flux" ??
+    # Now this component uses T_air to break the liquid-equivalent
+    # precip rate into separate P_rain and P_snow components.
+    # P_rain is used by channel_base.update_R()
+    # P_snow is used by snow_base.update_depth()
     #---------------------------------------------------------------
-    # "time_integral_of" vs. "integral_over_time_of"
-    # "area_time_integral_of" vs. "integral_over_area_and_time_of"
-    #
-    # "watershed_integral_of"  ?????
-    # "line_integral_of" OR "length_integral_of" ???
-    # "area_integral_of"
-    # "volume_integral_of"
-    #
-    # Maybe generalize to:
-    # "domain_time_max_of"
-    # "time_max_of"
-    #------------------------------------------------------------------
-    # Note: The term "liquid_equivalent_depth" is sometimes used
-    #       (568 Google hits) instead of "precipitable_water" and
-    #       seems preferable.
-    #
-    # "atmosphere_column_water__liquid_equivalent_depth" OR
-    # "atmosphere_column_water_vapor__liquid_equivalent_depth" OR
-    # "atmosphere_column_water__precipitable_depth" OR
-    # "atmosphere_water__vertically_integrated_precipitable_depth" OR
-    # "atmosphere_water__cumulative_precipitable_depth" OR
-    #------------------------------------------------------------------
-    # "atmosphere__von_karman_constant" vs.
-    # "physics__von_karman_constant" ???
-    #------------------------------------------------------------------   
     _output_var_names = [
-        'air__density',           # rho_air
-        'air__emissivity',        # em_air
-        'air__relative_humidity', # RH
-        'air__temperature',       # T_air
-        'air__thermal_capacity',  # Cp_air
-        'air_water_vapor__partial_pressure',           # e_air   # (insert "reference_height" ??)
-        'air_water_vapor__saturated_partial_pressure', # e_sat_air
-        'atmosphere_column_water__liquid_equivalent_depth',   #  W_p ("precipitable depth")
-        'atmosphere_dust__transmittance_reduction',      # dust_atten  ##### (from GUI)
-        #'atmosphere__optical_path_length_ratio',        # M_opt [1]  (in solar_funcs.py)
-        'atmosphere__richardson_number',                 # Ri [1]
-        'atmosphere__thermal_bulk_exchange_coefficient', # Dh [m s-1]  ####### (insert "neutral" ??)
-        'atmosphere_turbulent_boundary_layer__roughness_length',   # z0           #########
-        'atmosphere_water__area_time_integral_of_liquid_equivalent_precipitation_rate', # vol_P
-        'atmosphere_water__liquid_equivalent_precipitation_rate',  # P [m s-1]
-        'atmosphere_water__mass_bulk_exchange_coefficient',        # De [m s-1]   #########
-        'atmosphere_water__max_over_domain_and_time_of_liquid_equivalent_precipitation_rate',    # P_max
-        'atmosphere_water__neutral_bulk_exchange_coefficient',     # Dn [m s-1]   #########
-         # 'atmosphere__von_karman_constant'
-        'land_surface_air__pressure',                   # p0
-        'land_surface_air__latent_heat_flux',           # Qe [W m-2]
-        'land_surface_air__sensible_heat_flux',         # Qh [W m-2]
-        # 'land_surface_air__temperature',
-        'land_surface_air_water_vapor__dew_point_temperature',      # T_dew
-        'land_surface_air_water_vapor__partial_pressure',           # e_surf       ########
-        'land_surface_air_water_vapor__saturated_partial_pressure', # e_sat_surf   ########
-        'land_surface__albedo',                         # albedo
-        'land_surface__aspect_angle',                   # alpha  (from GUI)
-        'land_surface__brutsaert_emissivity_canopy_factor', # canopy_factor  ########
-        'land_surface__brutsaert_emissivity_cloud_factor',  # cloud_factor   ########
-        'land_surface__emissivity',                         # em_surf        ########
-        'land_surface__latitude',                       # lat_deg [degrees]
-        'land_surface__longitude',                      # lon_deg [degrees]
-        'land_surface__net_irradiation_flux',           # Q_sum [W w-2]
-        'land_surface__net_longwave_irradiation_flux',  # Qn_LW [W m-2]
-        'land_surface__net_shortwave_irradiation_flux', # Qn_SW [W m-2]
-        'land_surface__slope_angle',                    # beta  (from GUI)
-        'land_surface__temperature',                    # T_surf   #### OR JUST "land__temperature"?
-        'model__time_step',                             # dt
-        'water__density',                               # rho_H2O
-        'water__fusion_specific_latent_heat',           # Lf     [J kg-1]
-        'water__vaporization_specific_latent_heat',     # Lv     [J kg-1]
-        # 'water_vapor_in_air_at_land_surface__partial_pressure',  # e_surf
-        # 'water_vapor_in_air__reference_height_partial_pressure   # e_air
-        # 'water_vapor_in_air__saturated_partial_pressure',        # e_sat_air
-        # 'water_vapor_in_air__saturated_partial_pressure',        # e_sat_surf
-        'wind__speed_reference_height',                 # z
-        'wind__reference_height_speed',                 # uz
-        ## 'wind__roughness_length',                    # z0_air
-        #------------------------------------------------------------------------
-        'earth__standard_gravity_constant',             # g      [m s-2]
-        'physics__stefan_boltzmann_constant',           # sigma  [W m-2 K-4]
-        'physics__von_karman_constant' ]                # kappa  [1]
-
+        # 'atmosphere__optical_path_length_ratio',                           # M_opt [1]  (in solar_funcs.py)
+        # 'atmosphere__von_karman_constant',                                 # kappa
+        'atmosphere_aerosol_dust__reduction_of_transmittance',               # dust_atten  ##### (from GUI)
+        'atmosphere_air-column_water-vapor__liquid-equivalent_depth',        # W_p ("precipitable depth")
+        'atmosphere_bottom_air__brutsaert_emissivity_canopy_factor',         # canopy_factor
+        'atmosphere_bottom_air__brutsaert_emissivity_cloud_factor',          # cloud_factor
+        'atmosphere_bottom_air__bulk_latent_heat_aerodynamic_conductance',   # De [m s-1], latent
+        'atmosphere_bottom_air__bulk_sensible_heat_aerodynamic_conductance', # Dh [m s-1], sensible
+        'atmosphere_bottom_air__emissivity',                                 # em_air
+        'atmosphere_bottom_air__mass-per-volume_density',                    # rho_air
+        'atmosphere_bottom_air__mass-specific_isobaric_heat_capacity',       # Cp_air
+        'atmosphere_bottom_air__neutral_bulk_aerodynamic_conductance',       # Dn [m s-1], neutral
+        'atmosphere_bottom_air__pressure',                                   # p0
+        'atmosphere_bottom_air__temperature',                                # T_air
+        'atmosphere_bottom_air_flow__bulk_richardson_number',                # Ri [1]
+        'atmosphere_bottom_air_flow__log_law_roughness_length',              # z0_air
+        'atmosphere_bottom_air_flow__reference-height_speed',                # uz
+        'atmosphere_bottom_air_flow__speed_reference_height',                # z
+        'atmosphere_bottom_air_land_net-latent-heat__energy_flux',           # Qe [W m-2]
+        'atmosphere_bottom_air_land_net-sensible-heat__energy_flux',         # Qh [W m-2]
+        'atmosphere_bottom_air_water-vapor__dew_point_temperature',          # T_dew
+        'atmosphere_bottom_air_water-vapor__partial_pressure',               # e_air # (insert "reference_height" ??)
+        'atmosphere_bottom_air_water-vapor__relative_saturation',            # RH
+        'atmosphere_bottom_air_water-vapor__saturated_partial_pressure',     # e_sat_air         
+        'atmosphere_water__domain_time_integral_of_precipitation_leq-volume_flux',  # vol_P
+        'atmosphere_water__domain_time_max_of_precipitation_leq-volume_flux',     # P_max
+        'atmosphere_water__precipitation_leq-volume_flux',                        # P [m s-1]
+        'atmosphere_water__rainfall_volume_flux',            # P_rain [m s-1] (liquid)      
+        'atmosphere_water__snowfall_leq-volume_flux',        # P_snow [m s-1]
+        'earth__standard_gravity_constant',                  # g   [m s-2]
+        'land_surface__albedo',                              # albedo
+        'land_surface__aspect_angle',                        # alpha  (from GUI)
+        'land_surface__emissivity',                          # em_surf
+        'land_surface__latitude',                            # lat_deg [degrees]
+        'land_surface__longitude',                           # lon_deg [degrees]
+        'land_surface__slope_angle',                         # beta  (from GUI)
+        'land_surface__temperature',                         # T_surf   ### OR JUST "land__temperature"?
+        # 'land_surface_air__temperature',                          # T_air
+        'land_surface_air_water-vapor__partial_pressure',           # e_surf # (insert "reference_height" ??)
+        'land_surface_air_water-vapor__saturated_partial_pressure', # e_sat_surf
+        'land_surface_net-longwave-radiation__energy_flux',  # Qn_LW [W m-2]
+        'land_surface_net-shortwave-radiation__energy_flux', # Qn_SW [W m-2]
+        'land_surface_net-total-energy__energy_flux',        # Q_sum [W w-2]
+        'model__time_step',                                  # dt
+        'physics__stefan_boltzmann_constant',                # sigma  [W m-2 K-4]
+        'physics__von_karman_constant',                      # kappa  [1]
+        'water__mass-specific_latent_fusion_heat',           # Lf     [J kg-1]
+        'water__mass-specific_latent_vaporization_heat',     # Lv     [J kg-1]
+        'water-liquid__mass-per-volume_density' ]            # rho_H2O
         
     #-----------------------------------------
     # These are used only in solar_funcs.py
@@ -375,64 +325,60 @@ class met_component( BMI_base.BMI_component ):
     # Maybe we should rename "z" to "z_ref" and "uz" to "uz_ref" ?
     #------------------------------------------------------------------   
     _var_name_map = {
-        'snow__density': 'rho_snow',
-        'snow__depth': 'h_snow',
-        'snow__liquid_equivalent_depth': 'h_swe',
-        'snow__melt_rate': 'SM',                    # (MR is used for ice)
-        #------------------------------------------
-        'air__density': 'rho_air',
-        'air__emissivity': 'em_air',
-        'air__relative_humidity': 'RH',
-        'air__temperature': 'T_air',
-        'air__thermal_capacity': 'Cp_air',
-        'air_water_vapor__partial_pressure': 'e_air',
-        'air_water_vapor__saturated_partial_pressure': 'e_sat_air',
-        'atmosphere_column_water__liquid_equivalent_depth': 'W_p',
-        'atmosphere_dust__transmittance_reduction': 'dust_atten',
+        'snowpack__z_mean_of_mass-per-volume_density': 'rho_snow',
+        'snowpack__depth': 'h_snow',
+        'snowpack__liquid-equivalent_depth': 'h_swe',
+        'snowpack__melt_volume_flux': 'SM',              # (MR is used for ice)
+        #-----------------------------------------------------------------
         #'atmosphere__optical_path_length_ratio': 'M_opt',    # (in solar_funcs.py)
-        'atmosphere__richardson_number': 'Ri',
-        'atmosphere__thermal_bulk_exchange_coefficient': 'Dh',
-        'atmosphere_turbulent_boundary_layer__roughness_length': 'z0_air', ## (not "z0")
-        'atmosphere_water__mass_bulk_exchange_coefficient': 'De',
-        'atmosphere_water__neutral_bulk_exchange_coefficient': 'Dn',
-        'atmosphere_water__liquid_equivalent_precipitation_rate': 'P',
-        'atmosphere_water__max_over_domain_and_time_of_liquid_equivalent_precipitation_rate': 'P_max',
-        'atmosphere_water__area_time_integral_of_liquid_equivalent_precipitation_rate': 'vol_P',
         # 'atmosphere__von_karman_constant': 'kappa',
-        'land_surface_air__pressure': 'p0',
-        'land_surface_air__latent_heat_flux': 'Qe',
-        'land_surface_air__sensible_heat_flux': 'Qh',
-        # 'land_surface_air__temperature': 'T_surf',
-        'land_surface_air_water_vapor__dew_point_temperature': 'T_dew',
-        'land_surface_air_water_vapor__partial_pressure': 'e_surf',
-        'land_surface_air_water_vapor__saturated_partial_pressure': 'e_sat_surf',
-        'land_surface__albedo': 'albedo',
-        'land_surface__aspect_angle': 'alpha',
-        'land_surface__brutsaert_emissivity_canopy_factor': 'canopy_factor',
-        'land_surface__brutsaert_emissivity_cloud_factor': 'cloud_factor',
-        'land_surface__emissivity': 'em_surf',
-        'land_surface__latitude': 'lat_deg',
-        'land_surface__longitude': 'lon_deg',
-        'land_surface__net_irradiation_flux': 'Q_sum',
-        'land_surface__net_longwave_irradiation_flux':  'Qn_LW',
-        'land_surface__net_shortwave_irradiation_flux': 'Qn_SW',
-        'land_surface__slope_angle': 'beta',
-        'land_surface__temperature': 'T_surf',
-        'model__time_step': 'dt',
-        'water__density': 'rho_H2O',
-        'water__fusion_specific_latent_heat': 'Lf',
-        'water__vaporization_specific_latent_heat': 'Lv',
-        # 'water_vapor_in_air_at_land_surface__partial_pressure': 'e_surf',
-        # 'water_vapor_in_air__reference_height_partial_pressure': 'e_air',
-        # 'water_vapor_in_air__saturated_partial_pressure': 'e_sat_air',
-        # 'water_vapor_in_air__saturated_partial_pressure': 'e_sat_surf',
-        'wind__speed_reference_height': 'z',
-        'wind__reference_height_speed': 'uz',
-        ## 'wind__roughness_length': 'z0_air',
-        #--------------------------------------------------------------------
-        'earth__standard_gravity_constant': 'g',
-        'physics__stefan_boltzmann_constant': 'sigma',
-        'physics__von_karman_constant': 'kappa' }
+        'atmosphere_aerosol_dust__reduction_of_transmittance': 'dust_atten',
+        'atmosphere_air-column_water-vapor__liquid-equivalent_depth': 'W_p',   #########
+        'atmosphere_bottom_air__brutsaert_emissivity_canopy_factor': 'canopy_factor',
+        'atmosphere_bottom_air__brutsaert_emissivity_cloud_factor':  'cloud_factor',
+        'atmosphere_bottom_air__bulk_latent_heat_aerodynamic_conductance':   'De',
+        'atmosphere_bottom_air__bulk_sensible_heat_aerodynamic_conductance': 'Dh',
+        'atmosphere_bottom_air__emissivity': 'em_air',               
+        'atmosphere_bottom_air__mass-per-volume_density': 'rho_air',
+        'atmosphere_bottom_air__mass-specific_isobaric_heat_capacity': 'Cp_air',
+        'atmosphere_bottom_air__neutral_bulk_heat_aerodynamic_conductance':  'Dn',
+        'atmosphere_bottom_air__pressure':                           'p0',
+        'atmosphere_bottom_air__temperature':                        'T_air',
+        'atmosphere_bottom_air_flow__bulk_richardson_number':        'Ri',        
+        'atmosphere_bottom_air_flow__log_law_roughness_length':      'z0_air', ## (not "z0")
+        'atmosphere_bottom_air_flow__reference-height_speed':        'uz',
+        'atmosphere_bottom_air_flow__speed_reference_height':        'z',
+        'atmosphere_bottom_air_land_net-latent-heat__energy_flux':   'Qe',
+        'atmosphere_bottom_air_land_net-sensible-heat__energy_flux': 'Qh',
+        'atmosphere_bottom_air_water-vapor__dew_point_temperature':  'T_dew',  
+        'atmosphere_bottom_air_water-vapor__partial_pressure':       'e_air',
+        'atmosphere_bottom_air_water-vapor__relative_saturation':    'RH',
+        'atmosphere_bottom_air_water-vapor__saturated_partial_pressure': 'e_sat_air',
+        'atmosphere_water__domain_time_integral_of_precipitation_leq-volume_flux': 'vol_P', 
+        'atmosphere_water__domain_time_max_of_precipitation_leq-volume_flux': 'P_max',       
+        'atmosphere_water__precipitation_leq-volume_flux': 'P',
+        'atmosphere_water__rainfall_volume_flux':          'P_rain',    
+        'atmosphere_water__snowfall_leq-volume_flux':      'P_snow',
+        'earth__standard_gravity_constant':                'g',
+        'land_surface__albedo':                            'albedo',
+        'land_surface__aspect_angle':                      'alpha',
+        'land_surface__emissivity':                        'em_surf',
+        'land_surface__latitude':                          'lat_deg',
+        'land_surface__longitude':                         'lon_deg',
+        'land_surface__slope_angle':                       'beta',
+        'land_surface__temperature':                       'T_surf',
+         # 'land_surface_air__temperature': 'T_surf',
+        'land_surface_air_water-vapor__partial_pressure':           'e_surf',
+        'land_surface_air_water-vapor__saturated_partial_pressure': 'e_sat_surf',        
+        'land_surface_net-longwave-radiation__energy_flux':         'Qn_LW',
+        'land_surface_net-shortwave-radiation__energy_flux':        'Qn_SW',
+        'land_surface_net-total-energy__energy_flux':               'Q_sum',
+        'model__time_step':                                         'dt',
+        'physics__stefan_boltzmann_constant':                       'sigma',
+        'physics__von_karman_constant':                             'kappa',
+        'water__mass-specific_latent_fusion_heat':                  'Lf',
+        'water__mass-specific_latent_vaporization_heat':            'Lv',
+        'water-liquid__mass-per-volume_density': 'rho_H2O' }
 
     #-----------------------------------------------------------------
     # Note: The "update()" function calls several functions with the
@@ -457,64 +403,60 @@ class met_component( BMI_base.BMI_component ):
     #       CCW from due east.  They are converted for use here.
     #-----------------------------------------------------------------    
     _var_units_map = {
-        'snow__density': 'kg m-3',
-        'snow__depth': 'm',
-        'snow__liquid_equivalent_depth': 'm',
-        'snow__melt_rate': 'm s-1',
-        #--------------------------------------------------
-        'air__density': 'kg m-3',
-        'air__emissivity': '1',
-        'air__relative_humidity': '1',
-        'air__temperature': 'C',                                  # (see Notes above)
-        'air__thermal_capacity': 'J kg-1 C-1',                    # (see Notes above)
-        'air_water_vapor__partial_pressure': 'mbar',              # (see Notes above)
-        'air_water_vapor__saturated_partial_pressure': 'mbar',    # (see Notes above)
-        'atmosphere_column_water__liquid_equivalent_depth': 'cm', # (see Notes above)
-        'atmosphere_dust__transmittance_reduction': '1',
-        #'atmosphere__optical_path_length_ratio': '1',
-        'atmosphere__richardson_number': '1',
-        'atmosphere__thermal_bulk_exchange_coefficient': 'm s-1',        # (see Notes above)
-        'atmosphere_turbulent_boundary_layer__roughness_length': 'm',
-        'atmosphere_water__mass_bulk_exchange_coefficient': 'm s-1',     # (see Notes above)
-        'atmosphere_water__neutral_bulk_exchange_coefficient': 'm s-1',  # (see Notes above)
-        'atmosphere_water__liquid_equivalent_precipitation_rate': 'm s-1',
-        'atmosphere_water__max_over_domain_and_time_of_liquid_equivalent_precipitation_rate': 'm s-1',
-        'atmosphere_water__area_time_integral_of_liquid_equivalent_precipitation_rate': 'm3',
+        'snowpack__z_mean_of_mass-per-volume_density':     'kg m-3',
+        'snowpack__depth':                   'm',
+        'snowpack__liquid-equivalent_depth': 'm',
+        'snowpack__melt_volume_flux':        'm s-1',
+        #-------------------------------------------------------------
+        # 'atmosphere__optical_path_length_ratio': '1',
         # 'atmosphere__von_karman_constant': '1',
-        'land_surface_air__pressure': 'mbar',
-        'land_surface_air__latent_heat_flux': 'W m-2',
-        'land_surface_air__sensible_heat_flux': 'W m-2',
-        # 'land_surface_air__temperature': 'C',
-        'land_surface_air_water_vapor__dew_point_temperature': 'C',
-        'land_surface_air_water_vapor__partial_pressure': 'mbar',
-        'land_surface_air_water_vapor__saturated_partial_pressure': 'mbar',
+        'atmosphere_aerosol_dust__reduction_of_transmittance':        '1',
+        'atmosphere_air-column_water-vapor__liquid-equivalent_depth': 'cm',           # (see Notes above)
+        'atmosphere_bottom_air__brutsaert_emissivity_canopy_factor':  '1',
+        'atmosphere_bottom_air__brutsaert_emissivity_cloud_factor':   '1',
+        'atmosphere_bottom_air__bulk_latent_heat_aerodynamic_conductance': 'm s-1',   # (see Notes above)
+        'atmosphere_bottom_air__bulk_sensible_heat_aerodynamic_conductance': 'm s-1', # (see Notes above)  
+        'atmosphere_bottom_air__emissivity': '1',                            
+        'atmosphere_bottom_air__mass-per-volume_density': 'kg m-3',
+        'atmosphere_bottom_air__mass-specific_isobaric_heat_capacity': 'J kg-1 K-1',   # (see Notes above)
+        'atmosphere_bottom_air__neutral_bulk_heat_aerodynamic_conductance': 'm s-1',   # (see Notes above)
+        'atmosphere_bottom_air__pressure':                               'mbar',
+        'atmosphere_bottom_air__temperature':                            'deg_C',      # (see Notes above)
+        'atmosphere_bottom_air_flow__bulk_richardson_number':            '1',
+        'atmosphere_bottom_air_flow__log_law_roughness_length':          'm',
+        'atmosphere_bottom_air_flow__reference-height_speed':            'm s-1',
+        'atmosphere_bottom_air_flow__speed_reference_height':            'm',
+        'atmosphere_bottom_air_land_net-latent-heat__energy_flux':       'W m-2',
+        'atmosphere_bottom_air_land_net-sensible-heat__energy_flux':     'W m-2',
+        'atmosphere_bottom_air_water-vapor__dew_point_temperature':      'deg_C',
+        'atmosphere_bottom_air_water-vapor__partial_pressure':           'mbar', # (see Notes above)
+        'atmosphere_bottom_air_water-vapor__relative_saturation':        '1',
+        'atmosphere_bottom_air_water-vapor__saturated_partial_pressure': 'mbar',     # (see Notes above)
+        'atmosphere_water__domain_time_integral_of_precipitation_leq-volume_flux': 'm3',
+        'atmosphere_water__domain_time_max_of_precipitation_leq-volume_flux': 'm s-1',        
+        'atmosphere_water__precipitation_leq-volume_flux': 'm s-1',
+        'atmosphere_water__rainfall_volume_flux': 'm s-1',      # (see Notes above)  
+        'atmosphere_water__snowfall_leq-volume_flux': 'm s-1',  # (see Notes above)
+        'earth__standard_gravity_constant': 'm s-2',
         'land_surface__albedo': '1',
         'land_surface__aspect_angle': 'radians',                      # (see Notes above)
-        'land_surface__brutsaert_emissivity_canopy_factor': '1',
-        'land_surface__brutsaert_emissivity_cloud_factor': '1',
         'land_surface__emissivity': '1',
         'land_surface__latitude': 'degrees',
         'land_surface__longitude': 'degrees',
-        'land_surface__net_irradiation_flux': 'W m-2',
-        'land_surface__net_longwave_irradiation_flux': 'W m-2',
-        'land_surface__net_shortwave_irradiation_flux': 'W m-2',
         'land_surface__slope_angle': 'radians',
-        'land_surface__temperature': 'C',
+        'land_surface__temperature': 'deg_C',
+        # 'land_surface_air__temperature': 'deg_C',
+        'land_surface_air_water-vapor__partial_pressure':           'mbar',
+        'land_surface_air_water-vapor__saturated_partial_pressure': 'mbar',
+        'land_surface_net-longwave-radiation__energy_flux': 'W m-2',
+        'land_surface_net-shortwave-radiation__energy_flux': 'W m-2',
+        'land_surface_net-total-energy__energy_flux': 'W m-2',
         'model__time_step': 's',
-        'water__density': 'kg m-3',
-        'water__fusion_specific_latent_heat': 'J kg-1',
-        'water__vaporization_specific_latent_heat': 'J kg-1',
-        # 'water_vapor_in_air_at_land_surface__partial_pressure': 'mbar',
-        # 'water_vapor_in_air__reference_height_partial_pressure': 'mbar',
-        # 'water_vapor_in_air__saturated_partial_pressure': 'mbar',
-        # 'water_vapor_in_air__saturated_partial_pressure': 'mbar',
-        'wind__speed_reference_height': 'm',
-        'wind__reference_height_speed': 'm s-1',
-        ## 'wind__roughness_length': 'm',
-        #--------------------------------------------------------------------
-        'earth__standard_gravity_constant': 'm s-2',
         'physics__stefan_boltzmann_constant': 'W m-2 K-4',
-        'physics__von_karman_constant': '1' }
+        'physics__von_karman_constant': '1',
+        'water__mass-specific_latent_fusion_heat': 'J kg-1',
+        'water__mass-specific_latent_vaporization_heat': 'J kg-1',
+        'water-liquid__mass-per-volume_density': 'kg m-3' }
 
     #------------------------------------------------    
     # Return NumPy string arrays vs. Python lists ?
@@ -569,7 +511,7 @@ class met_component( BMI_base.BMI_component ):
 ##        # So far, all vars have type "double",
 ##        # but use the one in BMI_base instead.
 ##        #---------------------------------------
-##        return 'double'
+##        return 'float64'
 ##    
 ##    #   get_var_type()
     #-------------------------------------------------------------------
@@ -578,15 +520,15 @@ class met_component( BMI_base.BMI_component ):
         #---------------------------------
         # Define some physical constants
         #---------------------------------
-        self.g        = np.float64(9.81)    # [m/s^2, gravity]
-        self.kappa    = np.float64(0.408)   # [none, von Karman]
+        self.g        = np.float64(9.81)    # [m s-2, gravity]
+        self.kappa    = np.float64(0.408)   # [1]  (von Karman)
         self.rho_H2O  = np.float64(1000)    # [kg m-3]
         self.rho_air  = np.float64(1.2614)  # [kg m-3]
-        self.Cp_air   = np.float64(1005.7)  # [J/kg/deg_C]
-        self.Lv       = np.float64(2500000) # [Joules/kg, Latent heat of vaporiz.)
-        self.Lf       = np.float64(334000)  # [J/kg = W*s/kg, Latent heat of fusion)
-        self.sigma    = np.float64(5.67E-8) # [W/(m^2 K^4)]  (Stefan-Boltzman constant)
-        self.C_to_K   = np.float64(273.15)  # (add to convert [deg_C] to [deg_K])
+        self.Cp_air   = np.float64(1005.7)  # [J kg-1 K-1]
+        self.Lv       = np.float64(2500000) # [J kg-1] Latent heat of vaporiz.
+        self.Lf       = np.float64(334000)  # [J kg-1 = W s kg-1], Latent heat of fusion
+        self.sigma    = np.float64(5.67E-8) # [W m-2 K-4]  (Stefan-Boltzman constant)
+        self.C_to_K   = np.float64(273.15)  # (add to convert deg C to K)
 
         self.twopi         = np.float64(2) * np.pi
         self.one_seventh   = np.float64(1) / 7
@@ -595,7 +537,12 @@ class met_component( BMI_base.BMI_component ):
 
         #---------------------------
         # See update_latent_heat()
-        #---------------------------
+        #-----------------------------------------------------------        
+        # According to Dingman (2002, p. 273), constant should
+        # be 0.622 instead of 0.662 (Zhang et al., 2000, p. 1002).
+        # Is this constant actually the dimensionless ratio of
+        # the molecular weight of water to that of dry air ?
+        #-----------------------------------------------------------
         ## self.latent_heat_constant = np.float64(0.622)
         self.latent_heat_constant = np.float64(0.662)
         
@@ -617,22 +564,22 @@ class met_component( BMI_base.BMI_component ):
         
     #   set_constants()             
     #-------------------------------------------------------------------
-    def initialize(self, cfg_prefix=None, mode="nondriver",
+    def initialize(self, cfg_file=None, mode="nondriver",
                    SILENT=False):
 
         if not(SILENT):
             print ' '
             print 'Meteorology component: Initializing...'
             
-        self.status     = 'initializing'  # (OpenMI 2.0 convention)
-        self.mode       = mode
-        self.cfg_prefix = cfg_prefix
-        
+        self.status   = 'initializing'  # (OpenMI 2.0 convention)
+        self.mode     = mode
+        self.cfg_file = cfg_file
+                
         #-----------------------------------------------
         # Load component parameters from a config file
         #-----------------------------------------------
         self.set_constants()
-        self.initialize_config_vars()
+        self.initialize_config_vars()     
         ## print '    Calling read_grid_info()...'
         self.read_grid_info()
         ## print '    Calling initialize_basin_vars()...'
@@ -651,8 +598,10 @@ class met_component( BMI_base.BMI_component ):
         #-------------------------------------------------
         # Write a "initialize_computed_vars()" method?
         #-------------------------------------------------
-        self.P = self.initialize_scalar(0, dtype='float64')
-            
+        self.P      = self.initialize_scalar(0, dtype='float64')
+        self.P_rain = self.initialize_scalar(0, dtype='float64')
+        self.P_snow = self.initialize_scalar(0, dtype='float64')
+                    
         #------------------------------------------------------
         # NB! "Sample steps" must be defined before we return
         #     Check all other process modules.
@@ -678,9 +627,6 @@ class met_component( BMI_base.BMI_component ):
         #-----------------------------------------------
         self.open_input_files()
         self.read_input_files()  # (initializes P)
-
-        ## Commented next line out on 3/15/12.
-        ## self.initialize_required_components(mode)
         
         ## self.check_input_types()  # (not needed so far)
         
@@ -718,17 +664,18 @@ class met_component( BMI_base.BMI_component ):
         #-------------------------------------------
         self.update_P_integral()
         self.update_P_max()
-        self.update_snow_vars()   # (snow depth due to snowfall)
+        self.update_P_rain()
+        self.update_P_snow()
 
         #-------------------------
         # Update computed values
         #-------------------------
         if not(self.PRECIP_ONLY):
-            self.update_richardson_number()
-            self.update_bulk_exchange_coeff()
+            self.update_bulk_richardson_number()
+            self.update_bulk_aero_conductance()
             self.update_sensible_heat_flux()
             self.update_saturation_vapor_pressure(MBAR=True)
-            self.update_saturation_vapor_pressure(MBAR=True, SURFACE=True)  ##########
+            self.update_saturation_vapor_pressure(MBAR=True, SURFACE=True)  ########
             self.update_vapor_pressure(MBAR=True)
             self.update_dew_point() ###
             self.update_precipitable_water_content()  ###
@@ -981,7 +928,7 @@ class met_component( BMI_base.BMI_component ):
         ## self.P_max = self.P.max()
         self.P_max = self.initialize_scalar( P_max, dtype='float64')
         self.vol_P = self.initialize_scalar( 0, dtype='float64')
-        self.Q_sum = self.initialize_scalar( 0, dtype='float64')
+
 
         #----------------------------------------------------------
         # For using new framework which embeds references from
@@ -990,9 +937,21 @@ class met_component( BMI_base.BMI_component ):
         # change from scalar to grid during update, so we need to
         # check that the reference isn't broken when the dtype
         # changes. (5/17/12)
-        #----------------------------------------------------------        
-        self.Qn_SW  = self.initialize_scalar( 0, dtype='float64')
-        self.Qn_LW  = self.initialize_scalar( 0, dtype='float64')
+        #---------------------------------------------------------- 
+        # These depend on grids alpha and beta, so will be grids.
+        #----------------------------------------------------------                
+        self.Qn_SW  = np.zeros([self.ny, self.nx], dtype='float64')
+        self.Qn_LW  = np.zeros([self.ny, self.nx], dtype='float64')
+        self.Qn_tot = np.zeros([self.ny, self.nx], dtype='float64')
+        self.Q_sum  = np.zeros([self.ny, self.nx], dtype='float64')
+        #----------------------------------------------------------  
+#         self.Qn_SW  = self.initialize_scalar( 0, dtype='float64')
+#         self.Qn_LW  = self.initialize_scalar( 0, dtype='float64')
+#         self.Qn_tot = self.initialize_scalar( 0, dtype='float64')
+#         self.Q_sum  = self.initialize_scalar( 0, dtype='float64')
+        #---------------------------------------------------------- 
+        # These may be scalars or grids.
+        #---------------------------------         
         self.Qe     = self.initialize_scalar( 0, dtype='float64')
         self.e_air  = self.initialize_scalar( 0, dtype='float64')
         self.e_surf = self.initialize_scalar( 0, dtype='float64')
@@ -1049,151 +1008,115 @@ class met_component( BMI_base.BMI_component ):
 
         ### print '##### P =', self.P
         
-    #   update_P_max()   
+    #   update_P_max()  
     #-------------------------------------------------------------------
-    def update_snow_vars(self):
+    def update_P_rain(self):
 
+        #-----------------------------------------------------------
+        # Note:  This routine is written so that it doesn't matter
+        #        whether P and T_air are grids or scalars.
+        #        For scalars: 1.5 * True = 1.5, 1.5 * False = 0.
+        #        Here are the possible combinations for checking.
+        #-----------------------------------------------------------
+        # P       T_air     P_rain
+        #----------------------------
+        # scalar  scalar    scalar    
+        # scalar  grid      grid
+        # grid    scalar    grid
+        # grid    grid      grid
+        #----------------------------
         if (self.DEBUG):
-            print 'Calling update_snow_vars()...'
-            
-        #---------------------------------------------
-        # If P or T_air is a grid, then we must have
-        # h_swe and h_snow be grids.  This is set
-        # up at start of Route_Flow.
-        #---------------------------------------------
-        h_swe    = self.h_swe    # (snow ref from new framework)
-        h_snow   = self.h_snow
-        rho_snow = self.rho_snow
-        #----------------------------------------------------
-##        h_swe    = self.get_port_data('h_swe',  self.sp)
-##        h_snow   = self.get_port_data('h_snow', self.sp)
-        
-        ## print 'MADE IT PAST get_port_data() calls.'
-        #--------------------------------------------------        
-##        rho_snow = self.sp.get_scalar_double('rho_snow')
-        ### main_dt  = self.cp.get_scalar_double('dt')
-        ## print 'MADE IT PAST get_scalar_double() calls.'
+            print 'Calling update_P_rain()...'
 
-        ###################################################
-        # (3/15/12) We shouldn't need this from Snow
-        # because it is set in "self.set_constants()"
-        ###################################################
-        # rho_H2O  = self.sp.get_scalar_double('rho_H2O')
-        rho_H2O  = self.rho_H2O
-        
-        #----------------------------------------------
-        # Update snow water equivalent and snow depth
-        #----------------------------------------------
-        # (3/14/07) New method that works regardless
-        # of whether P and T are scalars or grids.
-        #---------------------------------------------
-        # (8/20/09) Precip process now has constant
-        # timestep, dt, which should be used here.
-        #---------------------------------------------        
-        dh_swe  = (self.P * (self.T_air <= 0)) * self.dt
-        h_swe  += dh_swe
-        ratio   = (rho_H2O / rho_snow)
-        h_snow  = h_swe * ratio
-        ## print 'MADE IT PAST var updates.'
-        
-        #----------------------------------------------------
-        # Use "set_values" call to update h_snow and h_swe?
-        #----------------------------------------------------
-##        print 'shape(h_snow) =', shape(h_snow)
-##        print 'shape(h_swe)  =', shape(h_swe)
-##        print 'shape(P)      =', shape(self.P)
-##        print 'shape(T_air)  =', shape(self.T_air)
-##        print 'T_air         =', self.T_air
-
-        ###########################################################
-        # This may no longer be needed because we changed
-        # a reference to the var in the snow component. (5/18/12)
-        ###########################################################
-##        self.set_port_data('h_snow', h_snow, self.sp)
-##        self.set_port_data('h_swe',  h_swe,  self.sp)
-        ## print 'MADE IT PAST set_port_data() calls.'
-        
-        #---------------------------------------------
-        # Where precip falls as snow and gets saved
-        # to SWE, P must be set to zero so it can't
-        # go on to produce runoff.
-        #-----------------------------------------------
-        # A special situation occurs if P is a scalar
-        # and T is a grid.  P must then be converted
-        # to a grid in order to be able to reflect the
-        # fact that water was stored as snow in some
-        # pixels and not at others.  This happens
-        # automatically as written here. (3/14/07)
-        # If P and T are both scalars, P stays scalar.
-        ################################################
-        # NB!  Should still work in Python, because:
-        #   (1.5 * True = 1.5, 1.5 * False = 0)
-        ################################################
-        # NB!  This could be slowing things down a lot
-        #      because it happens every timestep, not
-        #      just when precip rate is updated.  Is
-        #      there some way to test out of this ??
-        ################################################
-        ################################################
-        # (2/7/13) We must use "*=" to preserve reference
-        # if P is a "mutable scalar".
         #-------------------------------------------------
-        self.P *= (dh_swe == 0)
-        ## self.P = (self.P * (dh_swe == 0))
+        # P_rain is the precip that falls as liquid that
+        # can contribute to runoff production.
+        #-------------------------------------------------
+        # P_rain is used by channel_base.update_R.
+        #-------------------------------------------------
+        P_rain = self.P * (self.T_air > 0)
+        if (np.rank( self.P_rain ) == 0):
+            self.P_rain.fill( P_rain )   #### (mutable scalar)
+        else:
+            self.P_rain[:] = P_rain
+  
+        if (self.DEBUG):
+            if (self.P_rain.max() > 0):
+                print '   >> Rain is falling...'
 
         #--------------
         # For testing
         #--------------
-        # nT = np.size(mv.T_air)
-        # nP = np.size(self.P)
-        # if (nT == 1):
-        #     tstr = str(mv.T_air)
-        #     print '   T_air = ' + tstr
-        # if (nP == 1):
-        #     pstr = str(self.P)
-        #     print '   P     = ' + pstr
-        
-        #-------------------------------------
-        # Message about rainfall or snowfall
-        #-------------------------------------
-        # Note that rain and snow may fall
-        # simultaneously at different pixels
-        #-------------------------------------
-        # Reporting this slows model too much
-        # but can be used for testing
-        #-------------------------------------
-        # w1 = np.where(dh_swe > 0)
-        # n1 = np.size(w1[0])
-        # if (n1 > 0): print '   Snow is falling...'
-        #--------------------------------------------------
-        # dh_rain = (P * (mv.T_air > 0))
-        # w2 = np.where(dh_rain > 0)
-        # n2 = np.size(w2[0])
-        # if (n2 > 0): print '   Rain is falling...'
+        ## print 'shape(P)      =', shape(self.P)
+        ## print 'shape(T_air)  =', shape(self.T_air)
+        ## print 'shape(P_rain) =', shape(self.P_rain)
+        ## print 'T_air         =', self.T_air
 
-    #   update_snow_vars() 
+        #########################################
+        #### Old note, to remember for later.
+        #--------------------------------------------------
+        # (2/7/13) We must use "*=" to preserve reference
+        # if P is a "mutable scalar".
+        #--------------------------------------------------
+                             
+    #   update_P_rain()
     #-------------------------------------------------------------------
-    def update_richardson_number(self):
+    def update_P_snow(self):
+
+        #----------------------------------------------------
+        # Notes:  Rain and snow may fall simultaneously at
+        #         different grid cells in the model domain.
+        #----------------------------------------------------
+        if (self.DEBUG):
+            print 'Calling update_P_snow()...'
+            
+        #-------------------------------------------------
+        # P_snow is the precip that falls as snow or ice
+        # that contributes to the snow depth.  This snow
+        # may melt to contribute to runoff later on.
+        #-------------------------------------------------
+        # P_snow is used by snow_base.update_depth.
+        #-------------------------------------------------
+        P_snow = self.P * (self.T_air <= 0)
+        if (np.rank( self.P_snow ) == 0):
+            self.P_snow.fill( P_snow )   #### (mutable scalar)
+        else:
+            self.P_snow[:] = P_snow
 
         if (self.DEBUG):
-            print 'Calling update_richardson_number()...'
-            
+            if (self.P_snow.max() > 0):
+                print '   >> Snow is falling...'
+                     
+    #   update_P_snow()
+    #-------------------------------------------------------------------
+    def update_bulk_richardson_number(self):
+
+        if (self.DEBUG):
+            print 'Calling update_bulk_richardson_number()...'
+
+        #---------------------------------------------------------------
+        # (9/6/14)  Found a typo in the Zhang et al. (2000) paper,
+        # in the definition of Ri.  Also see Price and Dunne (1976).
+        # We should have (Ri > 0) and (T_surf > T_air) when STABLE.
+        # This also removes problems/singularities in the corrections
+        # for the stable and unstable cases in the next function.      
         #---------------------------------------------------------------
         # Notes: Other definitions are possible, such as the one given
         #        by Dingman (2002, p. 599).  However, this one is the
         #        one given by Zhang et al. (2000) and is meant for use
         #        with the stability criterion also given there.
         #---------------------------------------------------------------
-        top     = self.g * self.z * (self.T_air - self.T_surf)
+        #### top     = self.g * self.z * (self.T_air - self.T_surf)  # BUG.
+        top     = self.g * self.z * (self.T_surf - self.T_air)
         bot     = (self.uz)**2.0 * (self.T_air + np.float64(273.15))
         self.Ri = (top / bot)
 
-    #   update_richardson_number()
+    #   update_bulk_richardson_number()
     #-------------------------------------------------------------------        
-    def update_bulk_exchange_coeff(self):
+    def update_bulk_aero_conductance(self):
 
         if (self.DEBUG):
-            print 'Calling update_bulk_exchange_coeff()...'
+            print 'Calling update_bulk_aero_conductance()...'
 
         #----------------------------------------------------------------
         # Notes: Dn       = bulk exchange coeff for the conditions of
@@ -1209,7 +1132,6 @@ class met_component( BMI_base.BMI_component ):
         #        RI       = Richardson's number (see function)
         #----------------------------------------------------------------
         h_snow = self.h_snow  # (ref from new framework)
-##        h_snow = self.get_port_data('h_snow', self.sp)
         
         #---------------------------------------------------
         # Compute bulk exchange coeffs (neutral stability)
@@ -1251,8 +1173,11 @@ class met_component( BMI_base.BMI_component ):
         else:
             w  = np.where(self.T_air != self.T_surf)
             nw = np.size(w[0])
-        #----------------------------------------------------------            
+        
         if (nw == 0):
+            #--------------------------------------------
+            # All pixels are neutral. Set Dh = De = Dn.
+            #--------------------------------------------
             self.Dn = Dn
             self.Dh = Dn
             self.De = Dn
@@ -1293,7 +1218,10 @@ class met_component( BMI_base.BMI_component ):
         # stable case (Zhang et al., 2000); hopefully not a typo.
         # It plots as a smooth curve through Ri=0.
         #------------------------------------------------------------
-        nD = np.size( Dn )
+        # (9/7/14)  Modified so that Dn is saved, but Dh = De.
+        #------------------------------------------------------------        
+        Dh = Dn.copy()   ### (9/7/14.  Save Dn also.)
+        nD = np.size( Dh )
         nR = np.size( self.Ri )
         if (nR > 1):    
             #--------------------------
@@ -1308,30 +1236,33 @@ class met_component( BMI_base.BMI_component ):
                 # Convert Dn to a grid here or somewhere
                 # Should stop with an error message
                 #******************************************
-                dum = int16(0)
-            if (ns != 0):    
-                Dn[ws] = Dn[ws] / (np.float64(1) + (np.float64(10) * self.Ri[ws]))
+                dum = np.int16(0)
+            if (ns != 0):
+                #----------------------------------------------------------
+                # If (Ri > 0), or (T_surf > T_air), then STABLE. (9/6/14)
+                #----------------------------------------------------------   
+                Dh[ws] = Dh[ws] / (np.float64(1) + (np.float64(10) * self.Ri[ws]))
             if (nu != 0):    
-                Dn[wu] = Dn[wu] * (np.float64(1) - (np.float64(10) * self.Ri[wu]))
+                Dh[wu] = Dh[wu] * (np.float64(1) - (np.float64(10) * self.Ri[wu]))
         else:    
             #----------------------------
             # Case where Ri is a scalar
             #--------------------------------
-            # Works if Dn is grid or scalar
+            # Works if Dh is grid or scalar
             #--------------------------------
             if (self.Ri > 0):    
-                Dn = Dn / (np.float64(1) + (np.float64(10) * self.Ri))
+                Dh = Dh / (np.float64(1) + (np.float64(10) * self.Ri))
             else:    
-                Dn = Dn * (np.float64(1) - (np.float64(10) * self.Ri))
+                Dh = Dh * (np.float64(1) - (np.float64(10) * self.Ri))
 
         #----------------------------------------------------
         # NB! We currently assume that these are all equal.
         #----------------------------------------------------
         self.Dn = Dn
-        self.Dh = Dn
-        self.De = Dn
+        self.Dh = Dh
+        self.De = Dh   ## (assumed equal)
         
-    #   update_bulk_exchange_coeff()
+    #   update_bulk_aero_conductance()
     #-------------------------------------------------------------------
     def update_sensible_heat_flux(self):
 
@@ -1346,8 +1277,8 @@ class met_component( BMI_base.BMI_component ):
         #---------------------
         # Physical constants
         #---------------------
-        # rho_air = 1.225d   ;[kg/m^3, at sea-level]
-        # Cp_air  = 1005.7   ;[J/kg/deg_C]
+        # rho_air = 1.225d   ;[kg m-3, at sea-level]
+        # Cp_air  = 1005.7   ;[J kg-1 K-1]
         
         #-----------------------------
         # Compute sensible heat flux
@@ -1466,6 +1397,7 @@ class met_component( BMI_base.BMI_component ):
         #         Vapor pressure is a function of air temperature,
         #         T_air, and relative humidity, RH.
         #         The formula used here needs e_air in kPa units.
+        #         See Dingman (2002, Appendix D, p. 587).
         #-----------------------------------------------------------
         e_air_kPa = self.e_air / np.float64(10)   # [kPa]
         log_vp    = np.log( e_air_kPa )
@@ -1589,13 +1521,10 @@ class met_component( BMI_base.BMI_component ):
                                            self.albedo,
                                            self.dust_atten )
 
-        self.Qn_SW = Qn_SW
-        ## self.Qn_SW = Qn_SW * self.Qsw_prefactor
-
-        #--------------
-        # For testing
-        #--------------
-        # self.Qn_SW = np.float64(100)    # [W/m^2]
+        if (np.rank( self.Qn_SW ) == 0):
+            self.Qn_SW.fill( Qn_SW )   #### (mutable scalar)
+        else:
+            self.Qn_SW[:] = Qn_SW  # [W m-2]
         
     #   update_net_shortwave_radiation()
     #-------------------------------------------------------------------
@@ -1636,9 +1565,9 @@ class met_component( BMI_base.BMI_component ):
             e_air_kPa = self.e_air / np.float64(10)  # [kPa]
             F       = self.canopy_factor
             C       = self.cloud_factor
-            term1 = (1.0 - F) * 1.72 * (e_air_kPa / T_air_K) ** self.one_seventh
-            term2 = (1.0 + (0.22 * C ** 2.0))
-            self.em_air = (term1 * term2) + F
+            term1   = (1.0 - F) * 1.72 * (e_air_kPa / T_air_K) ** self.one_seventh
+            term2   = (1.0 + (0.22 * C ** 2.0))
+            self.em_air  = (term1 * term2) + F
         else:
             #--------------------------------------------------------
             # Satterlund (1979) method for computing the emissivity
@@ -1647,10 +1576,19 @@ class met_component( BMI_base.BMI_component ):
             # temperatures below 0 degrees C" (see G. Liston)
             # Liston cites Aase and Idso(1978), Satterlund (1979)
             #--------------------------------------------------------
-            e_air_mbar  = self.e_air
+            e_air_mbar = self.e_air
             eterm  = np.exp(-1 * (e_air_mbar)**(T_air_K / 2016) )
             self.em_air = 1.08 * (1.0 - eterm)
-               
+ 
+        #--------------------------------------------------------------  
+        # Can't do this yet.  em_air is always initialized scalar now
+        # but may change to grid on assignment. (9/23/14)
+        #--------------------------------------------------------------
+#         if (np.rank( self.em_air ) == 0):
+#             self.em_air.fill( em_air )   #### (mutable scalar)
+#         else:
+#             self.em_air[:] = em_air
+           
     #   update_em_air()    
     #-------------------------------------------------------------------
     def update_net_longwave_radiation(self):
@@ -1666,7 +1604,7 @@ class met_component( BMI_base.BMI_component ):
         #        LW_out  = em_surf * sigma * (T_surf + 273.15)^4
         #
         #        Temperatures in [deg_C] must be converted to
-        #        [deg_K].  Recall that absolute zero occurs at
+        #        [K].  Recall that absolute zero occurs at
         #        0 [deg_K] or -273.15 [deg_C].
         #
         #----------------------------------------------------------------
@@ -1688,14 +1626,38 @@ class met_component( BMI_base.BMI_component ):
         LW_out   = self.em_surf * self.sigma * (T_surf_K)** 4.0
         LW_out   = LW_out + ((1.0 - self.em_surf) * LW_in)
                
-        self.Qn_LW = (LW_in - LW_out)
+        self.Qn_LW = (LW_in - LW_out)   # [W m-2]
 
-        #--------------
-        # For testing
-        #--------------
-        # self.Qn_LW = np.float64(10)    # [W/m^2]
+        #--------------------------------------------------------------  
+        # Can't do this yet.  Qn_LW is always initialized grid now
+        # but will often be created above as a scalar. (9/23/14)
+        #--------------------------------------------------------------
+#         if (np.rank( self.Qn_LW ) == 0):
+#             self.Qn_LW.fill( Qn_LW )   #### (mutable scalar)
+#         else:
+#             self.Qn_LW[:] = Qn_LW  # [W m-2]
         
     #   update_net_longwave_radiation()
+    #-------------------------------------------------------------------
+    def update_net_total_radiation(self):
+
+        #-----------------------------------------------
+        # Notes: Added this on 9/11/14.  Not used yet.
+        #------------------------------------------------------------
+        #        Qn_SW = net shortwave radiation flux (solar)
+        #        Qn_LW = net longwave radiation flux (air, surface)
+        #------------------------------------------------------------       
+        if (self.DEBUG):
+            print 'Calling update_net_total_radiation()...'
+            
+        Qn_tot = self.Qn_SW + self.Qn_LW   # [W m-2]
+
+        if (np.rank( self.Qn_tot ) == 0):
+            self.Qn_tot.fill( Qn_tot )   #### (mutable scalar)
+        else:
+            self.Qn_tot[:] = Qn_tot  # [W m-2]
+                       
+    #   update_net_total_radiation()
     #-------------------------------------------------------------------
     def update_net_energy_flux(self):
 
@@ -1717,20 +1679,20 @@ class met_component( BMI_base.BMI_component ):
         #        Qc    = energy flux via conduction from snow to soil
         #                (ARHYTHM assumes this to be negligible; Qc=0.)
         #        Ecc   = cold content of snowpack = amount of energy
-        #                needed before snow can begin to melt [J/m^2]
+        #                needed before snow can begin to melt [J m-2]
 
-        #        All Q's here have units of [W/m^2].
+        #        All Q's here have units of [W m-2].
         #        Are they all treated as positive quantities ?
 
-        #        rho_air  = density of air [kg/m^3]
-        #        rho_snow = density of snow [kg/m^3]
-        #        Cp_air   = specific heat of air [J/kg/deg_C]
-        #        Cp_snow  = heat capacity of snow [J/kg/deg_C]
+        #        rho_air  = density of air [kg m-3]
+        #        rho_snow = density of snow [kg m-3]
+        #        Cp_air   = specific heat of air [J kg-1 K-1]
+        #        Cp_snow  = heat capacity of snow [J kg-1 K-1]
         #                 = ???????? = specific heat of snow
-        #        Kh       = eddy diffusivity for heat [m^2/s]
-        #        Ke       = eddy diffusivity for water vapor [m^2/s]
-        #        Lv       = latent heat of vaporization [J/kg]
-        #        Lf       = latent heat of fusion [J/kg]
+        #        Kh       = eddy diffusivity for heat [m2 s-1]
+        #        Ke       = eddy diffusivity for water vapor [m2 s-1]
+        #        Lv       = latent heat of vaporization [J kg-1]
+        #        Lf       = latent heat of fusion [J kg-1]
         #        ------------------------------------------------------
         #        Dn       = bulk exchange coeff for the conditions of
         #                   neutral atmospheric stability [m/s]
@@ -1756,9 +1718,14 @@ class met_component( BMI_base.BMI_component ):
         #        kappa    = von Karman's constant [unitless] = 0.41
         #        dt       = snowmelt timestep [seconds]
         #----------------------------------------------------------------
-        self.Q_sum = self.Qn_SW + self.Qn_LW + self.Qh + \
-                     self.Qe + self.Qa + self.Qc    #[W/m^2]
+        Q_sum = self.Qn_SW + self.Qn_LW + self.Qh + \
+                self.Qe + self.Qa + self.Qc    # [W m-2]
 
+        if (np.rank( self.Q_sum) == 0):
+            self.Q_sum.fill( Q_sum )   #### (mutable scalar)
+        else:
+            self.Q_sum[:] = Q_sum  # [W m-2]
+            
     #   update_net_energy_flux()   
     #-------------------------------------------------------------------  
     def open_input_files(self):
@@ -2009,7 +1976,7 @@ class met_component( BMI_base.BMI_component ):
 
         if (self.DEBUG):
             print 'Calling open_output_files()...'
-        model_output.check_nio()
+        model_output.check_netcdf()
         self.update_outfile_names()
         
         #--------------------------------------

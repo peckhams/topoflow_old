@@ -49,17 +49,18 @@ from topoflow.utils import rtg_files
 #
 #   class d8_base
 #
+#       get_attribute()           # (NOT READY YET)  #############
+#       get_input_var_names()
+#       get_output_var_names()
+#       get_var_name()
+#       get_var_units()
+#-----------------------------
 #       set_constants()
 #       set_default_config_vars()   # (1/17/12)
-#       get_input_items()
-#       get_output_items()
 #----------------------------------
 #       initialize()
 #       update()
 #       set_computed_input_vars()
-#       embed_child_components()
-#       add_child_ports()
-#       initialize_ports()
 #       initialize_computed_vars()
 #----------------------------------
 #       get_pixel_dimensions()
@@ -109,6 +110,73 @@ from topoflow.utils import rtg_files
 #-----------------------------------------------------------------------
 class d8_component( BMI_base.BMI_component ):
 
+    _input_var_names = [ 'land_surface__elevation' ]  # (DEM)
+    
+    #------------------------------------------------------------
+    # Note: no_flow_IDs, parent_IDs, w1, p1, etc. are currently
+    #       not 1D arrays but tuples with array of rows and an
+    #       array of cols.  Therefore they can't be accessed by
+    #       another component using current interface functions
+    #       for getting and setting 1D arrays or "vectors".
+    #------------------------------------------------------------        
+    # items = ['ID_grid', 'd8_grid', 'A', 'ds', 'dw',
+    # 'parent_IDs', 'edge_IDs',
+    # 'w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w7', 'w8',
+    # 'p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8',
+    # 'noflow_IDs', nx, ny, dx, dy, dd, da ]
+       
+    _output_var_names = []
+    
+    _var_name_map = {
+        'land_surface__elevation': 'DEM' }
+
+    _var_units_map = {
+        'land_surface__elevation': 'm' }
+
+    #------------------------------------------------    
+    # Return NumPy string arrays vs. Python lists ?
+    #------------------------------------------------
+    ## _input_var_names  = np.array( _input_var_names )
+    ## _output_var_names = np.array( _output_var_names )
+
+    #-------------------------------------------------------------------
+    def get_input_var_names(self):
+
+        #--------------------------------------------------------
+        # Note: These are currently variables needed from other
+        #       components vs. those read from files or GUI.
+        #--------------------------------------------------------   
+        return self._input_var_names
+    
+    #   get_input_var_names()
+    #-------------------------------------------------------------------
+    def get_output_var_names(self):
+ 
+        return self._output_var_names
+    
+    #   get_output_var_names()
+    #-------------------------------------------------------------------
+    def get_var_name(self, long_var_name):
+            
+        return self._var_name_map[ long_var_name ]
+
+    #   get_var_name()
+    #-------------------------------------------------------------------
+    def get_var_units(self, long_var_name):
+
+        return self._var_units_map[ long_var_name ]
+   
+    #   get_var_units()
+    #-------------------------------------------------------------------
+##    def get_var_type(self, long_var_name):
+##
+##        #---------------------------------------
+##        # So far, all vars have type "double",
+##        # but use the one in BMI_base instead.
+##        #---------------------------------------
+##        return 'float64'
+##    
+##    #   get_var_type()                    
     #-------------------------------------------------------------------
     def set_constants(self):
 
@@ -184,37 +252,8 @@ class d8_component( BMI_base.BMI_component ):
         self.dw_ts_file       = ''
 
     #   set_default_config_vars()
-    #-------------------------------------------------------------------
-##    def get_input_items(self):
-##
-##        items = ['DEM']
-##        return items
-##        ## return np.array(items)    # (string array vs. list)
-##
-##    #   get_input_items()
-##    #-------------------------------------------------------------------
-##    def get_output_items(self):
-##
-##        #------------------------------------------------------------
-##        # Note: no_flow_IDs, parent_IDs, w1, p1, etc. are currently
-##        #       not 1D arrays but tuples with array of rows and an
-##        #       array of cols.  Therefore they can't be accessed by
-##        #       another component using current interface functions
-##        #       for getting and setting 1D arrays or "vectors".
-##        #------------------------------------------------------------        
-##        items = ['ID_grid', 'd8_grid', 'A', 'ds', 'dw',
-##                 'parent_IDs', 'edge_IDs',
-##                 'w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w7', 'w8',
-##                 'p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8' ]
-##                 ## 'noflow_IDs',
-##                 ## nx, ny, dx, dy, dd, da
-##
-##        return items
-##        ## return np.array(items)    # (string array vs. list)
-##    
-##    #   get_output_items()
     #-----------------------------------------------------------------
-    def initialize(self, cfg_prefix=None, mode='nondriver',
+    def initialize(self, cfg_file=None, mode='nondriver',
                    SILENT=False, REPORT=True):
 
         #--------------------------------------------------------
@@ -229,13 +268,14 @@ class d8_component( BMI_base.BMI_component ):
 
         self.status     = 'initializing'  # (OpenMI 2.0 convention)
         self.mode       = mode
-        self.cfg_prefix = cfg_prefix
 
-        # print '### cfg_directory =', cfg_directory
-        # print '### cfg_prefix    =', cfg_prefix
-
-        # if (cfg_directory != None):    # (Removed on 11/7/11.)
-        #     os.chdir( cfg_directory )
+        if (cfg_file == None):
+			cfg_extension = self.get_attribute( 'cfg_extension' )
+			filename      = self.site_prefix + cfg_extension
+			cfg_file      = self.in_directory + filename
+			## self.cfg_file   = os.path.join( os.getcwd(), filename )
+			## self.cfg_prefix = self.site_prefix
+        self.cfg_file = cfg_file
         
         #-----------------------------------------------
         # Load component parameters from a config file
@@ -294,7 +334,6 @@ class d8_component( BMI_base.BMI_component ):
         #-----------------------------
         ## self.initialize_time_vars()  # (done above now)
         self.initialize_computed_vars(SILENT=SILENT, REPORT=REPORT)
-        ## self.initialize_required_components(mode)   ##### NOT READY YET ###
         
         self.open_output_files()    # (added on 11/8/11) ###################
         self.status = 'initialized'
@@ -390,39 +429,6 @@ class d8_component( BMI_base.BMI_component ):
         
     #   set_computed_input_vars()
 ##    #-------------------------------------------------------------------
-##    def embed_child_components(self):
-##
-##        #------------------------------------------------
-##        # Instantiate and embed "process components"
-##        # in the place of the CCA ports.
-##        #------------------------------------------------
-##        import erosion_base
-##        self.ep = erosion_base.erosion_component()
-##
-##    #   embed_child_components()
-##    #-------------------------------------------------------------------
-##    def add_child_ports(self):
-##
-##        #-------------------------------------------------------
-##        # Note: Erosion component does not have any ports yet.
-##        #-------------------------------------------------------
-##        pass
-##
-##    #   add_child_ports()
-##    #-------------------------------------------------------------------
-##    def initialize_ports(self):
-##
-##        #-------------------------------------------------
-##        # Initialize the process objects/components
-##        # This is also where output files are opened.
-##        #-------------------------------------------------
-##        DEBUG = True
-##        if (self.ep.get_status() != 'initialized'):        # erosion vars
-##            self.ep.initialize( cfg_prefix=self.cfg_prefix )
-##            if (DEBUG): print '\nD8 component initialized EROSION.'
-##
-##    #   initialize_ports()            
-    #---------------------------------------------------------------------
     def initialize_computed_vars(self, DOUBLE=False,
                                  SILENT=True, REPORT=False):
 
@@ -958,7 +964,7 @@ class d8_component( BMI_base.BMI_component ):
         # open_new_gs_file() has a "dtype" keyword that defaults
         # to "float32".  Flow codes have dtype = "uint8".
         #-----------------------------------------------------------
-        model_output.check_nio()    # (test import and info message)
+        model_output.check_netcdf()    # (test import and info message)
         self.update_outfile_names()
 
         #--------------------------------------

@@ -1,12 +1,19 @@
-
-## Copyright (c) 2001-2013, Scott D. Peckham
-##
-## January 2013   (Revised handling of input/output names).
-## October 2012   (CSDMS Standard Names and BMI)
-## January 2009  (converted from IDL)
-## July, August 2009
-## May 2010 (changes to unit_test() and read_cfg_file()
-
+#
+#  Copyright (c) 2001-2014, Scott D. Peckham
+#
+#  Sep 2014.  Cleanup and testing.
+#             Own versions of input file routines, at end.
+#  Aug 2014.  Customized initialize_computed_vars(), which calls
+#             initialize_cold_content(). 
+#             Updates to standard names and BMI.
+#  Nov 2013.  Converted TopoFlow to Python package.
+#  Jan 2013.  Revised handling of input/output names.
+#  Oct 2012.  CSDMS Standard Names and BMI.
+#  May 2010.  Changes to unit_test() and read_cfg_file().
+#  Aug 2009.  Updates.
+#  Jul 2009.  Updates.
+#  Jan 2009.  Converted from IDL.
+#
 #-----------------------------------------------------------------------
 #  NOTES:  This file defines an Energy-Balance snowmelt component
 #          and related functions.  It inherits from the snowmelt
@@ -22,12 +29,19 @@
 #      get_var_units()          # (5/16/12, Bolton)
 #      ----------------------
 #      check_input_types()
+#      initialize_cold_content()   # (9/13/14, from snow_base.py)
+#      initialize_computed_vars()  # (9/13/14, from snow_base.py)
 #      update_meltrate()
+#      ----------------------
+#      open_input_files()
+#      read_input_files()
+#      close_input_files()
 #
 #-----------------------------------------------------------------------
 
 import numpy as np
 
+from topoflow.utils import model_input
 from topoflow.components import snow_base
 
 #-----------------------------------------------------------------------
@@ -60,23 +74,31 @@ class snow_component( snow_base.snow_component ):
     # Some input vars, like ****** are read from the CFG
     # file and not from other components.  They are therefore
     # included with the output_vars.
-    #----------------------------------------------------------
+    #------------------------------------------------------------
+    # Note: snowfall_leq-volume_flux *must* be nonliquid precip.
+    #------------------------------------------------------------  
     _input_var_names = [
-        'air__density',
-        'air__relative_humidity',
-        'air__temperature',
-        'air__thermal_capacity',
-        'atmosphere_turbulent_boundary_layer__roughness_length',
-        'atmosphere_water__liquid_equivalent_precipitation_rate',
-        'land_surface_air__pressure',
-        'land_surface__net_irradiation_flux',
-        'land_surface__net_longwave_irradiation_flux',
-        'land_surface__net_shortwave_irradiation_flux',
-        'land_surface__temperature',        
-        'water__density',
-        'wind__speed_reference_height',
-        'wind__reference_height_speed' ]
-                          
+        'atmosphere_bottom_air__mass-per-volume_density',
+        'atmosphere_bottom_air__mass-specific_isobaric_heat_capacity',
+        'atmosphere_bottom_air__temperature',
+        'atmosphere_water__snowfall_leq-volume_flux',
+        'land_surface__temperature',    # (used to initialize Ecc)
+        'land_surface_net-total-energy__energy_flux',
+        'water-liquid__mass-per-volume_density' ]
+
+        #------------------------------------------------------------
+        # These are used by Meteorology component to compute Q_sum.
+        # but are not needed directly by this component. (9/14/14)
+        #------------------------------------------------------------
+        # 'atmosphere_bottom_air__pressure',
+        # 'atmosphere_bottom_air_flow__log_law_roughness_length',
+        # 'atmosphere_bottom_air_flow__speed_reference_height',
+        # 'atmosphere_bottom_air_flow__reference-height_speed',
+        # 'atmosphere_bottom_air_water-vapor__relative_saturation',
+        # 'land_surface_net-longwave-radiation__energy_flux',
+        # 'land_surface_net-shortwave-radiation__energy_flux',
+                        
+                                  
     #------------------------------------------------------------
     # Note: The main output of the Energy-Balance method is SM.
     #       Functions in snow_base.py compute additional output
@@ -90,77 +112,82 @@ class snow_component( snow_base.snow_component ):
     #       vol_SM was "basin_cumulative_snow_meltwater_volume"
     #------------------------------------------------------------
     _output_var_names = [
-        'model__time_step',                        # dt        
-        'snow__area_time_integral_of_melt_rate',   # vol_SM
-        'snow__degree_day_coefficient',            # c0   (read from CFG)
-        'snow__degree_day_threshold_temperature',  # T0   (read from CFG)
-        'snow__density',                           # rho_snow
-        'snow__depth',                             # h_snow
-        'snow__initial_depth',                     # h0_snow
-        'snow__initial_liquid_equivalent_depth',   # h0_swe
-        'snow__liquid_equivalent_depth',           # h_swe
-        'snow__melt_rate',                         # SM   (MR is used for ice)
-        'snow__thermal_capacity' ]                 # Cp_snow
+        'model__time_step',                            # dt   
+        'snowpack__domain_time_integral_of_melt_volume_flux',   # vol_SM
+        'snowpack__energy-per-area_cold_content',      # Ecc
+        'snowpack__depth',                             # h_snow
+        'snowpack__initial_depth',                     # h0_snow
+        'snowpack__initial_liquid-equivalent_depth',   # h0_swe
+        'snowpack__liquid-equivalent_depth',           # h_swe
+        'snowpack__melt_volume_flux',                  # SM
+        'snowpack__z_mean_of_mass-per-volume_density', # rho_snow 
+        'snowpack__z_mean_of_mass-specific_isobaric_heat_capacity' ]  # Cp_snow   
     
     _var_name_map = {
-        'air__density': 'rho_air',
-        'air__relative_humidity': 'RH',
-        'air__temperature': 'T_air',
-        'air__thermal_capacity': 'Cp_air',
-        'atmosphere_turbulent_boundary_layer__roughness_length': 'z0_air',
-        'atmosphere_water__liquid_equivalent_precipitation_rate': 'P',
-        'land_surface_air__pressure': 'p0',
-        'land_surface__net_irradiation_flux': 'Q_sum',
-        'land_surface__net_longwave_irradiation_flux': 'Qn_LW',
-        'land_surface__net_shortwave_irradiation_flux': 'Qn_SW',
+        'atmosphere_bottom_air__mass-per-volume_density': 'rho_air',
+        'atmosphere_bottom_air__mass-specific_isobaric_heat_capacity': 'Cp_air',
+        'atmosphere_bottom_air__temperature': 'T_air',
+        'atmosphere_water__snowfall_leq-volume_flux': 'P_snow',
+        'land_surface_net-total-energy__energy_flux': 'Q_sum',
         'land_surface__temperature': 'T_surf',        
-        'water__density': 'rho_H2O',
-        'wind__speed_reference_height': 'z',
-        'wind__reference_height_speed': 'uz',
+        'water-liquid__mass-per-volume_density': 'rho_H2O',
+        #------------------------------------------------------------
+        # These are used by Meteorology component to compute Q_sum.
+        # but are not needed directly by this component. (9/14/14)
+        #------------------------------------------------------------
+        #'atmosphere_bottom_air__pressure': 'p0',
+        #'atmosphere_bottom_air_flow__log_law_roughness_length': 'z0_air',
+        #'atmosphere_bottom_air_flow__speed_reference_height': 'z',
+        #'atmosphere_bottom_air_flow__reference-height_speed': 'uz',
+        #'atmosphere_bottom_air_water-vapor__relative_saturation': 'RH',        
+        #'land_surface_net-longwave-radiation__energy_flux': 'Qn_LW',
+        #'land_surface_net-shortwave-radiation__energy_flux': 'Qn_SW',        
         #----------------------------------------------------------
-        'model__time_step': 'dt',
-        'snow__area_time_integral_of_melt_rate': 'vol_SM',
-        'snow__degree_day_coefficient': 'c0',                  ########
-        'snow__degree_day_threshold_temperature': 'T0',        ########
-        'snow__density': 'rho_snow',
-        'snow__depth': 'h_snow',
-        'snow__initial_depth': 'h0_snow',
-        'snow__initial_liquid_equivalent_depth': 'h0_swe',
-        'snow__liquid_equivalent_depth': 'h_swe',
-        'snow__melt_rate': 'SM',                # (MR is used for ice)
-        'snow__thermal_capacity': 'Cp_snow' }
+        'model__time_step': 'dt',     
+        'snowpack__domain_time_integral_of_melt_volume_flux': 'vol_SM',
+        'snowpack__depth': 'h_snow',
+        'snowpack__energy-per-area_cold_content': 'Ecc',
+        'snowpack__initial_depth': 'h0_snow',
+        'snowpack__initial_liquid-equivalent_depth': 'h0_swe',
+        'snowpack__liquid-equivalent_depth': 'h_swe',
+        'snowpack__melt_volume_flux': 'SM',
+        'snowpack__z_mean_of_mass-per-volume_density': 'rho_snow',
+        'snowpack__z_mean_of_mass-specific_isobaric_heat_capacity': 'Cp_snow' }
     
     #-----------------------------------------------------------------
     # Note: We need to be careful with whether units are C or K,
     #       for all "thermal" quantities (e.g. thermal_capacity).
     #-----------------------------------------------------------------       
     _var_units_map = {
-        'air__density': 'kg m-3',
-        'air__relative_humidity': '1',
-        'air__temperature': 'C',                                  # (see Notes above)
-        'air__thermal_capacity': 'J kg-1 C-1',                    # (see Notes above)
-        'atmosphere_turbulent_boundary_layer__roughness_length': 'm',
-        'atmosphere_water__liquid_equivalent_precipitation_rate': 'm s-1',
-        'land_surface_air__pressure': 'mbar',
-        'land_surface__net_irradiation_flux': 'W m-2',
-        'land_surface__net_longwave_irradiation_flux': 'W m-2',
-        'land_surface__net_shortwave_irradiation_flux': 'W m-2',
-        'land_surface__temperature': 'C',        
-        'water__density': 'kg m-3',
-        'wind__speed_reference_height': 'm',
-        'wind__reference_height_speed': 'm s-1',
-        #----------------------------------------------------------
+        'atmosphere_bottom_air__mass-per-volume_density': 'kg m-3',
+        'atmosphere_bottom_air__mass-specific_isobaric_heat_capacity': 'J kg-1 K-1 ', # (see Notes above)
+        'atmosphere_bottom_air__temperature': 'deg_C',  # (see Notes above)
+        'atmosphere_water__snowfall_leq-volume_flux': 'm s-1',
+        'land_surface_net-total-energy__energy_flux': 'W m-2',
+        'land_surface__temperature': 'deg_C',        
+        'water-liquid__mass-per-volume_density': 'kg m-3',
+        #------------------------------------------------------------
+        # These are used by Meteorology component to compute Q_sum.
+        # but are not needed directly by this component. (9/14/14)
+        #------------------------------------------------------------
+        # 'atmosphere_bottom_air__pressure': 'mbar',
+        # 'atmosphere_bottom_air_flow__log_law_roughness_length': 'm',
+        # 'atmosphere_bottom_air_flow__speed_reference_height': 'm',
+        # 'atmosphere_bottom_air_flow__reference-height_speed': 'm s-1',
+        # 'atmosphere_bottom_air_water-vapor__relative_saturation': '1',                
+        # 'land_surface_net-longwave-radiation__energy_flux': 'W m-2',
+        # 'land_surface_net-shortwave-radiation__energy_flux': 'W m-2',        
+        #--------------------------------------------------------------
         'model__time_step': 's',
-        'snow__area_time_integral_of_melt_rate': 'm3',
-        'snow__degree_day_coefficient': 'mm day-1 C-1',     ##########
-        'snow__degree_day_threshold_temperature': 'C',      ##########
-        'snow__density': 'kg m-3',
-        'snow__depth': 'm',
-        'snow__initial_depth': 'm',
-        'snow__initial_liquid_equivalent_depth': 'm',
-        'snow__liquid_equivalent_depth': 'm',
-        'snow__melt_rate': 'm s-1',
-        'snow__thermal_capacity': 'J kg-1 C-1' }
+        'snowpack__domain_time_integral_of_melt_volume_flux': 'm3',
+        'snowpack__depth': 'm',
+        'snowpack__energy-per-area_cold_content': 'J m-2',
+        'snowpack__initial_depth': 'm',
+        'snowpack__initial_liquid-equivalent_depth': 'm',
+        'snowpack__liquid-equivalent_depth': 'm',
+        'snowpack__melt_volume_flux': 'm s-1',
+        'snowpack__z_mean_of_mass-per-volume_density': 'kg m-3',
+        'snowpack__z_mean_of_mass-specific_isobaric_heat_capacity': 'J kg-1 K-1' }
 
     #------------------------------------------------    
     # Return NumPy string arrays vs. Python lists ?
@@ -215,7 +242,7 @@ class snow_component( snow_base.snow_component ):
 ##        # So far, all vars have type "double",
 ##        # but use the one in BMI_base instead.
 ##        #---------------------------------------
-##        return 'double'
+##        return 'float64'
 ##    
 ##    #   get_var_type()
     #-------------------------------------------------------------------
@@ -226,36 +253,21 @@ class snow_component( snow_base.snow_component ):
         #        currently always scalars.
         #--------------------------------------------------        
         are_scalars = np.array([
-##                          self.pp.is_scalar('rate'),
-##                          self.pp.is_scalar('duration'),
-                          #--------------------------------
-##                          self.mp.is_scalar('P'),
-##                          self.mp.is_scalar('rho_H2O'),
-##                          self.mp.is_scalar('rho_air'),
-##                          self.mp.is_scalar('Cp_air'),
-##                          self.mp.is_scalar('T_air'),
-##                          self.mp.is_scalar('T_surf'),
-##                          self.mp.is_scalar('RH'),
-##                          self.mp.is_scalar('p0'),
-##                          self.mp.is_scalar('uz'),
-##                          self.mp.is_scalar('z'),
-##                          self.mp.is_scalar('z0_air'),
-##                          self.mp.is_scalar('Qn_SW'),
-##                          self.mp.is_scalar('Qn_LW'),
-                          #--------------------------------
-                          self.is_scalar('P'),
+                          self.is_scalar('P_snow'),
                           self.is_scalar('rho_H2O'),
                           self.is_scalar('rho_air'),
                           self.is_scalar('Cp_air'),
-                          self.is_scalar('T_air'),
+                          self.is_scalar('T_air'),   ##### CHECK THIS ONE.
                           self.is_scalar('T_surf'),
-                          self.is_scalar('RH'),
-                          self.is_scalar('p0'),
-                          self.is_scalar('uz'),
-                          self.is_scalar('z'),
-                          self.is_scalar('z0_air'),
-                          self.is_scalar('Qn_SW'),
-                          self.is_scalar('Qn_LW'),
+                          self.is_scalar('Q_sum'),
+                          #--------------------------------                          
+#                           self.is_scalar('RH'),
+#                           self.is_scalar('p0'),
+#                           self.is_scalar('uz'),
+#                           self.is_scalar('z'),
+#                           self.is_scalar('z0_air'),
+#                           self.is_scalar('Qn_SW'),
+#                           self.is_scalar('Qn_LW'),
                           #--------------------------------
                           self.is_scalar('rho_snow'),
                           self.is_scalar('Cp_snow'),
@@ -267,9 +279,102 @@ class snow_component( snow_base.snow_component ):
         
     #   check_input_types()
     #-------------------------------------------------------------------
+    def initialize_computed_vars(self):
+
+        #------------------------------------------
+        # If T_air or precip are grids, then make
+        # sure that h_snow and h_swe are grids
+        #------------------------------------------
+        T_IS_GRID = self.is_grid('T_air')
+        P_IS_GRID = self.is_grid('P_snow')
+        H0_SNOW_IS_SCALAR = self.is_scalar('h0_snow')
+        H0_SWE_IS_SCALAR  = self.is_scalar('h0_swe') 
+
+        #------------------------------------------------------
+        # If h0_snow or h0_swe are scalars, the use of copy()
+        # here requires they were converted to numpy scalars.
+        # Using copy() may not be necessary for scalars.
+        #------------------------------------------------------
+        h_snow = self.h0_snow.copy()    # [meters]
+        h_swe  = self.h0_swe.copy()     # [meters]
+
+        #------------------------------------------------------       
+        # For the Energy Balance method, SM, h_snow and h_swe
+        # are always grids because Q_sum is always a grid.
+        #--------------------------------------------------------------
+        # Convert both h_snow and h_swe to grids if not already grids
+        #--------------------------------------------------------------
+        if (H0_SNOW_IS_SCALAR):
+            self.h_snow = h_snow + np.zeros([self.ny, self.nx], dtype='float64')
+        else:
+            self.h_snow = h_snow  # (is already a grid)
+        if (H0_SWE_IS_SCALAR):
+            self.h_swe = h_swe + np.zeros([self.ny, self.nx], dtype='float64')
+        else:
+            self.h_swe = h_swe    # (is already a grid)          
+
+        self.SM     = np.zeros([self.ny, self.nx], dtype='float64')
+        self.vol_SM = self.initialize_scalar( 0, dtype='float64') # (m3)
+
+        #----------------------------------------------------
+        # Compute density ratio for water to snow.
+        # rho_H2O is for liquid water close to 0 degrees C.
+        # Water is denser than snow, so density_ratio > 1.
+        #----------------------------------------------------
+        self.density_ratio = (self.rho_H2O / self.rho_snow)
+                                                       
+        #----------------------------------------------------
+        # Initialize the cold content of snowpack (2/21/07)
+        #-------------------------------------------------------------
+        # This is the only difference from initialize_computed_vars()
+        # method in snow_base.py.
+        #-------------------------------------------------------------
+        self.initialize_cold_content()
+        
+    #   initialize_computed_vars()
+    #---------------------------------------------------------------------
+    def initialize_cold_content( self ):
+
+		#----------------------------------------------------------------
+		# NOTES: This function is used to initialize the cold content
+		#        of a snowpack.
+		#        The cold content has units of [J m-2] (_NOT_ [W m-2]).
+		#        It is an energy (per unit area) threshold (or deficit)
+		#        that must be overcome before melting of snow can occur.
+		#        Cold content changes over time as the snowpack warms or
+		#        cools, but must always be non-negative.
+        #
+		#        K_snow is between 0.063 and 0.71  [W m-1 K-1]
+		#        All of the Q's have units of W m-2 = J s-1 m-2).
+		#
+		#        T0 is read from the config file.  This is a different
+		#        T0 from the one used by the Degree-Day method.
+		#---------------------------------------------------------------
+
+		#--------------------------------------------
+		# Compute initial cold content of snowpack
+		#--------------------------------------------
+        T_snow    = self.T_surf
+        del_T     = (self.T0 - T_snow)
+        self.Ecc  = (self.rho_snow * self.Cp_snow) * self.h0_snow * del_T
+
+		#------------------------------------		
+		# Cold content must be nonnegative.
+		#----------------------------------------------
+		# Ecc > 0 if (T_snow < T0).  i.e. T_snow < 0.
+		#----------------------------------------------
+        self.Ecc = np.maximum( self.Ecc, np.float64(0))
+        ### np.maximum( self.Ecc, np.float64(0), self.Ecc)  # (in place)
+        
+    #   initialize_cold_content()
+    #-------------------------------------------------------------------
     def update_meltrate(self):
 
         #------------------------------------------------------------
+        # Notes: This computes a "potential" meltrate, which can't
+        #        be realized unless there is enough snow.
+        #        See snow_base.enforce_max_meltrate().
+        #------------------------------------------------------------        
         # Notes: See notes in "met_base.py" for the method called
         #        "update_net_energy_flux()".
 
@@ -297,8 +402,7 @@ class snow_component( snow_base.snow_component ):
         #----------------------------------
         # Compute energy-balance meltrate   
         #------------------------------------------------------
-        # Ecc is initialized with the Initial_Cold_Content
-        # function by Initialize_Snow_Vars function (2/21/07)
+        # Ecc is initialized by initialize_cold_content().
         #------------------------------------------------------
         # The following pseudocode only works for scalars but
         # is otherwise equivalent to that given below and
@@ -327,25 +431,33 @@ class snow_component( snow_base.snow_component ):
         #      Ecc = Ecc - (Q_sum * dt)
         #      M   = 0d
         #  endelse
-        #----------------------------------------------------------
-        # Q_sum = Qn_SW + Qn_LW + Qh + Qe + Qa + Qc     # [W/m^2]
-        #----------------------------------------------------------
-        Q_sum = self.Q_sum  # (2/3/13, new framework)
-        #----------------------------------------------------------
-##        Q_sum = self.get_port_data('Q_sum', self.mp)    # [W/m^2]
-        Qcc   = (self.Ecc / self.dt)                    # [W/m^2]
-        Qm    = np.maximum((Q_sum - Qcc), float64(0))                   # [W/m^2]
-        Ecc   = np.maximum((self.Ecc - (Q_sum * self.dt)), np.float64(0))  # [J/m^2]
+        #---------------------------------------------------------
+        # Q_sum = Qn_SW + Qn_LW + Qh + Qe + Qa + Qc    # [W m-2]
+        #---------------------------------------------------------
         
-        #print 'Qm = ', Qm
-        #print ' '
+        #-----------------------------------------------        
+        # New approach; easier to understand (9/14/14)
+        #----------------------------------------------- 
+        # E_in  = energy input over one time step
+        # E_rem = energy remaining in excess of Ecc
+        #-----------------------------------------------
+        E_in  = (self.Q_sum * self.dt)
+        E_rem = np.maximum( E_in - self.Ecc, np.float64(0) )
+        Qm    = (E_rem / self.dt)  # [W m-2]
+        
+        ##################################
+        # Used before 9/14/14/.
+        ##################################        
+        # Q_sum = self.Q_sum  # (2/3/13, new framework)
+        # Qcc   = (self.Ecc / self.dt)                   # [W m-2]
+        # Qm    = np.maximum((Q_sum - Qcc), float64(0))  # [W m-2]
         
         #-------------------------------------
         # Convert melt energy to a melt rate
         #------------------------------------------
         # Lf = latent heat of fusion [J/kg]
         # Lv = latent heat of vaporization [J/kg]
-        # M  = (Qm/ (rho_w * Lf))
+        # M  = (Qm / (rho_w * Lf))
         #------------------------------------------
         # rho_w = 1000d       ;[kg/m^3]
         # Lf    = 334000d     ;[J/kg = W*s/kg]
@@ -353,7 +465,15 @@ class snow_component( snow_base.snow_component ):
         #------------------------------------------
         M       = (Qm / np.float64(3.34E+8))   #[m/s]
         self.SM = np.maximum(M, np.float64(0))
-   
+
+        #--------------------------------------------------
+        # Update the cold content of the snowpack [J m-2]
+        # If this is positive, there was no melt so far.
+        #--------------------------------------------------
+        # (9/13/14) Bug fix: Ecc wasn't stored into self.
+        #--------------------------------------------------        
+        self.Ecc = np.maximum((self.Ecc - E_in), np.float64(0))
+
         #-------------------------------------------------------
         # Note: enforce_max_meltrate() method is always called
         #       by the base class to make sure that meltrate
@@ -362,8 +482,62 @@ class snow_component( snow_base.snow_component ):
         #  self.enforce_max_meltrate()
             
     #   update_meltrate()
-    #-------------------------------------------------------------------
-    
+    #---------------------------------------------------------------------
+    def open_input_files(self):
+
+        self.Cp_snow_file  = self.in_directory + self.Cp_snow_file
+        self.rho_snow_file = self.in_directory + self.rho_snow_file
+        self.T0_file       = self.in_directory + self.T0_file
+        self.h0_snow_file  = self.in_directory + self.h0_snow_file
+        self.h0_swe_file   = self.in_directory + self.h0_swe_file
+
+        self.Cp_snow_unit  = model_input.open_file(self.Cp_snow_type,  self.Cp_snow_file)
+        self.rho_snow_unit = model_input.open_file(self.rho_snow_type, self.rho_snow_file)
+        self.T0_unit       = model_input.open_file(self.T0_type,       self.T0_file)
+        self.h0_snow_unit  = model_input.open_file(self.h0_snow_type,  self.h0_snow_file)
+        self.h0_swe_unit   = model_input.open_file(self.h0_swe_type,   self.h0_swe_file)
+
+    #   open_input_files()
+    #-------------------------------------------------------------------  
+    def read_input_files(self):
+
+        rti = self.rti
+
+        #--------------------------------------------------------
+        # All grids are assumed to have a data type of Float32.
+        #--------------------------------------------------------
+        Cp_snow = model_input.read_next(self.Cp_snow_unit, self.Cp_snow_type, rti)
+        if (Cp_snow != None): self.Cp_snow = Cp_snow
+        
+        rho_snow = model_input.read_next(self.rho_snow_unit, self.rho_snow_type, rti)
+        if (rho_snow != None): self.rho_snow = rho_snow
+
+        T0 = model_input.read_next(self.T0_unit, self.T0_type, rti)
+        if (T0 != None): self.T0 = T0
+        
+        h0_snow = model_input.read_next(self.h0_snow_unit, self.h0_snow_type, rti)
+        if (h0_snow != None): self.h0_snow = h0_snow
+        
+        h0_swe = model_input.read_next(self.h0_swe_unit, self.h0_swe_type, rti)
+        if (h0_swe != None): self.h0_swe = h0_swe
+        
+    #   read_input_files()       
+    #-------------------------------------------------------------------  
+    def close_input_files(self):
+     
+        if (self.Cp_snow_type  != 'Scalar'): self.Cp_snow_unit.close()
+        if (self.rho_snow_type != 'Scalar'): self.rho_snow_unit.close()
+        if (self.T0_type       != 'Scalar'): self.T0_unit.close()
+        if (self.h0_snow_type  != 'Scalar'): self.h0_snow_unit.close()
+        if (self.h0_swe_type   != 'Scalar'): self.h0_swe_unit.close()
+            
+##        if (self.T0_file       != ''): self.T0_unit.close()
+##        if (self.rho_snow_file != ''): self.rho_snow_unit.close()
+##        if (self.h0_snow_file  != ''): self.h0_snow_unit.close()
+##        if (self.h0_swe_file   != ''): self.h0_swe_unit.close()
+
+    #   close_input_files()    
+    #-------------------------------------------------------------------    
 #-------------------------------------------------------------------------  
 ###-------------------------------------------------------------------------
 ##def Energy_Balance_Meltrate(Qn_SW, Qn_LW, T_air, T_surf, RH, p0, \
@@ -372,7 +546,7 @@ class snow_component( snow_base.snow_component ):
 ##                            e_air, e_surf):  #(returned)
 ##
 ##    #-----------------------------------------------------------------
-##    #Notes:  3/13/07.  This function used to have vapor pressure
+##    # Notes: 3/13/07.  This function used to have vapor pressure
 ##    #        arguments e_air and e_surf.  However, e_air is always
 ##    #        computed as a function of T_air and RH and e_surf is
 ##    #        computed as a function of T_surf (saturated vap. press.)
@@ -400,8 +574,8 @@ class snow_component( snow_base.snow_component ):
 ##
 ##    #        rho_air  = density of air [kg/m^3]
 ##    #        rho_snow = density of snow [kg/m^3]
-##    #        Cp_air   = specific heat of air [J/kg/deg_C]
-##    #        Cp_snow  = heat capacity of snow [J/kg/deg_C]
+##    #        Cp_air   = specific heat of air [Jkg-1 K-1]
+##    #        Cp_snow  = heat capacity of snow [Jkg-1 K-1]
 ##    #                 = ???????? = specific heat of snow
 ##    #        Kh       = eddy diffusivity for heat [m^2/s]
 ##    #        Ke       = eddy diffusivity for water vapor [m^2/s]

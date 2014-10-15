@@ -1,8 +1,15 @@
-
-## Copyright (c) 2001-2010, Scott D. Peckham
-## January, May, July 2009
-## May 2010 (changes to unit_test() and read_cfg_file()
-
+#
+#  Copyright (c) 2001-2014, Scott D. Peckham
+#
+#  Sep 2014.  New standard names and BMI updates and testing.
+#  Nov 2013.  Converted TopoFlow to a Python package.
+#  Feb 2013.  Adapted to use EMELI framework.
+#  Oct 2012.  CSDMS Standard Names and BMI.
+#  May 2010.  Changes to unit_test() and read_cfg_file().
+#  Jul 2009.  Updates.
+#  May 2009.  Updates.
+#  Jan 2009.  Converted from IDL to Python with I2PY.
+#
 #-----------------------------------------------------------------------
 #  NOTES:  This file defines a "dynamic wave" channel flow component
 #          and related functions.  It inherits from the channels
@@ -11,7 +18,7 @@
 #
 #  class channels_component
 #
-#      get_attribute()   # (10/26/11)
+#      get_attribute()           # (10/26/11)
 #      get_input_var_names()     # (defined in channels_base.py)
 #      get_output_var_names()    # (defined in channels_base.py)
 #      get_var_name()            # (defined in channels_base.py)
@@ -73,12 +80,15 @@ class channels_component(channels_base.channels_component):
         #         S_free from the last time step, then u is
         #         overwritten with new values.
         #--------------------------------------------------------
-        
-        #-----------------------------
-        # Get the free-surface slope
-        #-----------------------------
-        self.update_free_surface_slope()
-        
+
+        #----------------------------
+        # Update free surface slope
+        #-----------------------------------------------------
+        # This is called to update self.S_free for DIFFUSIVE
+        # and DYNAMIC cases in channel_base.update().
+        #-----------------------------------------------------
+        ### self.update_free_surface_slope()
+   
         #----------------------------------------
         # Compute the wetted bed area (2/12/07)
         #----------------------------------------
@@ -88,50 +98,6 @@ class channels_component(channels_base.channels_component):
         #pw = width + (2d * pb)
         #bA = pw * ds_chan        ;(a 2D array)
         #*** bA = da             ;(for testing only)
-
-        #---------------------------------------
-        # Always need to know where (d <= 0),
-        # so do it here before everything else
-        #--------------------------------------- 
-        wp = np.where( self.d > 0 )
-        np = np.size( wp[0])
-        wn = np.where( self.d <= 0 )
-        nn = np.size( wn[0] )
-        #-----------------------------------------
-        # This makes f=0 and du=0 where (d le 0)
-        #-----------------------------------------
-        dinv = self.d.copy()  # (just to get size)
-        #########################
-        if (np != 0):
-            dinv[wp] = (np.float64(1) / self.d[wp])
-        if (nn != 0):    
-            dinv[wn] = np.float64(0)
-        
-        #--------------------------------
-        # Compute an effective depth so
-        # that f doesn't blow up ??
-        #--------------------------------
-        #** deff = (d > 1e-9)
-        #** deff = (d > 0.001)   ;(1 mm)
-        #----------------------------------
-        # deff = self.d
-        
-        #-----------------------------
-        # Compute f for Manning case
-        #-----------------------------
-        if (self.MANNING):    
-            nval  = self.nval
-            self.f = self.g * (nval * nval * (dinv ** self.one_third))
-            
-        #---------------------------------
-        # Compute f for Law of Wall case
-        #---------------------------------
-        if (self.LAW_OF_WALL):
-            smoothness = (self.aval / self.z0val) * self.d
-            #**** smoothness = (0.476d / z0val) * deff
-            smoothness = np.maximum(smoothness, float64(1.1))
-            #################################################
-            self.f = (self.kappa / np.log(smoothness)) ** np.float64(2)
         
         #-----------------
         # Before 2/13/07

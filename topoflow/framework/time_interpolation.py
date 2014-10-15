@@ -1,7 +1,4 @@
 
-#  NOTE: In this version, "bmi.get_0d_double()" is used regardless
-#        of the rank of the variable.  Rename to "bmi.get_values()"?
-
 #-------------------------------------------------------------------     
 # Copyright (c) 2013, Scott D. Peckham
 #
@@ -22,7 +19,7 @@
 #      convert_time_units()
 #
 #-------------------------------------------------------------------
-import numpy
+import numpy as np
 
 #-------------------------------------------------------------------
 class time_interp_data():
@@ -57,7 +54,7 @@ class time_interp_data():
         #--------------
         # For testing
         #--------------
-##        if (self.long_var_name == 'atmosphere_water__liquid_equivalent_precipitation_rate'):
+##        if (self.long_var_name == 'atmosphere_water__precipitation_leq-volume_flux'):
 ##            print 'In __init__():'
 ##            print '(P1,P2, t1,t2) =', self.v1, self.v2, self.t1, self.t2
             
@@ -87,7 +84,7 @@ class time_interp_data():
         except:
             self.v1 = self.v2.copy()
         #-----------------------------------           
-##        if (numpy.rank( self.v1 ) > 0):
+##        if (np.rank( self.v1 ) > 0):
 ##            self.v1[:] = self.v2.copy()
 ##        else:
 ##            self.v1 = self.v2.copy()
@@ -103,7 +100,7 @@ class time_interp_data():
         except:
             self.v2 = v2.copy()     ## NEED THIS!
         #-----------------------------------  
-##        if (numpy.rank( self.v2 ) > 0):
+##        if (np.rank( self.v2 ) > 0):
 ##            self.v2[:] = v2
 ##        else:
 ##            self.v2 = v2
@@ -114,9 +111,9 @@ class time_interp_data():
         #---------------------------------------------
         # This would also work:
         #    v1_ne_v2 = (v2 - self.v1) != 0
-        #    if numpy.any( v1_ne_v2 ) and (t2 != self.t1):
+        #    if np.any( v1_ne_v2 ) and (t2 != self.t1):
         #----------------------------------------------------       
-        dv = numpy.abs(v2 - self.v1)
+        dv = np.abs(v2 - self.v1)
         dv_min = dv.min()
         if (dv_min != 0) and (t2 != self.t1):
             self.a = (v2 - self.v1) / (t2 - self.t1)
@@ -132,13 +129,13 @@ class time_interp_data():
             # This a and b gives "no interpolation",
             # that is, v[t] = v1 = v2.
             #------------------------------------------
-            self.a  = numpy.float64(0)
+            self.a  = np.float64(0)
             self.b  = v2
 
         #--------------
         # For testing
         #--------------
-##        if (self.long_var_name == 'atmosphere_water__liquid_equivalent_precipitation_rate'):
+##        if (self.long_var_name == 'atmosphere_water__precipitation_leq-volume_flux'):
 ##            print '(P1,P2, t1,t2) =', self.v1, self.v2, self.t1, self.t2
             
     #   update()
@@ -252,7 +249,7 @@ class time_interpolator():
                 # Get vars at start of interpolation time interval
                 #---------------------------------------------------                
                 for long_var_name in self.vars_provided[ port_name ]:
-                    v1 = bmi.get_0d_double( long_var_name )
+                    v1 = bmi.get_values( long_var_name )
                     data = time_interp_data( v1=v1, t1=t1, \
                                 long_var_name=long_var_name )
                     self.time_interp_vars[ long_var_name ] = data
@@ -281,7 +278,7 @@ class time_interpolator():
                 # Get vars at end of interpolation time interval
                 #-------------------------------------------------                
                 for long_var_name in self.vars_provided[ port_name ]:       
-                    v2 = bmi.get_0d_double( long_var_name )
+                    v2 = bmi.get_values( long_var_name )
                     #-------------------------------------
                     # Save (v2,t2) and update the time
                     # interpolation parameters a and b.
@@ -433,17 +430,17 @@ class time_interpolator():
             #--------------------------------------------------- 
             for long_var_name in self.vars_provided[ port_name ]:
                 #------------------------------------------------
-                # Note: bmi.get_0d_double() works for any rank.
+                # Note: bmi.get_values() works for any rank.
                 #------------------------------------------------
                 # self.time_interp_vars is a dictionary that is
                 # initialized in the framework's initialize().
                 #------------------------------------------------ 
-                v2 = bmi.get_0d_double( long_var_name )
+                v2 = bmi.get_values( long_var_name )
                 
                 #--------------
                 # For testing
                 #--------------
-##                if (long_var_name == 'atmosphere_water__liquid_equivalent_precipitation_rate'):
+##                if (long_var_name == 'atmosphere_water__precipitation_leq-volume_flux'):
 ##                    print '(time, P) =', t2, v2
                     
                 i_vars = self.time_interp_vars[ long_var_name ]
@@ -537,17 +534,17 @@ class time_interpolator():
             #--------------------------------------------------- 
             for long_var_name in self.vars_provided[ port_name ]:
                 #------------------------------------------------
-                # Note: bmi.get_0d_double() works for any rank.
+                # Note: bmi.get_values() works for any rank.
                 #------------------------------------------------
                 # self.time_interp_vars is a dictionary that is
                 # initialized in the framework's initialize().
                 #------------------------------------------------ 
-                v2 = bmi.get_0d_double( long_var_name )
+                v2 = bmi.get_values( long_var_name )
                 
                 #--------------
                 # For testing
                 #--------------
-##                if (long_var_name == 'atmosphere_water__liquid_equivalent_precipitation_rate'):
+##                if (long_var_name == 'atmosphere_water__precipitation_leq-volume_flux'):
 ##                    print '(time, P) =', t2, v2
                     
                 i_vars = self.time_interp_vars[ long_var_name ]
@@ -610,7 +607,7 @@ class time_interpolator():
         comp_status = bmi.get_status()
         if (comp_status == 'initialized') or \
            (comp_status == 'finalized'):
-            return bmi.get_0d_double( long_var_name )
+            return bmi.get_values( long_var_name )
 
         #---------------------------     
         # Case of no interpolation
@@ -633,7 +630,7 @@ class time_interpolator():
                 print '#########################################'
                 print ' '
                 
-            return bmi.get_0d_double( long_var_name )
+            return bmi.get_values( long_var_name )
 
         #-------------------------------      
         # Case of Linear interpolation
@@ -660,7 +657,7 @@ class time_interpolator():
             #--------------
             # For testing
             #--------------
-##            if (long_var_name == 'atmosphere_water__liquid_equivalent_precipitation_rate'):
+##            if (long_var_name == 'atmosphere_water__precipitation_leq-volume_flux'):
 ##                print '(time, P, a, b) =', time, value, i_vars.a, i_vars.b
 
             return value

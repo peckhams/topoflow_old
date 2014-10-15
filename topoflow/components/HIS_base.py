@@ -137,7 +137,7 @@ class HIS_component(BMI_base.BMI_component):
 ##        # So far, all vars have type "double",
 ##        # but use the one in BMI_base instead.
 ##        #---------------------------------------
-##        return 'double'
+##        return 'float64'
 ##    
 ##    #   get_var_type()    
     #-------------------------------------------------------------------
@@ -242,16 +242,16 @@ class HIS_component(BMI_base.BMI_component):
 
     #   import_suds()   
     #-------------------------------------------------------------------
-    def initialize(self, cfg_prefix=None, mode="nondriver",
+    def initialize(self, cfg_file=None, mode="nondriver",
                    SILENT=False):
 
         if not(SILENT):
             print ' '
             print 'Data-HIS component: Initializing...'
             
-        self.status     = 'initializing'  # (OpenMI 2.0 convention)
-        self.mode       = mode
-        self.cfg_prefix = cfg_prefix
+        self.status   = 'initializing'  # (OpenMI 2.0 convention)
+        self.mode     = mode
+        self.cfg_file = cfg_file
         
         #-----------------------------------------------
         # Load component parameters from a config file
@@ -283,12 +283,6 @@ class HIS_component(BMI_base.BMI_component):
         #---------------------------------------------
         # self.open_input_files()
         # self.read_input_files()
-
-        #----------------------------------------------
-        # Must come before initialize_computed_vars()
-        # because it uses ALL_SCALARS.
-        #----------------------------------------------
-        # self.initialize_required_components(mode)
         # self.check_input_types()
         # self.initialize_computed_vars()
 
@@ -722,7 +716,7 @@ class HIS_component(BMI_base.BMI_component):
         #-------------------------------------------------
         # Notes:  v0 = infiltration rate at surface
         #-------------------------------------------------
-        model_output.check_nio()
+        model_output.check_netcdf()
         self.update_outfile_names()
         
 ##        #--------------------------------------

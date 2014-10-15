@@ -1,8 +1,10 @@
-##       
-## Copyright (c) 2010-2012, Scott D. Peckham
-##
-## February 2012  (Complete CMI, starting from CSDMS_base.py.)
-##
+#
+# NOTE:  This is not currently used.  See emeli.py in frameworks folder.
+#      
+# Copyright (c) 2010-2012, Scott D. Peckham
+#
+# February 2012  (Complete CMI, starting from CSDMS_base.py.)
+#
 #-----------------------------------------------------------------------
 #
 #  Notes:  This file defines a "base class" with a CMI (Component
@@ -413,136 +415,140 @@ class CMI_component:
         #       conversion is done by PortQueue just prior to
         #       calling CMT.set_values().
         #---------------------------------------------------------
-        try:
-            #----------------------------------------------
-            # Get data type and rank for long_var_name.
-            # Assume that NumPy dtype string is returned.
-            #----------------------------------------------
-            type_name = self.bmi.get_var_type( long_var_name )
-            rank      = self.bmi.get_var_rank( long_var_name )
-
-            #-----------------------------------------------------------
-            # Call the appropriate BMI method.  We could do this other
-            # ways in Python, but this is the general approach.
-            #-----------------------------------------------------------
-            if (type_name == 'float64'):
-                if (rank == 0):
-                    values = self.bmi.get_0d_double( long_var_name )
-                elif (rank == 1):
-                    values = self.bmi.get_1d_double( long_var_name )
-                elif (rank == 2):
-                    values = self.bmi.get_2d_double( long_var_name )
-                elif (rank == 3):
-                    values = self.bmi.get_3d_double( long_var_name )
-    ##            elif (rank == 4):
-    ##                values = self.bmi.get_4d_double( long_var_name )
-                    #-------------------------------------------------------------
-            elif (type_name == 'int32'):
-                if (rank == 0):
-                    values = self.bmi.get_0d_int( long_var_name )
-                elif (rank == 1):
-                    values = self.bmi.get_1d_int( long_var_name )
-                elif (rank == 2):
-                    values = self.bmi.get_2d_int( long_var_name )
-                elif (rank == 3):
-                    values = self.bmi.get_3d_int( long_var_name )
-    ##            elif (rank == 4):
-    ##                values = self.bmi.get_4d_int( long_var_name )
-                    #-------------------------------------------------------------
-            else:
-                print '############################################'
-                print ' ERROR: In CMI_base.get_values():'
-                print '        Type_name of "' + type_name + '"'
-                print '        is not yet supported.'
-                print '############################################'
-                print ' '
-                
-            #-----------------------------------------------
-            # Return values on this component's own grid
-            # and with its own units for variables.
-            # Set values will do conversions when needed ?
-            #-----------------------------------------------
-            return values
-
-        except:
-            print '######################################'
-            print ' ERROR: In CMI_base.get_values():'
-            print '        A BMI method call failed.'
-            print '        Returning a value of zero.'
-            print '######################################'
-            print ' '
-            return numpy.float64( 0 )
+        return self.bmi.get_values( long_var_name )
+        
+#         try:
+#             #----------------------------------------------
+#             # Get data type and rank for long_var_name.
+#             # Assume that NumPy dtype string is returned.
+#             #----------------------------------------------
+#             type_name = self.bmi.get_var_type( long_var_name )
+#             rank      = self.bmi.get_var_rank( long_var_name )
+# 
+#             #-----------------------------------------------------------
+#             # Call the appropriate BMI method.  We could do this other
+#             # ways in Python, but this is the general approach.
+#             #-----------------------------------------------------------
+#             if (type_name == 'float64'):
+#                 if (rank == 0):
+#                     values = self.bmi.get_0d_double( long_var_name )
+#                 elif (rank == 1):
+#                     values = self.bmi.get_1d_double( long_var_name )
+#                 elif (rank == 2):
+#                     values = self.bmi.get_2d_double( long_var_name )
+#                 elif (rank == 3):
+#                     values = self.bmi.get_3d_double( long_var_name )
+#     ##            elif (rank == 4):
+#     ##                values = self.bmi.get_4d_double( long_var_name )
+#                     #-------------------------------------------------------------
+#             elif (type_name == 'int32'):
+#                 if (rank == 0):
+#                     values = self.bmi.get_0d_int( long_var_name )
+#                 elif (rank == 1):
+#                     values = self.bmi.get_1d_int( long_var_name )
+#                 elif (rank == 2):
+#                     values = self.bmi.get_2d_int( long_var_name )
+#                 elif (rank == 3):
+#                     values = self.bmi.get_3d_int( long_var_name )
+#     ##            elif (rank == 4):
+#     ##                values = self.bmi.get_4d_int( long_var_name )
+#                     #-------------------------------------------------------------
+#             else:
+#                 print '############################################'
+#                 print ' ERROR: In CMI_base.get_values():'
+#                 print '        Type_name of "' + type_name + '"'
+#                 print '        is not yet supported.'
+#                 print '############################################'
+#                 print ' '
+#                 
+#             #-----------------------------------------------
+#             # Return values on this component's own grid
+#             # and with its own units for variables.
+#             # Set values will do conversions when needed ?
+#             #-----------------------------------------------
+#             return values
+# 
+#         except:
+#             print '######################################'
+#             print ' ERROR: In CMI_base.get_values():'
+#             print '        A BMI method call failed.'
+#             print '        Returning a value of zero.'
+#             print '######################################'
+#             print ' '
+#             return numpy.float64( 0 )
 
     #   get_values()
     #-------------------------------------------------------------------
     def set_values( self, long_var_name, values ):
 
-        #----------------------------------------------
-        # Get data type and rank for long_var_name.
-        # Assume that NumPy dtype string is returned.
-        #----------------------------------------------
-        dtype = self.bmi.get_var_type( long_var_name )
-        rank  = self.bmi.get_var_rank( long_var_name )
-
-        #---------------------------------------------
-        # Check data type and rank for input values.
-        #---------------------------------------------
-        val_dtype = str( values.dtype )
-        val_rank  = numpy.rank( values )
+        self.bmi.set_values( long_var_name, values )
         
-        if (val_rank != rank):
-            print '#############################################'
-            print ' ERROR: In CMI_base.set_values():'
-            print '        Rank of values does not match the'
-            print '        rank of target variable named:'
-            print '          ' + long_var_name
-            print '#############################################'
-            print ' '
-            return
-        
-        if (val_dtype != dtype):
-            #------------------------------------
-            # Attempt to cast values to dtype ?
-            #------------------------------------
-            new_vals = values.astype( dtype )
-        else:
-            new_vals = values
-            
-	#------------------------------------------------------------------
-	# First check the type of the data that is stored in the
-	# generic array.  Cast the generic array to a SIDL array of
-	# that type.  Call the appropriate BMI set_value function and
-	# pass it a pointer to the start of the data. This is pseudo
-	# code that looks more or less like what it would be in C.
-	# The underlying data is contiguous in memory and of unit stride.
-	#------------------------------------------------------------------
-        if (dtype == 'float64'):
-            if (rank == 0):
-                self.bmi.set_0d_double( long_var_name, new_vals )
-            elif (rank == 1):
-                self.bmi.set_1d_double( long_var_name, new_vals )
-            elif (rank == 2):
-                self.bmi.set_2d_double( long_var_name, new_vals )
-            elif (rank == 3):
-                self.bmi.set_3d_double( long_var_name, new_vals )
-	#------------------------------------------------------------------
-        elif (dtype == 'int32'):
-            if (rank == 0):
-                self.bmi.set_0d_int( long_var_name, new_vals )
-            elif (rank == 1):
-                self.bmi.set_1d_int( long_var_name, new_vals )
-            elif (rank == 2):
-                self.bmi.set_2d_int( long_var_name, new_vals )
-            elif (rank == 3):
-                self.bmi.set_3d_int( long_var_name, new_vals )
-        #-------------------------------------------------------------
-        else:
-            print '############################################'
-            print ' ERROR: In CMI_base.set_values():'
-            print '        Type_name of "' + dtype + '"'
-            print '        is not yet supported.'
-            print '############################################'
-            print ' '
+#         #----------------------------------------------
+#         # Get data type and rank for long_var_name.
+#         # Assume that NumPy dtype string is returned.
+#         #----------------------------------------------
+#         dtype = self.bmi.get_var_type( long_var_name )
+#         rank  = self.bmi.get_var_rank( long_var_name )
+# 
+#         #---------------------------------------------
+#         # Check data type and rank for input values.
+#         #---------------------------------------------
+#         val_dtype = str( values.dtype )
+#         val_rank  = numpy.rank( values )
+#         
+#         if (val_rank != rank):
+#             print '#############################################'
+#             print ' ERROR: In CMI_base.set_values():'
+#             print '        Rank of values does not match the'
+#             print '        rank of target variable named:'
+#             print '          ' + long_var_name
+#             print '#############################################'
+#             print ' '
+#             return
+#         
+#         if (val_dtype != dtype):
+#             #------------------------------------
+#             # Attempt to cast values to dtype ?
+#             #------------------------------------
+#             new_vals = values.astype( dtype )
+#         else:
+#             new_vals = values
+#             
+# 	#------------------------------------------------------------------
+# 	# First check the type of the data that is stored in the
+# 	# generic array.  Cast the generic array to a SIDL array of
+# 	# that type.  Call the appropriate BMI set_value function and
+# 	# pass it a pointer to the start of the data. This is pseudo
+# 	# code that looks more or less like what it would be in C.
+# 	# The underlying data is contiguous in memory and of unit stride.
+# 	#------------------------------------------------------------------
+#         if (dtype == 'float64'):
+#             if (rank == 0):
+#                 self.bmi.set_0d_double( long_var_name, new_vals )
+#             elif (rank == 1):
+#                 self.bmi.set_1d_double( long_var_name, new_vals )
+#             elif (rank == 2):
+#                 self.bmi.set_2d_double( long_var_name, new_vals )
+#             elif (rank == 3):
+#                 self.bmi.set_3d_double( long_var_name, new_vals )
+# 	#------------------------------------------------------------------
+#         elif (dtype == 'int32'):
+#             if (rank == 0):
+#                 self.bmi.set_0d_int( long_var_name, new_vals )
+#             elif (rank == 1):
+#                 self.bmi.set_1d_int( long_var_name, new_vals )
+#             elif (rank == 2):
+#                 self.bmi.set_2d_int( long_var_name, new_vals )
+#             elif (rank == 3):
+#                 self.bmi.set_3d_int( long_var_name, new_vals )
+#         #-------------------------------------------------------------
+#         else:
+#             print '############################################'
+#             print ' ERROR: In CMI_base.set_values():'
+#             print '        Type_name of "' + dtype + '"'
+#             print '        is not yet supported.'
+#             print '############################################'
+#             print ' '
                 
     #   set_values()
     #-------------------------------------------------------------------
@@ -557,46 +563,49 @@ class CMI_component:
 	#         each cell in the grid has a unique, long-integer
 	#         ID and these are used for indices.
 	#-------------------------------------------------------------
-
-        #----------------------------------------------
-        # Get data type and rank for long_var_name.
-        # Assume that NumPy dtype string is returned.
-        #----------------------------------------------
-        dtype = self.bmi.get_var_type( long_var_name )
-        rank  = self.bmi.get_var_rank( long_var_name )
-
-        if (dtype == 'float64'):
-            if (rank == 2):
-                return self.bmi.get_2d_double_at_indices( long_var_name, indices )
-        elif (dtype == 'int32'):
-            if (rank == 2):
-                return self.bmi.get_2d_int_at_indices( long_var_name, indices )
+    self.bmi.get_values_at_indices( long_var_name, indices )
+    
+# 	#----------------------------------------------
+# 	# Get data type and rank for long_var_name.
+# 	# Assume that NumPy dtype string is returned.
+# 	#----------------------------------------------
+# 	dtype = self.bmi.get_var_type( long_var_name )
+# 	rank  = self.bmi.get_var_rank( long_var_name )
+# 
+# 	if (dtype == 'float64'):
+# 		if (rank == 2):
+# 			return self.bmi.get_2d_double_at_indices( long_var_name, indices )
+# 	elif (dtype == 'int32'):
+# 		if (rank == 2):
+# 			return self.bmi.get_2d_int_at_indices( long_var_name, indices )
             
     #   get_values_at_indices()
     #-------------------------------------------------------------------
     def set_values_at_indices( self, long_var_name, indices, values ):
 
-        #----------------------------------------------
-        # Get data type and rank for long_var_name.
-        # Assume that NumPy dtype string is returned.
-        #----------------------------------------------
-        dtype = self.bmi.get_var_type( long_var_name )
-        rank  = self.bmi.get_var_rank( long_var_name )
-
-        if (dtype == 'float64'):
-            if (rank == 2):
-                self.bmi.set_2d_double_at_indices( long_var_name, indices, values )
-                return
-        elif (dtype == 'int32'):
-            if (rank == 2):
-                self.bmi.set_2d_int_at_indices( long_var_name, indices, values )
-                return
-
-        print '#####################################################'
-        print ' ERROR: CMI_base.set_values_at_indices() currently'
-        print '        requires target variable to be a 2D array.'
-        print '#####################################################'
-        print ' '
+        self.bmi.set_values_at_indices( long_var_name, indices, values )
+        
+#         #----------------------------------------------
+#         # Get data type and rank for long_var_name.
+#         # Assume that NumPy dtype string is returned.
+#         #----------------------------------------------
+#         dtype = self.bmi.get_var_type( long_var_name )
+#         rank  = self.bmi.get_var_rank( long_var_name )
+# 
+#         if (dtype == 'float64'):
+#             if (rank == 2):
+#                 self.bmi.set_2d_double_at_indices( long_var_name, indices, values )
+#                 return
+#         elif (dtype == 'int32'):
+#             if (rank == 2):
+#                 self.bmi.set_2d_int_at_indices( long_var_name, indices, values )
+#                 return
+# 
+#         print '#####################################################'
+#         print ' ERROR: CMI_base.set_values_at_indices() currently'
+#         print '        requires target variable to be a 2D array.'
+#         print '#####################################################'
+#         print ' '
                 
     #   set_values_at_indices()
     #-------------------------------------------------------------------

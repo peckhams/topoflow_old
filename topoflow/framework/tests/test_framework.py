@@ -9,7 +9,7 @@ import os
 import tempfile
 # See:  http://docs.python.org/2/library/tempfile.html
 
-from topoflow.framework import framework
+from topoflow.framework import emeli
 ## from topoflow.utils import tf_utils
 
 #-----------------------------------------------------------------------
@@ -46,14 +46,15 @@ def topoflow_test( driver_port_name='hydro_model',
     #          diversions
     #          ice
     #-----------------------------------------------------
-    
-    #----------------------------------------------
-    # Get path to the current file (framework.py)
-    # At top need: "#! /usr/bin/env python" ??
-    #----------------------------------------------
-    paths = framework.get_package_paths()
-    framework_dir = paths['framework']
-    examples_dir  = paths['examples']
+
+    #-------------------------------------------------------
+    # (2/6/13) Since the framework runs the clock now, do
+    # we still need to specify a "driver_port" ??
+    # Might still be necessary for use in CSDMS framework.
+    #-------------------------------------------------------
+    f = emeli.framework()
+    examples_dir = emeli.paths['examples']
+    ## examples_dir = f.paths['examples']
     
     #--------------------
     # Default arguments
@@ -62,16 +63,6 @@ def topoflow_test( driver_port_name='hydro_model',
         cfg_prefix = 'June_20_67'
     if (cfg_directory == None):
         cfg_directory = examples_dir + 'Treynor_Iowa/'
-
-    #-------------------------------------------------------
-    # (2/6/13) Since the framework runs the clock now, do
-    # we still need to specify a "driver_port" ??
-    # Might still be necessary for use in CSDMS framework.
-    #-------------------------------------------------------
-    f = framework.framework()
-
-    # No longer needed or used.
-    ## f.repo_dir = framework_dir  #### repo_dir vs. repo_path ??
     
     #------------------------------
     # Run the full TopoFlow model
@@ -81,40 +72,23 @@ def topoflow_test( driver_port_name='hydro_model',
                  cfg_directory=cfg_directory,
                  time_interp_method=time_interp_method )
 
-    #----------------
-    # Run the model
-    #----------------
-##    f.run_model_old( driver_name=driver_name,
-##                     cfg_prefix=cfg_prefix,
-##                     cfg_directory=cfg_directory,
-##                     time_interp_method=time_interp_method)
-
 #   topoflow_test()
 #-----------------------------------------------------------------------
 def erode_test( cfg_prefix=None, cfg_directory=None,
                 time_interp_method='Linear'):
+         
+    f = emeli.framework()
+    driver_port_name = 'LEM'
+    examples_dir = emeli.paths['examples']
+    ## examples_dir = f.paths['examples']
 
-    #----------------------------------------------
-    # Get path to the current file (framework.py)
-    # At top need: "#! /usr/bin/env python" ??
-    #----------------------------------------------
-    paths = framework.get_package_paths()
-    framework_dir = paths['framework']
-    examples_dir  = paths['examples']
-    
     #--------------------
     # Default arguments
     #--------------------
     if (cfg_prefix == None):
         cfg_prefix = 'Test'
     if (cfg_directory == None):
-        cfg_directory = examples_dir + 'Erode_Test'
-            
-    f = framework.framework()
-    driver_port_name = 'LEM'
-
-    # No longer needed or used.
-    ## f.repo_dir = framework_dir  #### repo_dir vs. repo_path ??
+        cfg_directory = examples_dir + 'Erode_Test/'
 
     #----------------------
     # Run the Erode model
@@ -188,7 +162,7 @@ def ref_test():
             
             ## self.x = self.x + 1  # (ref is lost; not in place)
         #-------------------------------------------------
-        def get_0d_double(self, var_name):
+        def get_values(self, var_name):
             return getattr( self, var_name )
             #-----------------------------------
             # Using exec like this also works.
@@ -208,7 +182,7 @@ def ref_test():
         def print_x(self):
             print 'After c1.update(), c2.x =', self.x
         #-------------------------------------------------
-        def set_0d_double(self, var_name, scalar):
+        def set_values(self, var_name, scalar):
             setattr( self, var_name, scalar )
             #-----------------------------------
             # Using exec like this also works.
@@ -226,8 +200,8 @@ def ref_test():
     #-------------------------------------
     # Copy reference to x from c1 to c2.
     #-------------------------------------
-    vector = c1.get_0d_double('x')
-    c2.set_0d_double('x', vector)
+    vector = c1.get_values('x')
+    c2.set_values('x', vector)
     #------------------------------------------    
     # c2.x = c1.x   # (works)
     # exec("c2.x = c1.x") in globals(), locals()  # (works)
@@ -242,32 +216,19 @@ def ref_test():
 #-----------------------------------------------------------------------
 #-----------------------------------------------------------------------
 def framework_test1():
-    
-    #----------------------------------------------
-    # Get path to the current file (framework.py)
-    # At top need: "#! /usr/bin/env python" ??
-    #----------------------------------------------
-    paths = framework.get_package_paths()
-    framework_dir = paths['framework']
-    examples_dir  = paths['examples']
 
-    f = framework.framework()
-
-    # No longer needed or used.
-    ## f.repo_dir = framework_dir  #### repo_dir vs. repo_path ??
-    ## repo_file = framework_dir + 'component_repository.xml'
-    
+    f = emeli.framework()
+    examples_dir = emeli.paths['examples']
+    ## examples_dir = f.paths['examples']
     ## driver_port_name = 'hydro_model'  # (TopoFlow Driver test)
-
-    f.read_repository( SILENT=False )
 
     #-----------------------------------------
     # Set the working directory for test run
     #-----------------------------------------
-    cfg_directory = examples_dir + 'Treynor_Iowa/'
-    os.chdir( cfg_directory )     ############ IS THIS NEEDED?
-    cfg_prefix    = 'June_20_67'
+    f.cfg_directory = examples_dir + 'Treynor_Iowa/'
+    f.cfg_prefix = 'June_20_67'
     
+    f.read_repository( SILENT=False )  
     print 'Components in repository:'
     for comp_name in f.repo_list:
         print '   ' + comp_name
@@ -347,9 +308,12 @@ def framework_test1():
     # "initialize_ports()", inherited from CSDMS_base.py.
     # But this won't be done with the new approach.
     #-------------------------------------------------------------
-    f.initialize( 'meteorology', cfg_prefix )
+    ## cfg_file = None
+    ## f.initialize( 'meteorology', cfg_file )
+    f.initialize( 'meteorology' )
     print 'Initialized component of type: meteorology.'
-    f.initialize( 'snow', cfg_prefix )
+    ## f.initialize( 'snow', cfg_file)
+    f.initialize( 'snow' )
     print 'Initialized component of type: snow.'   
     print ' '
 
@@ -359,10 +323,10 @@ def framework_test1():
     print 'Copying references from Meteorology to Snow component...'
     provider_name = 'meteorology'
     user_name     = 'snow'
-    var_name_list = ['air__temperature',
-                     'land_surface__net_irradiation_flux',
+    var_name_list = ['atmosphere_bottom_air__temperature',
                      'land_surface__temperature',
-                     'water__density' ]
+                     'land_surface_net-total-energy__energy_flux',
+                     'water-liquid__mass-per-volume_density' ]
 
     for long_var_name in var_name_list:
         f.connect( provider_name, user_name,
@@ -374,10 +338,10 @@ def framework_test1():
     print 'Copying references from Snow to Meteorology component...'
     provider_name = 'snow'
     user_name     = 'meteorology'
-    var_name_list = [ 'snow__density',
-                      'snow__depth',
-                      'snow__liquid_equivalent_depth',
-                      'snow__melt_rate' ]
+    var_name_list = [ 'snowpack__depth',
+                      'snowpack__liquid-equivalent_depth',
+                      'snowpack__melt_volume_flux',
+                      'snowpack__z_mean_of_mass-per-volume_density']
     for long_var_name in var_name_list:
         f.connect( provider_name, user_name,
                    long_var_name )
@@ -405,20 +369,9 @@ def framework_test1():
 #-----------------------------------------------------------------------
 def framework_test2():
 
-    #----------------------------------------------
-    # Get path to the current file (framework.py)
-    # At top need: "#! /usr/bin/env python" ??
-    #----------------------------------------------
-    paths = framework.get_package_paths()
-    framework_dir = paths['framework']
-    examples_dir  = paths['examples']
-
-    f = framework.framework()
-
-    # No longer needed or used.
-    ## f.repo_dir = framework_dir  #### repo_dir vs. repo_path ??
-    ## repo_file = framework_dir + 'component_repository.xml'
-        
+    f = emeli.framework()
+    examples_dir = emeli.paths['examples']
+    ## examples_dir = f.paths['examples']    
     ## driver_port_name = 'hydro_model'  # (TopoFlow Driver test)
 
     f.read_repository( SILENT=False )
@@ -426,11 +379,9 @@ def framework_test2():
     #-----------------------------------------
     # Set the working directory for test run
     #-----------------------------------------
-    cfg_prefix    = 'June_20_67'
-    cfg_directory = examples_dir + 'Treynor_Iowa/'
-    os.chdir( cfg_directory )     ############ IS THIS NEEDED?
-    f.cfg_prefix = cfg_prefix  ## (needed by initialize())
-    
+    f.cfg_directory = examples_dir + 'Treynor_Iowa/'
+    f.cfg_prefix = 'June_20_67'  # (needed by initialize())
+        
     print 'Components in repository:'
     for comp_name in f.repo_list:
         print '   ' + comp_name
@@ -440,7 +391,8 @@ def framework_test2():
     # Set self.comp_set_list and self.provider_list
     # from info in the provider file.
     #-----------------------------------------------------
-    f.provider_file = (cfg_prefix + '_providers.txt')
+    filename = (f.cfg_prefix + '_providers.txt')
+    f.provider_file = (f.cfg_directory + filename)
     f.read_provider_file()
     
     #--------------------------------------------
@@ -496,14 +448,15 @@ def framework_test2():
 def bobs_erode_test( driver_port_name='LEM',
                      cfg_prefix=None, cfg_directory=None,
                      time_interp_method='Linear'):
-    
-    #----------------------------------------------
-    # Get path to the current file (framework.py)
-    # At top need: "#! /usr/bin/env python" ??
-    #----------------------------------------------
-    paths = framework.get_package_paths()
-    framework_dir = paths['framework']
-    ## examples_dir  = paths['examples']
+
+    #-------------------------------------------------------
+    # (2/6/13) Since the framework runs the clock now, do
+    # we still need to specify a "driver_port" ??
+    # Might still be necessary for use in CSDMS framework.
+    #-------------------------------------------------------
+    f = emeli.framework()
+    examples_dir = emeli.paths['examples']
+    ## examples_dir = f.paths['examples']   
     
     #--------------------
     # Default arguments
@@ -513,17 +466,7 @@ def bobs_erode_test( driver_port_name='LEM',
     if (cfg_directory == None):
         cfg_directory = os.getenv("HOME") + '/Erode_Tests/Bob_LCP/'
         ## cfg_directory = '~/Erode_Tests/Bob_LCP/'  # (doesn't work)
-    
-    #-------------------------------------------------------
-    # (2/6/13) Since the framework runs the clock now, do
-    # we still need to specify a "driver_port" ??
-    # Might still be necessary for use in CSDMS framework.
-    #-------------------------------------------------------
-    f = framework.framework()
-
-    # No longer needed or used.
-    ## f.repo_dir = framework_dir  #### repo_dir vs. repo_path ??
-    
+           
     #------------------------------
     # Run the full TopoFlow model
     #------------------------------

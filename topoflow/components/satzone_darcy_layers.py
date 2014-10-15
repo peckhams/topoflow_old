@@ -1,11 +1,15 @@
-
-## Copyright (c) 2001-2013, Scott D. Peckham
-##
-## January 2013   (Revised handling of input/output names).
-## October 2012   (CSDMS Standard Names and BMI)
-## July, August 2009
-## May 2010 (changes to unit_test() and read_cfg_file()
-
+#
+#  Copyright (c) 2001-2014, Scott D. Peckham
+#
+#  Sep 2014. 
+#  Nov 2013.  Converted TopoFlow to Python package.
+#  Jan 2013.  Revised handling of input/output names.
+#  Oct 2012.  CSDMS Standard Names and BMI.
+#  May 2010.  Changes to initialize(), read_cfg_file() and unit_test().
+#  Aug 2009.  Updates.
+#  Jul 2009.  Updates.
+#  Jan 2009,  Converted from IDL.
+#
 #-----------------------------------------------------------------------
 #  NOTES:  This file defines a "Darcy layers" groundwater component
 #          and related functions.  It inherits from the groundwater
@@ -18,8 +22,10 @@
 #      get_input_var_names()    # (5/16/12, Bolton)
 #      get_output_var_names()   # (5/16/12, Bolton)
 #      get_var_name()           # (5/16/12, Bolton)
-#      get_var_units()          # (5/16/12, Bolton)      
-#      update()    ## (move all of the "update_*" methods to here??)
+#      get_var_units()          # (5/16/12, Bolton)
+#      ------------------------------------------------------------     
+#      Move all "update_*" methods from satzone_base.py to here ?
+#      ------------------------------------------------------------    
 #
 #  Functions:   (commented out)
 #      Total_Darcy_Layer_Flow_VK()
@@ -58,54 +64,43 @@ class satzone_component( satzone_base.satzone_component ):
     # water surface???  (Bolton, 5/16/2012)
     #----------------------------------------------
     _input_var_names = [
-        'channel_water__depth',               # (d@channels)
-        'soil_water_table__recharge_rate'  ]  # (Rg@infil)     
+        'channel_water_x-section__mean_depth',              # (d@channels)
+        'land_surface_water__evaporation_volume_flux',      # (ET@evap)
+        'soil_water_sat-zone_top__recharge_volume_flux'  ]  # (Rg@infil)     
 
-    #---------------------------------------------------------------
-    # Maybe "soil_water_table" should be replaced with
-    # "land_subsurface_water_table" or "underground_water_table" ?
-    #---------------------------------------------------------------
-    # For GW, we currently use:
-    #   land_water__baseflow_emergence_rate
-    # but should we use:
-    #   land_subsurface_to_surface_water__baseflow_seepage_rate
-    # Maybe use these words:
-    #    "ground" vs. "underground" vs. "land_subsurface" ?
-    #---------------------------------------------------------------
-    _output_var_names = [ 
-        ## 'land_subsurface_to_surface_water__baseflow_seepage_rate', # GW            #######
-        ## 'land_subsurface_to_surface_water__area_time_integral_of_baseflow_seepage_rate',  # vol_GW
-        'land_water__area_time_integral_of_baseflow_emergence_rate',  # vol_GW
-        'land_water__baseflow_emergence_rate',              # GW
+    _output_var_names = [
         'land_surface__elevation',                          # elev
+        'land_surface_water__baseflow_volume_flux',         # GW
+        'land_surface_water__domain_time_integral_of_baseflow_volume_flux',  # vol_GW
         'model__time_step',                                 # dt
-        'soil_model_layer_0__porosity',                     # qs[0]
-        'soil_model_layer_0__thickness',                    # th[0,:,:]
-        'soil_model_layer_0__wetted_thickness',             # y[0,:,:]
-        'soil_model_layer_1__porosity',                     # qs[1]
-        'soil_model_layer_1__thickness',                    # th[1,:,:]
-        'soil_model_layer_1__wetted_thickness',             # y[1,:,:]
-        'soil_model_layer_2__porosity',                     # qs[2]
-        'soil_model_layer_2__thickness',                    # th[2,:,:]
-        'soil_model_layer_2__wetted_thickness',             # y[2,:,:]
-        #-----------------------------------
-        # These are for *all* soil layers.
-        #-----------------------------------
-        'soil_model_layer__porosity',                       # qs
-        'soil_model_layer__thickness',                      # th
-        'soil_model_layer__wetted_thickness',               # y
+        'model_soil_layer-0__porosity',                     # qs[0]
+        'model_soil_layer-0__saturated_thickness',          # y[0,:,:]
+        'model_soil_layer-0__thickness',                    # th[0,:,:]
+        'model_soil_layer-1__porosity',                     # qs[1]
+        'model_soil_layer-1__saturated_thickness',          # y[1,:,:]
+        'model_soil_layer-1__thickness',                    # th[1,:,:]
+        'model_soil_layer-2__porosity',                     # qs[2]
+        'model_soil_layer-2__saturated_thickness',          # y[2,:,:]
+        'model_soil_layer-2__thickness',                    # th[2,:,:]
+        #----------------------------------------------
+        # These are for *all* soil layers (not used).
+        #----------------------------------------------
+        # 'model_soil_layer__porosity',                       # qs
+        # 'model_soil_layer__saturated_thickness',            # y
+        # 'model_soil_layer__thickness',                      # th
         #----------------------------------------
         # The "top_layer" is same as "layer_0".
         #----------------------------------------
-        'soil_model_top_layer__porosity',                   # qs[0,:,:]
-        'soil_model_top_layer__thickness',                  # th[0,:,:]
-        'soil_model_top_layer__wetted_thickness',           # y[0,:,:]
-        'soil_water_table_surface__elevation' ]             # h_table  #############
+        'soil_water_sat-zone_top_surface__elevation',   # h_table  #############
+        'soil_top-layer__porosity',                     # qs[0,:,:]
+        'soil_top-layer__saturated_thickness',          # y[0,:,:]
+        'soil_top-layer__thickness' ]                   # th[0,:,:]
+
         #-------------------------------------------
         # These are read from GUI/file, but could
         # still be returned.
         #-------------------------------------------
-        # 'soil_water_table_surface__initial_elevation' ]   # h0_table
+        # 'soil_water_sat-zone_top_surface__initial_elevation' ]   # h0_table
 
     #-------------------------------------------------------------------
     # Note: The variables qs, th and y are ndarrays.  If we define
@@ -124,81 +119,81 @@ class satzone_component( satzone_base.satzone_component ):
     #       the var_name_map, which getattr and setattr don't support.
     #-------------------------------------------------------------------
     _var_name_map = {
-        'channel_water__depth': 'd',      # channels comp
-        'soil_water_table__recharge_rate': 'Rg',
+        'channel_water_x-section__mean_depth':           'd',      # channels comp
+        'soil_water_sat-zone_top__recharge_volume_flux': 'Rg',
         #------------------------------------------------------------------------
-        ## 'land_subsurface_to_surface_water__baseflow_seepage_rate': 'GW',
-        ## 'land_subsurface_to_surface_water__area_time_integral_of_baseflow_seepage_rate': 'vol_GW',
         'land_surface__elevation': 'elev',
-        'land_water__area_time_integral_of_baseflow_emergence_rate': 'vol_GW',
-        'land_water__baseflow_emergence_rate': 'GW',  
+        'land_surface_water__baseflow_volume_flux': 'GW',  
+        'land_surface_water__domain_time_integral_of_baseflow_volume_flux': 'vol_GW',
+        'land_surface_water__evaporation_volume_flux': 'ET',
         'model__time_step': 'dt',
         #----------------------------------------------------------------
-        'soil_model_layer_0__porosity':         'qs_layer_0', ## 'qs[0]',
-        'soil_model_layer_0__thickness':        'th_layer_0', ## 'th[0,:,:]',
-        'soil_model_layer_0__wetted_thickness': 'y_layer_0',  ## 'y[0,:,:]',
-        'soil_model_layer_1__porosity':         'qs_layer_1',
-        'soil_model_layer_1__thickness':        'th_layer_1',
-        'soil_model_layer_1__wetted_thickness': 'y_layer_1',
-        'soil_model_layer_2__porosity':         'qs_layer_2',
-        'soil_model_layer_2__thickness':        'th_layer_2',
-        'soil_model_layer_2__wetted_thickness': 'y_layer_2',
+        # These are defined in satzone_base.py.  (9/22/14)
+        'model_soil_layer-0__porosity':            'qs_layer_0', ## 'qs[0]',
+        'model_soil_layer-0__saturated_thickness': 'y_layer_0',  ## 'y[0,:,:]',
+        'model_soil_layer-0__thickness':           'th_layer_0', ## 'th[0,:,:]',
+        'model_soil_layer-1__porosity':            'qs_layer_1',
+        'model_soil_layer-1__saturated_thickness': 'y_layer_1',
+        'model_soil_layer-1__thickness':           'th_layer_1',
+        'model_soil_layer-2__porosity':            'qs_layer_2',
+        'model_soil_layer-2__saturated_thickness': 'y_layer_2',
+        'model_soil_layer-2__thickness':           'th_layer_2',
+
         #----------------------------------------------------------------
-##        'soil_model_layer_0__porosity':         'qs[0]',
-##        'soil_model_layer_0__thickness':        'th[0,:,:]',
-##        'soil_model_layer_0__wetted_thickness': 'y[0,:,:]',
-##        'soil_model_layer_1__porosity':         'qs[1]',
-##        'soil_model_layer_1__thickness':        'th[1,:,:]',
-##        'soil_model_layer_1__wetted_thickness': 'y[1,:,:]',
-##        'soil_model_layer_2__porosity':         'qs[2]',
-##        'soil_model_layer_2__thickness':        'th[2,:,:]',
-##        'soil_model_layer_2__wetted_thickness': 'y[2,:,:]',
-        #-----------------------------------
-        # These are for *all* soil layers.
-        #-----------------------------------
-        'soil_model_layer__porosity':         'qs',
-        'soil_model_layer__thickness':        'th',
-        'soil_model_layer__wetted_thickness': 'y',
+##        'model_soil_layer-0__porosity':         'qs[0]',
+##        'model_soil_layer-0__saturated_thickness': 'y[0,:,:]',
+##        'model_soil_layer-0__thickness':        'th[0,:,:]',
+##        'model_soil_layer-1__porosity':         'qs[1]',
+##        'model_soil_layer-1__saturated_thickness': 'y[1,:,:]',
+##        'model_soil_layer-1__thickness':        'th[1,:,:]',
+##        'model_soil_layer-2__porosity':         'qs[2]',
+##        'model_soil_layer-2__saturated_thickness': 'y[2,:,:]',
+##        'model_soil_layer-2__thickness':        'th[2,:,:]',
+        #----------------------------------------------
+        # These are for *all* soil layers (not used).
+        #----------------------------------------------
+        # 'model_soil_layers__porosity':            'qs',
+        # 'model_soil_layers__saturated_thickness': 'y',
+        # 'model_soil_layers__thickness':           'th',
         #----------------------------------------
         # The "top_layer" is same as "layer_0".
         #----------------------------------------
-        'soil_model_top_layer__porosity':         'qs_layer_0', ## 'qs[0]',
-        'soil_model_top_layer__thickness':        'th_layer_0', ## 'th[0],
-        'soil_model_top_layer__wetted_thickness': 'y_layer_0',  ## 'y[0,:,:]',     
-        'soil_water_table_surface__elevation':    'h_table' }
+        'soil_water_sat-zone_top_surface__elevation': 'h_table',
+        'soil_top-layer__porosity':                   'qs_layer_0',  ## 'qs[0]',
+        'soil_top-layer__saturated_thickness':        'y_layer_0',   ## 'y[0,:,:]',  
+        'soil_top-layer__thickness':                  'th_layer_0' } ## 'th[0],
         
     _var_units_map = {
-        'channel_water__depth': 'm',      # channels comp
-        'soil_water_table__recharge_rate': 'm s-1',
-        #------------------------------------------------------------------------
-        # 'land_subsurface_to_surface_water__baseflow_seepage_rate': 'm s-1',
-        # 'land_subsurface_to_surface_water__area_time_integral_of_baseflow_seepage_rate': 'm3',
+        'channel_water_x-section__mean_depth': 'm',      # channels comp
+        'soil_water_sat-zone_top__recharge_volume_flux': 'm s-1',
+        #----------------------------------------------------------------
         'land_surface__elevation': 'm',
-        'land_water__area_time_integral_of_baseflow_emergence_rate': 'm3',
-        'land_water__baseflow_emergence_rate': 'm s-1',
-        'model__time_step': 's',       #########################
-        'soil_model_layer_0__porosity': '1',
-        'soil_model_layer_0__thickness':'m',
-        'soil_model_layer_0__wetted_thickness': 'm',
-        'soil_model_layer_1__porosity': '1',
-        'soil_model_layer_1__thickness': 'm',
-        'soil_model_layer_1__wetted_thickness': 'm',
-        'soil_model_layer_2__porosity': '1',
-        'soil_model_layer_2__thickness': 'm',
-        'soil_model_layer_2__wetted_thickness': 'm',
-        #-----------------------------------
-        # These are for *all* soil layers.
-        #-----------------------------------
-        'soil_model_layer__porosity': '1',
-        'soil_model_layer__thickness': 'm',
-        'soil_model_layer__wetted_thickness': 'm',
+        'land_surface_water__baseflow_volume_flux': 'm s-1',
+        'land_surface_water__domain_time_integral_of_baseflow_volume_flux': 'm3',
+        'land_surface_water__evaporation_volume_flux': 'm s-1',
+        'model__time_step': 's',         ############# CHECK UNITS
+        'model_soil_layer-0__porosity': '1',
+        'model_soil_layer-0__saturated_thickness': 'm',
+        'model_soil_layer-0__thickness':'m',
+        'model_soil_layer-1__porosity': '1',
+        'model_soil_layer-1__saturated_thickness': 'm',
+        'model_soil_layer-1__thickness': 'm',
+        'model_soil_layer-2__porosity': '1',
+        'model_soil_layer-2__saturated_thickness': 'm',
+        'model_soil_layer-2__thickness': 'm',
+        #----------------------------------------------
+        # These are for *all* soil layers (not used).
+        #----------------------------------------------
+        # 'model_soil_layers__porosity': '1',
+        # 'model_soil_layers__saturated_thickness': 'm',
+        # 'model_soil_layers__thickness': 'm',
         #----------------------------------------
         # The "top_layer" is same as "layer_0".
         #----------------------------------------
-        'soil_model_top_layer__porosity': '1',
-        'soil_model_top_layer__thickness': 'm',
-        'soil_model_top_layer__wetted_thickness': 'm',
-        'soil_water_table_surface__elevation': 'm' }
+        'soil_water_sat-zone_top_surface__elevation': 'm',
+        'soil_top-layer__porosity': '1',
+        'soil_top-layer__saturated_thickness': 'm',
+        'soil_top-layer__thickness': 'm' }
 
     #------------------------------------------------    
     # Return NumPy string arrays vs. Python lists ?

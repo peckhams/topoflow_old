@@ -525,7 +525,7 @@ def Equivalent_Latitude( lat_deg, alpha, beta, DEGREES=False ):
     term1   = np.sin(beta) * np.cos(alpha) * np.cos(lat_rad)
     term2   = np.cos(beta) * np.sin(lat_rad)
     
-    eq_lat   = np.arcsin(term1 + term2)
+    eq_lat  = np.arcsin(term1 + term2)
     
     #--------------------------------------
     # Convert to degrees?  Sunrise_Offset
@@ -699,16 +699,26 @@ def Clear_Sky_Radiation( lat_deg, Julian_day, W_p,
     #-----------------------------------------------
     T_sr = Sunrise_Offset_Slope(lat_deg, Julian_day, alpha, beta)
     T_ss = Sunset_Offset_Slope(lat_deg,  Julian_day, alpha, beta)
-    
+
     #------------------------------------------------
     # Use of LE & GE also takes care of case where
     # Tsr = T_ss = 0, when abs(eq_lat_deg) gt 66.5.
     #------------------------------------------------
-    dark   = np.where( np.logical_or((TSN_offset <= T_sr),
-                                     (TSN_offset >= T_ss)) )
-    n_dark = np.size( dark[0] )
-    if (n_dark != 0):    
-        K_cs[ dark ] = np.float64(0)
+    # Without WHERE call, cProfile time was reduced
+    # from 0.604 to 0.582.
+    #------------------------------------------------    
+    dark = np.logical_or( (TSN_offset <= T_sr), (TSN_offset >= T_ss) )  
+    K_cs[ dark ] = np.float64(0)
+            
+    #------------------------------------------------
+    # Use of LE & GE also takes care of case where
+    # Tsr = T_ss = 0, when abs(eq_lat_deg) gt 66.5.
+    #------------------------------------------------
+#     dark   = np.where( np.logical_or((TSN_offset <= T_sr),
+#                                      (TSN_offset >= T_ss)) )
+#     n_dark = np.size( dark[0] )
+#     if (n_dark != 0):    
+#         K_cs[ dark ] = np.float64(0)
     
     return K_cs   # [Watts / m^2]
     

@@ -66,25 +66,25 @@ class evap_component( evap_base.evap_component ):
         'time_units':         'seconds' }
 
     _input_var_names = [
-        'channel_water__depth' ]    # channels comp
+        'channel_water_x-section__mean_depth' ]    # channels comp
 
     _output_var_names = [
-        'land_water__evaporation_rate',
-        'land_water__area_time_integral_of_evaporation_rate',
+        'land_surface_water__evaporation_volume_flux',
+        'land_surface_water__domain_time_integral_of_evaporation_volume_flux',
         'model_grid_cell__area',
         'model__time_step' ]
 
     _var_name_map = {
-        'channel_water__depth' : 'd',
-        'land_water__evaporation_rate': 'ET',
-        'land_water__area_time_integral_of_evaporation_rate': 'vol_ET',
+        'channel_water_x-section__mean_depth' : 'd',
+        'land_surface_water__evaporation_volume_flux': 'ET',
+        'land_surface_water__domain_time_integral_of_evaporation_volume_flux': 'vol_ET',
         'model_grid_cell__area': 'da',
         'model__time_step': 'dt' }
 
     _var_units_map = {
-        'channel_water__depth' : 'm',
-        'land_water__evaporation_rate': 'm s-1',
-        'land_water__area_time_integral_of_evaporation_rate': 'm3',
+        'channel_water_x-section__mean_depth' : 'm',
+        'land_surface_water__evaporation_volume_flux': 'm s-1',
+        'land_surface_water__domain_time_integral_of_evaporation_volume_flux': 'm3',
         'model_grid_cell__area': 'm2',
         'model__time_step': 's' }
 
@@ -141,7 +141,7 @@ class evap_component( evap_base.evap_component ):
 ##        # So far, all vars have type "double",
 ##        # but use the one in BMI_base instead.
 ##        #---------------------------------------
-##        return 'double'
+##        return 'float64'
 ##    
 ##    #   get_var_type()
     #-------------------------------------------------------------------

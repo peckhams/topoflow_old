@@ -2,35 +2,33 @@
 ## See "d_bankfull" in update_flow_depth()  ######## (2/21/13)
 
 ## See "(5/13/10)" for a temporary fix.
-
-## Copyright (c) 2001-2013, Scott D. Peckham
-##
-## Jan 2013. Shared scalar doubles are now 0D numpy arrays.
-##           This makes them mutable and allows components with
-##           a reference to them to see them change.
-##           So far:  Q_outlet, Q_peak, Q_min...
-##
-## Jan 2013. Revised handling of input/output names.
-##
-## Oct 2012. CSDMS Standard Names and BMI)
-##
-## May 2010. Changes to initialize() and read_cfg_file()
-##
-## May 2012. Commented out diversions.update() for now.  #######
-##
-## May 2012. Shared scalar doubles are now 1-element 1D numpy arrays.
-##           This makes them mutable and allows components with
-##           a reference to them to see them change.
-##           So far:  Q_outlet, Q_peak, Q_min...
-##
-## Mar 2010. Changed codes to code, widths to width,
-##           angles to angle, nvals to nval, z0vals to z0val,
-##           slopes to slope (for GUI tools and consistency
-##           across all process components)
-##
-## May, July, August 2009
-##
-## January 2009   (converted from IDL)
+#------------------------------------------------------------------------
+#  Copyright (c) 2001-2014, Scott D. Peckham
+#
+#  Sep 2014.  Wrote new update_diversions().
+#             New standard names and BMI updates and testing.
+#  Nov 2013.  Converted TopoFlow to a Python package.
+#  Feb 2013.  Adapted to use EMELI framework.
+#  Jan 2013.  Shared scalar doubles are now 0D numpy arrays.
+#             This makes them mutable and allows components with
+#             a reference to them to see them change.
+#             So far:  Q_outlet, Q_peak, Q_min...
+#  Jan 2013.  Revised handling of input/output names.
+#  Oct 2012.  CSDMS Standard Names and BMI.
+#  May 2012.  Commented out diversions.update() for now.  #######
+#  May 2012.  Shared scalar doubles are now 1-element 1D numpy arrays.
+#             This makes them mutable and allows components with
+#             a reference to them to see them change.
+#             So far:  Q_outlet, Q_peak, Q_min...
+#  May 2010.  Changes to initialize() and read_cfg_file()
+#  Mar 2010.  Changed codes to code, widths to width,
+#             angles to angle, nvals to nval, z0vals to z0val,
+#             slopes to slope (for GUI tools and consistency
+#             across all process components)
+#  Aug 2009.  Updates.
+#  Jul 2009.  Updates.
+#  May 2009.  Updates.
+#  Jan 2009.  Converted from IDL.
 
 #-----------------------------------------------------------------------
 #  NB!     In the CFG file, change MANNING and LAW_OF_WALL flags to
@@ -53,6 +51,10 @@
 #          flow.  See channels_kinematic_wave.py,
 #          channels_diffusive_wave.py and channels_dynamic_wave.py.
 #-----------------------------------------------------------------------
+#  NOTES:  update_free_surface_slope() is called by the
+#          update_velocity() methods of channels_diffusive_wave.py
+#          and channels_dynamic_wave.py.
+#-----------------------------------------------------------------------
 #
 #  class channels_component
 #
@@ -67,16 +69,10 @@
 #      update()
 #      finalize()
 #      set_computed_input_vars()   # (5/11/10)
-#-----------------------------
-#      CCA Port Related
-#-----------------------------
-#      get_cca_port_info()         # (OBSOLETE)
-#      embed_child_components()    # (OBSOLETE)
-#      add_child_ports()           # (OBSOLETE)
-#      initialize_ports()          # (OBSOLETE)
 #----------------------------------
 #      initialize_d8_vars()          ########
 #      initialize_computed_vars()
+#      initialize_diversion_vars()      # (9/22/14)
 #      initialize_outlet_values()
 #      initialize_peak_values()
 #      initialize_min_and_max_values()  # (2/3/13)
@@ -84,12 +80,19 @@
 #      update_R()
 #      update_R_integral()
 #      update_discharge()
+#      update_diversions()          # (9/22/14)
 #      update_flow_volume()
 #      update_flow_depth()
 #      update_free_surface_slope()
+#      update_shear_stress()        # (9/9/14, depth-slope product)
+#      update_shear_speed()         # (9/9/14)
 #      update_trapezoid_Rh()
+#      update_friction_factor()     # (9/9/14)
+#----------------------------------
 #      update_velocity()            # (override as needed)
 #      update_velocity_on_edges()
+#      update_froude_number()       # (9/9/14)
+#----------------------------------
 #      update_outlet_values()
 #      update_peak_values()         # (at the main outlet)
 #      update_Q_out_integral()      # (moved here from basins.py)
@@ -102,6 +105,7 @@
 #      close_input_files()
 #----------------------------------
 #      update_outfile_names()
+#      bundle_output_files()        # (9/21/14. Not used yet)
 #      open_output_files()
 #      write_output_files()
 #      close_output_files()
@@ -141,33 +145,34 @@ from topoflow.utils import tf_utils
 class channels_component( BMI_base.BMI_component ):
 
     #-----------------------------------------------------------
-    # Notes: This is first called without the prefix argument.
-    #        The grid filenames below are set using the data
-    #        prefix by the Read_Run_Info_Panel routine.
-
-    # NB!    (3/16/07) dt is now set to zero initially, so
-    #        that Read_Run_Info_Panel can determine if user
-    #        has set the value (e.g. by loading a saved value).
-    #        If unset, then it is set by Read_Run_Info_Panel.
-    #        If GUI is not used, it is set in the input file.
-    #-----------------------------------------------------------
-    # Should we use "land_snow" or just "snow" (current).
-    #------------------------------------------------------------
-    # For GW, we currently use:
-    #   land_water__baseflow_emergence_rate
-    # but should we use:
-    #   land_subsurface_to_surface_water__baseflow_seepage_rate
-    #------------------------------------------------------------    
+    # Note: rainfall_volume_flux *must* be liquid-only precip.
+    #-----------------------------------------------------------        
     _input_var_names = [
-        'atmosphere_water__liquid_equivalent_precipitation_rate', # (P)
-        'glacier__melt_rate',                           # (MR)
+        'atmosphere_water__rainfall_volume_flux',          # (P_rain)
+        'glacier_ice__melt_volume_flux',                   # (MR)
         ## 'land_surface__elevation',
         ## 'land_surface__slope',
-        ## 'land_subsurface_to_surface_water__baseflow_seepage_rate', # GW   
-        'land_water__baseflow_emergence_rate',              # (GW)
-        'land_water__evaporation_rate',                     # (ET)
-        'land_water__infiltration_rate',                    # (IN)
-        'snow__melt_rate' ]                                 # (SM)
+        'land_surface_water__baseflow_volume_flux',        # (GW)
+        'land_surface_water__evaporation_volume_flux',     # (ET)
+        'soil_surface_water__infiltration_volume_flux',    # (IN)
+        'snowpack__melt_volume_flux',                      # (SM)
+        'water-liquid__mass-per-volume_density' ]           # (rho_H2O)
+        #------------------------------------------------------------------
+#         'canals__count',                                   # n_canals
+#         'canals_entrance__x_coordinate',                   # canals_in_x
+#         'canals_entrance__y_coordinate',                   # canals_in_y
+#         'canals_entrance_water__volume_fraction',          # Q_canals_fraction
+#         'canals_exit__x_coordinate',                       # canals_out_x
+#         'canals_exit__y_coordinate',                       # canals_out_y
+#         'canals_exit_water__volume_flow_rate',             # Q_canals_out
+#         'sinks__count',                                    # n_sinks
+#         'sinks__x_coordinate',                             # sinks_x
+#         'sinks__y_coordinate',                             # sinks_y
+#         'sinks_water__volume_flow_rate',                   # Q_sinks
+#         'sources__count',                                  # n_sources
+#         'sources__x_coordinate',                           # sources_x
+#         'sources__y_coordinate',                           # sources_y
+#         'sources_water__volume_flow_rate' ]                # Q_sources
         
     #----------------------------------
     # Maybe add these out_vars later.
@@ -175,174 +180,222 @@ class channels_component( BMI_base.BMI_component ):
     #  ['time_sec', 'time_min' ]
     
     _output_var_names = [
-        'channel_bed__manning_coefficient',                    # nval
-        'channel_bed__max_over_domain_of_manning_coefficient', # nval_max
-        'channel_bed__max_over_domain_of_roughness_length',    # z0val_max
-        'channel_bed__min_over_domain_of_manning_coefficient', # nval_min
-        'channel_bed__min_over_domain_of_roughness_length',    # z0val_min
-        'channel_bed__roughness_length',                       # z0val
-        'channel_bed_surface__slope',                          # S_bed
-        'channel_centerline__straight_sinuosity',              # sinu
-        'channel_cross_section__hydraulic_radius',             # Rh
-        'channel_cross_section_trapezoid__bank_angle',         # angle    ####
-        'channel_cross_section_trapezoid__bottom_width',       # width    ####
-##        'channel_cross_section_water__depth',                  # d
-##        'channel_cross_section_water__initial_depth',          # d0       ####
-##        'channel_cross_section_water__speed',                  # u
-        'channel_model__time_step',                            # dt
-        'channel_water__depth',                                # d
-        'channel_water__initial_depth',                        # d0       ####
-        'channel_water__speed',                                # u
-        'channel_water__discharge',                            # Q
-        'channel_water__friction_factor',                      # f
-        # 'channel_water__froude_number',
-        'channel_water__volume',                               # vol
-        'channel_water_model__time_step',                      # dt
-        'channel_water_surface__slope',                        # S_free
-        'model_grid_cell__area',                               # da
-        'model__time_step',                                    # dt
-        'land_water__runoff_rate',                                 # R
-        'watershed_outlet_water__depth',                           # d_outlet
-        'watershed_outlet_water__discharge',                       # Q_outlet
-        'watershed_outlet_water__friction_factor',                 # f_outlet
-        'watershed_outlet_water__time_integral_of_discharge',      # vol_Q
-        'watershed_outlet_water__max_over_time_of_depth',          # d_peak
-        'watershed_outlet_water__max_over_time_of_discharge',      # Q_peak
-        'watershed_outlet_water__max_over_time_of_speed',          # u_peak
-        'watershed_outlet_water__speed',                           # u_outlet
-        'watershed_outlet_water__time_of_max_of_depth',            # Td_peak
-        'watershed_outlet_water__time_of_max_of_discharge',        # T_peak
-        'watershed_outlet_water__time_of_max_of_speed',            # Tu_peak
-        'watershed_water__area_time_integral_of_runoff_rate',      # vol_R
-        #-----------------------------------------------------
-        # These might only be available at the end of run ??
-        #-----------------------------------------------------
-        'watershed_water__max_over_domain_of_depth',        # d_max
-        'watershed_water__max_over_domain_of_discharge',    # Q_max
-        'watershed_water__max_over_domain_of_speed',        # u_max
-        'watershed_water__min_over_domain_of_depth',        # d_min
-        'watershed_water__min_over_domain_of_discharge',    # Q_min
-        'watershed_water__min_over_domain_of_speed' ]       # u_min   
+        'basin_outlet_water_flow__half_of_fanning_friction_factor',        # f_outlet
+        'basin_outlet_water_x-section__mean_depth',                        # d_outlet
+        'basin_outlet_water_x-section__peak_time_of_depth',                # Td_peak
+        'basin_outlet_water_x-section__peak_time_of_volume_flow_rate',     # T_peak
+        'basin_outlet_water_x-section__peak_time_of_volume_flux',          # Tu_peak
+        'basin_outlet_water_x-section__time_integral_of_volume_flow_rate', # vol_Q
+        'basin_outlet_water_x-section__time_max_of_mean_depth',            # d_peak
+        'basin_outlet_water_x-section__time_max_of_volume_flow_rate',      # Q_peak
+        'basin_outlet_water_x-section__time_max_of_volume_flux',           # u_peak
+        'basin_outlet_water_x-section__volume_flow_rate',                  # Q_outlet
+        'basin_outlet_water_x-section__volume_flux',                       # u_outlet
+         #--------------------------------------------------
+        'canals_entrance_water__volume_flow_rate',                         # Q_canals_in 
+         #-------------------------------------------------- 
+        'channel_bottom_surface__slope',                           # S_bed 
+        'channel_bottom_water_flow__domain_max_of_log_law_roughness_length',  # z0val_max
+        'channel_bottom_water_flow__domain_min_of_log_law_roughness_length',  # z0val_min
+        'channel_bottom_water_flow__log_law_roughness_length',                # z0val
+        'channel_bottom_water_flow__magnitude_of_shear_stress',    # tau
+        'channel_bottom_water_flow__shear_speed',                  # u_star
+        'channel_centerline__sinuosity',                           # sinu
+        'channel_water__volume',                                   # vol
+        'channel_water_flow__froude_number',                       # froude
+        'channel_water_flow__half_of_fanning_friction_factor',     # f
+        'channel_water_flow__domain_max_of_manning_n_parameter',   # nval_max
+        'channel_water_flow__domain_min_of_manning_n_parameter',   # nval_min
+        'channel_water_flow__manning_n_parameter',                 # nval
+        'channel_water_surface__slope',                            # S_free
+        #---------------------------------------------------
+        # These might only be available at the end of run.
+        #---------------------------------------------------
+        'channel_water_x-section__domain_max_of_mean_depth',       # d_max
+        'channel_water_x-section__domain_min_of_mean_depth',       # d_min
+        'channel_water_x-section__domain_max_of_volume_flow_rate', # Q_max
+        'channel_water_x-section__domain_min_of_volume_flow_rate', # Q_min
+        'channel_water_x-section__domain_max_of_volume_flux',      # u_max
+        'channel_water_x-section__domain_min_of_volume_flux',      # u_min
+        #---------------------------------------------------------------------    
+        'channel_water_x-section__hydraulic_radius',               # Rh
+        'channel_water_x-section__initial_mean_depth',             # d0
+        'channel_water_x-section__mean_depth',                     # d
+        'channel_water_x-section__volume_flow_rate',               # Q  
+        'channel_water_x-section__volume_flux',                    # u
+        'channel_water_x-section__wetted_area',                    # A_wet
+        'channel_water_x-section__wetted_perimeter',               # P_wet
+        ## 'channel_water_x-section_top__width',                   # (not used)
+        'channel_x-section_trapezoid_bottom__width',               # width
+        'channel_x-section_trapezoid_side__flare_angle',           # angle
+        'land_surface_water__runoff_volume_flux',                  # R  
+        'land_surface_water__domain_time_integral_of_runoff_volume_flux', # vol_R     
+        'model__time_step',                                        # dt
+        'model_grid_cell__area' ]                                  # da
         
     _var_name_map = {
-        'atmosphere_water__liquid_equivalent_precipitation_rate': 'P',
-        'glacier__melt_rate':                                  'MR',
+        'atmosphere_water__rainfall_volume_flux':              'P_rain',
+        'glacier_ice__melt_volume_flux':                       'MR',
         ## 'land_surface__elevation':                          'DEM',
         ## 'land_surface__slope':                              'S_bed',
-        'land_water__baseflow_emergence_rate':                 'GW',
-        'land_water__evaporation_rate':                        'ET',
-        'land_water__infiltration_rate':                       'IN',
-        'land_water__runoff_rate':                             'R',
-        'snow__melt_rate':                                     'SM',
-        #--------------------------------------------------------------------
-        'channel_bed__manning_coefficient':                    'nval',
-        'channel_bed__max_over_domain_of_manning_coefficient': 'nval_max',
-        'channel_bed__max_over_domain_of_roughness_length':    'z0val_max',
-        'channel_bed__min_over_domain_of_manning_coefficient': 'nval_min',
-        'channel_bed__min_over_domain_of_roughness_length':    'z0val_min',
-        'channel_bed__roughness_length':                       'z0val',
-        'channel_bed_surface__slope':                          'S_bed',
-        'channel_centerline__straight_sinuosity':              'sinu',
-        'channel_cross_section__hydraulic_radius':             'Rh',
-        'channel_cross_section_trapezoid__bank_angle':         'angle',   ####
-        'channel_cross_section_trapezoid__bottom_width':       'width',   ####
-##        'channel_cross_section_water__depth':                  'd',
-##        'channel_cross_section_water__initial_depth':          'd0',    ####
-##        'channel_cross_section_water__speed':                  'u',
-        'channel_model__time_step':                            'dt',
-        'channel_water__depth':                                'd',
-        'channel_water__initial_depth':                        'd0',
-        'channel_water__speed':                                'u',
-        'channel_water__discharge':                            'Q',
-        'channel_water__friction_factor':                      'f',
-        # 'channel_water__froude_number':                      'Fr',
-        'channel_water__volume':                               'vol',
-        'channel_water_model__time_step':                      'dt',
-        'channel_water_surface__slope':                        'S_free',
-        'model_grid_cell__area':                               'da',  ### model?
-        'model__time_step':                                    'dt',  ### model?
-        'watershed_outlet_water__depth':                       'd_outlet',
-        'watershed_outlet_water__discharge':                   'Q_outlet',
-        'watershed_outlet_water__friction_factor':             'f_outlet',
-        'watershed_outlet_water__max_over_time_of_depth':      'd_peak',
-        'watershed_outlet_water__max_over_time_of_discharge':  'Q_peak',
-        'watershed_outlet_water__max_over_time_of_speed':      'u_peak',
-        'watershed_outlet_water__speed':                       'u_outlet',
-        'watershed_outlet_water__time_integral_of_discharge':  'vol_Q',
-        'watershed_outlet_water__time_of_max_of_depth':        'Td_peak',
-        'watershed_outlet_water__time_of_max_of_discharge':    'T_peak',
-        'watershed_outlet_water__time_of_max_of_speed':        'Tu_peak',
-        'watershed_water__area_time_integral_of_runoff_rate':  'vol_R',
-        'watershed_water__max_over_domain_of_depth':        'd_max',
-        'watershed_water__max_over_domain_of_discharge':    'Q_max',
-        'watershed_water__max_over_domain_of_speed':        'u_max',
-        'watershed_water__min_over_domain_of_depth':        'd_min',
-        'watershed_water__min_over_domain_of_discharge':    'Q_min',
-        'watershed_water__min_over_domain_of_speed':        'u_min' }
+        'land_surface_water__baseflow_volume_flux':            'GW',
+        'land_surface_water__evaporation_volume_flux':         'ET',
+        'soil_surface_water__infiltration_volume_flux':        'IN',
+        'snowpack__melt_volume_flux':                          'SM',
+        'water-liquid__mass-per-volume_density':               'rho_H2O',
+        #------------------------------------------------------------------------
+        'basin_outlet_water_flow__half_of_fanning_friction_factor':'f_outlet',
+        'basin_outlet_water_x-section__mean_depth':                'd_outlet',
+        'basin_outlet_water_x-section__peak_time_of_depth':            'Td_peak',
+        'basin_outlet_water_x-section__peak_time_of_volume_flow_rate': 'T_peak',
+        'basin_outlet_water_x-section__peak_time_of_volume_flux':      'Tu_peak',
+        'basin_outlet_water_x-section__volume_flow_rate':            'Q_outlet',
+        'basin_outlet_water_x-section__volume_flux':                 'u_outlet',
+        'basin_outlet_water_x-section__time_integral_of_volume_flow_rate': 'vol_Q',
+        'basin_outlet_water_x-section__time_max_of_mean_depth':      'd_peak',
+        'basin_outlet_water_x-section__time_max_of_volume_flow_rate':'Q_peak',
+        'basin_outlet_water_x-section__time_max_of_volume_flux':     'u_peak',
+        #--------------------------------------------------------------------------
+        'canals_entrance_water__volume_flow_rate':                 'Q_canals_in', 
+        #--------------------------------------------------------------------------    
+        'channel_bottom_surface__slope':                           'S_bed',
+        'channel_bottom_water_flow__domain_max_of_log_law_roughness_length': 'z0val_max',
+        'channel_bottom_water_flow__domain_min_of_log_law_roughness_length': 'z0val_min',
+        'channel_bottom_water_flow__log_law_roughness_length':     'z0val',
+        'channel_bottom_water_flow__magnitude_of_shear_stress':    'tau',
+        'channel_bottom_water_flow__shear_speed':                  'u_star',
+        'channel_centerline__sinuosity':                           'sinu',
+        'channel_water__volume':                                   'vol',
+        'channel_water_flow__domain_max_of_manning_n_parameter':   'nval_max',
+        'channel_water_flow__domain_min_of_manning_n_parameter':   'nval_min',
+        'channel_water_flow__froude_number':                       'froude',
+        'channel_water_flow__half_of_fanning_friction_factor':     'f',
+        'channel_water_flow__manning_n_parameter':                 'nval',
+        'channel_water_surface__slope':                            'S_free',
+        #-----------------------------------------------------------------------
+        'channel_water_x-section__domain_max_of_mean_depth':       'd_max',
+        'channel_water_x-section__domain_min_of_mean_depth':       'd_min',
+        'channel_water_x-section__domain_max_of_volume_flow_rate': 'Q_max',
+        'channel_water_x-section__domain_min_of_volume_flow_rate': 'Q_min',
+        'channel_water_x-section__domain_max_of_volume_flux':      'u_max',
+        'channel_water_x-section__domain_min_of_volume_flux':      'u_min',
+        #-----------------------------------------------------------------------      
+        'channel_water_x-section__hydraulic_radius':               'Rh',
+        'channel_water_x-section__initial_mean_depth':             'd0',
+        'channel_water_x-section__mean_depth':                     'd',
+        'channel_water_x-section__volume_flow_rate':               'Q',                
+        'channel_water_x-section__volume_flux':                    'u',
+        'channel_water_x-section__wetted_area':                    'A_wet',
+        'channel_water_x-section__wetted_perimeter':               'P_wet',
+        ## 'channel_water_x-section_top__width':                   # (not used)
+        'channel_x-section_trapezoid_bottom__width':               'width',   ####
+        'channel_x-section_trapezoid_side__flare_angle':           'angle',   ####
+        'land_surface_water__domain_time_integral_of_runoff_volume_flux': 'vol_R',
+        'land_surface_water__runoff_volume_flux':                  'R',
+        'model__time_step':                                        'dt',
+        'model_grid_cell__area':                                   'da',
+        #------------------------------------------------------------------
+        'canals__count':                          'n_canals',
+        'canals_entrance__x_coordinate':          'canals_in_x',
+        'canals_entrance__y_coordinate':          'canals_in_y',
+        'canals_entrance_water__volume_fraction': 'Q_canals_fraction',
+        'canals_exit__x_coordinate':              'canals_out_x',
+        'canals_exit__y_coordinate':              'canals_out_y',
+        'canals_exit_water__volume_flow_rate':    'Q_canals_out',
+        'sinks__count':                           'n_sinks',
+        'sinks__x_coordinate':                    'sinks_x',
+        'sinks__y_coordinate':                    'sinks_y',
+        'sinks_water__volume_flow_rate':          'Q_sinks',
+        'sources__count':                         'n_sources',
+        'sources__x_coordinate':                  'sources_x',
+        'sources__y_coordinate':                  'sources_y',
+        'sources_water__volume_flow_rate':        'Q_sources' }
+
 
     #------------------------------------------------
     # Create an "inverse var name map"
     # inv_map = dict(zip(map.values(), map.keys()))
     #------------------------------------------------
-##    _inv_var_name_map = dict( zip(_var_name_map.values(),
-##                                  _var_name_map.keys() ) )
+##    _long_name_map = dict( zip(_var_name_map.values(),
+##                               _var_name_map.keys() ) )
 
     _var_units_map = {
-        'atmosphere_water__liquid_equivalent_precipitation_rate': 'm s-1',
-        'glacier__melt_rate':                                  'm s-1',
+        'atmosphere_water__rainfall_volume_flux':              'm s-1',
+        'glacier_ice__melt_volume_flux':                       'm s-1',
         ## 'land_surface__elevation':                          'm',
         ## 'land_surface__slope':                              '1',
-        'land_water__baseflow_emergence_rate':                 'm s-1',
-        'land_water__evaporation_rate':                        'm s-1',
-        'land_water__infiltration_rate':                       'm s-1',
-        'land_water__runoff_rate':                             'm s-1',
-        'snow__melt_rate':                                     'm s-1',
-        #-------------------------------------------------------------------
-        'channel_bed__manning_coefficient':                    'm-1/3 s',
-        'channel_bed__max_over_domain_of_manning_coefficient': 'm-1/3 s',
-        'channel_bed__max_over_domain_of_roughness_length':    'm',
-        'channel_bed__min_over_domain_of_manning_coefficient': 'm-1/3 s',
-        'channel_bed__min_over_domain_of_roughness_length':    'm',
-        'channel_bed__roughness_length':                       'm',
-        'channel_bed_surface__slope':                          '1',
-        'channel_centerline__straight_sinuosity':              '1',
-        'channel_cross_section__hydraulic_radius':             'm',
-        'channel_cross_section_trapezoid__bank_angle':         'rad', # CHECKED
-        'channel_cross_section_trapezoid__bottom_width':       'm',
-##        'channel_cross_section_water__depth':                  'm',
-##        'channel_cross_section_water__initial_depth':          'm',
-##        'channel_cross_section_water__speed':                  'm s-1',
-        'channel_model__time_step':                            's',
-        'channel_water__depth':                                'm',
-        'channel_water__initial_depth':                        'm',
-        'channel_water__speed':                                'm s-1',
-        'channel_water__discharge':                            'm3 s-1',
-        'channel_water__friction_factor':                      '1',
-        # 'channel_water__froude_number':                      '1',
-        'channel_water__volume':                               'm3',
-        'channel_water_model__time_step':                      's',
-        'channel_water_surface__slope':                        '1',
-        'model_grid_cell__area':                               'm2', ### model?
-        'model__time_step':                                    's',  ### model?
-        'watershed_outlet_water__depth':                       'm',
-        'watershed_outlet_water__discharge':                   'm3',
-        'watershed_outlet_water__friction_factor':             '1',
-        'watershed_outlet_water__time_integral_of_discharge':  'm3',
-        'watershed_outlet_water__max_over_time_of_depth':       'm',
-        'watershed_outlet_water__max_over_time_of_discharge':   'm3 s-1',
-        'watershed_outlet_water__max_over_time_of_speed':       'm s-1',
-        'watershed_outlet_water__speed':                        'm s-1',
-        'watershed_outlet_water__time_of_max_of_depth':         'min',
-        'watershed_outlet_water__time_of_max_of_discharge':     'min',
-        'watershed_outlet_water__time_of_max_of_speed':         'min',
-        'watershed_water__area_time_integral_of_runoff_rate':'m3',
-        'watershed_water__max_over_domain_of_depth':            'm',
-        'watershed_water__max_over_domain_of_discharge':        'm3 s-1',
-        'watershed_water__max_over_domain_of_speed':            'm s-1',
-        'watershed_water__min_over_domain_of_depth':            'm',
-        'watershed_water__min_over_domain_of_discharge':        'm3 s-1',
-        'watershed_water__min_over_domain_of_speed':            'm s-1' }
-        
+        'land_surface_water__baseflow_volume_flux':            'm s-1',
+        'land_surface_water__evaporation_volume_flux':         'm s-1',
+        'soil_surface_water__infiltration_volume_flux':        'm s-1',
+        'snowpack__melt_volume_flux':                          'm s-1',
+        'water-liquid__mass-per-volume_density':               'kg m-3',
+        #--------------------------------------------------------------------------- 
+        'basin_outlet_water_flow__half_of_fanning_friction_factor':        '1',       
+        'basin_outlet_water_x-section__mean_depth':                        'm',
+        'basin_outlet_water_x-section__peak_time_of_depth':                'min',
+        'basin_outlet_water_x-section__peak_time_of_volume_flow_rate':     'min',
+        'basin_outlet_water_x-section__peak_time_of_volume_flux':          'min',        
+        'basin_outlet_water_x-section__time_integral_of_volume_flow_rate': 'm3',
+        'basin_outlet_water_x-section__time_max_of_mean_depth':            'm',
+        'basin_outlet_water_x-section__time_max_of_volume_flow_rate':      'm3 s-1',
+        'basin_outlet_water_x-section__time_max_of_volume_flux':           'm s-1',
+        'basin_outlet_water_x-section__volume_flow_rate':                  'm3',
+        'basin_outlet_water_x-section__volume_flux':                       'm s-1',
+        #---------------------------------------------------------------------------
+        'canals_entrance_water__volume_flow_rate':                 'm3 s-1', 
+        #---------------------------------------------------------------------------  
+        'channel_bottom_surface__slope':                           '1',
+        'channel_bottom_water_flow__domain_max_of_log_law_roughness_length':  'm',
+        'channel_bottom_water_flow__domain_min_of_log_law_roughness_length':  'm',
+        'channel_bottom_water_flow__log_law_roughness_length':     'm',
+        'channel_bottom_water_flow__magnitude_of_shear_stress':    'kg m-1 s-2',
+        'channel_bottom_water_flow__shear_speed':                  'm s-1',
+        'channel_centerline__sinuosity':                           '1',    
+        'channel_water__volume':                                   'm3', 
+        'channel_water_flow__froude_number':                       '1',
+        'channel_water_flow__half_of_fanning_friction_factor':     '1',               
+        'channel_water_flow__manning_n_parameter':                 'm-1/3 s',
+        'channel_water_flow__domain_max_of_manning_n_parameter':   'm-1/3 s',
+        'channel_water_flow__domain_min_of_manning_n_parameter':   'm-1/3 s',
+        'channel_water_surface__slope':                            '1',
+        #--------------------------------------------------------------------
+        'channel_water_x-section__domain_max_of_mean_depth':       'm',
+        'channel_water_x-section__domain_min_of_mean_depth':       'm',
+        'channel_water_x-section__domain_max_of_volume_flow_rate': 'm3 s-1',
+        'channel_water_x-section__domain_min_of_volume_flow_rate': 'm3 s-1',
+        'channel_water_x-section__domain_max_of_volume_flux':      'm s-1',
+        'channel_water_x-section__domain_min_of_volume_flux':      'm s-1',
+        #--------------------------------------------------------------------
+        'channel_water_x-section__hydraulic_radius':               'm',
+        'channel_water_x-section__initial_mean_depth':             'm',
+        'channel_water_x-section__mean_depth':                     'm',
+        'channel_water_x-section__volume_flow_rate':               'm3 s-1',
+        'channel_water_x-section__volume_flux':                    'm s-1',
+        'channel_water_x-section__wetted_area':                    'm2',
+        'channel_water_x-section__wetted_perimeter':               'm',
+        'channel_x-section_trapezoid_bottom__width':               'm',
+        'channel_x-section_trapezoid_side__flare_angle':           'rad', # CHECKED 
+        'land_surface_water__domain_time_integral_of_runoff_volume_flux': 'm3',  
+        'land_surface_water__runoff_volume_flux':                  'm s-1',        
+        'model__time_step':                                        's',
+        'model_grid_cell__area':                                   'm2',
+        #------------------------------------------------------------------
+        'canals__count':                          '1',
+        'canals_entrance__x_coordinate':          'm',
+        'canals_entrance__y_coordinate':          'm',
+        'canals_entrance_water__volume_fraction': '1',
+        'canals_exit__x_coordinate':              'm',
+        'canals_exit__y_coordinate':              'm',
+        'canals_exit_water__volume_flow_rate':    'm3 s-1',
+        'sinks__count':                           '1',
+        'sinks__x_coordinate':                    'm',
+        'sinks__y_coordinate':                    'm',
+        'sinks_water__volume_flow_rate':          'm3 s-1',
+        'sources__count':                         '1',
+        'sources__x_coordinate':                  'm',
+        'sources__y_coordinate':                  'm',
+        'sources_water__volume_flow_rate':        'm3 s-1' }
+
     #------------------------------------------------    
     # Return NumPy string arrays vs. Python lists ?
     #------------------------------------------------
@@ -384,7 +437,7 @@ class channels_component( BMI_base.BMI_component ):
 ##        # So far, all vars have type "double",
 ##        # but use the one in BMI_base instead.
 ##        #---------------------------------------
-##        return 'double'
+##        return 'float64'
 ##    
 ##    #   get_var_type()
     #-------------------------------------------------------------------
@@ -403,17 +456,16 @@ class channels_component( BMI_base.BMI_component ):
         
     #   set_constants()
     #-------------------------------------------------------------------
-    def initialize(self, cfg_prefix=None, mode="nondriver",
-                   SILENT=False): 
+    def initialize(self, cfg_file=None, mode="nondriver", SILENT=False): 
 
         if not(SILENT):
             print ' '
             print 'Channels component: Initializing...'
         
-        self.status     = 'initializing'  # (OpenMI 2.0 convention)
-        self.mode       = mode
-        self.cfg_prefix = cfg_prefix
-
+        self.status   = 'initializing'  # (OpenMI 2.0 convention)
+        self.mode     = mode
+        self.cfg_file = cfg_file
+        
         #-----------------------------------------------
         # Load component parameters from a config file
         #-----------------------------------------------
@@ -477,21 +529,6 @@ class channels_component( BMI_base.BMI_component ):
 ##        if (self.SAVE_Q_PIXELS and (self.Q_ts_file == '')):    
 ##            self.Q_ts_file = (self.case_prefix + '_0D-Q.txt')       
 
-        ###############################################################
-        ###############################################################
-        #  If this component is running in stand-alone mode,
-        #  then it must initialize the process modules that
-        #  it is going to use.  If it is being called by another
-        #  component, should caller pass ports in via "set_value" ??
-        ###############################################################
-        ###############################################################
-
-        ############################################
-        # Not needed by new framework, 5/17/12.
-        ############################################
-        ## print 'CHANNELS calling initialize_required_components()...'
-##        self.initialize_required_components( mode )
-        
         self.open_output_files()
         self.status = 'initialized'  # (OpenMI 2.0 convention) 
         
@@ -530,17 +567,39 @@ class channels_component( BMI_base.BMI_component ):
         self.update_R_integral()
         if (DEBUG): print '#### Calling update_discharge()...'
         self.update_discharge()
+        if (DEBUG): print '#### Calling update_diversions()...'
+        self.update_diversions()
         if (DEBUG): print '#### Calling update_flow_volume()...'
         self.update_flow_volume()
         if (DEBUG): print '#### Calling update_flow_depth()...'
         self.update_flow_depth()
+        #-----------------------------------------------------------------
         if not(self.DYNAMIC_WAVE):
             if (DEBUG): print '#### Calling update_trapezoid_Rh()...'
             self.update_trapezoid_Rh()
             # print 'Rhmin, Rhmax =', self.Rh.min(), self.Rh.max()a
+        #-----------------------------------------------------------------
+        # (9/9/14) Moved this here from update_velocity() methods.
+        #-----------------------------------------------------------------        
+        if not(self.KINEMATIC_WAVE):
+            if (DEBUG): print '#### Calling update_free_surface_slope()...' 
+            self.update_free_surface_slope()
+        if (DEBUG): print '#### Calling update_shear_stress()...'
+        self.update_shear_stress()
+        if (DEBUG): print '#### Calling update_shear_speed()...'
+        self.update_shear_speed()  
+        #-----------------------------------------------------------------
+        # Must update friction factor before velocity for DYNAMIC_WAVE.
+        #-----------------------------------------------------------------        
+        if (DEBUG): print '#### Calling update_friction_factor()...'
+        self.update_friction_factor()      
+        #-----------------------------------------------------------------          
         if (DEBUG): print '#### Calling update_velocity()...'
         self.update_velocity()
         self.update_velocity_on_edges()     # (set to zero)
+        if (DEBUG): print '#### Calling update_froude_number()...'
+        self.update_froude_number()
+        #-----------------------------------------------------------------
 ##        print 'Rmin, Rmax =', self.R.min(), self.R.max()
 ##        print 'Qmin,  Qmax =',  self.Q.min(), self.Q.max()
 ##        print 'umin,  umax =',  self.u.min(), self.u.max()
@@ -634,6 +693,10 @@ class channels_component( BMI_base.BMI_component ):
     #-------------------------------------------------------------------
     def set_computed_input_vars(self):
 
+        #---------------------------------------------------------------    
+        # Note: The initialize() method calls initialize_config_vars()
+        #       (in BMI_base.py), which calls this method at the end.
+        #--------------------------------------------------------------
         cfg_extension = self.get_attribute( 'cfg_extension' ).lower()
         # cfg_extension = self.get_cfg_extension().lower()
         self.KINEMATIC_WAVE = ("kinematic" in cfg_extension)
@@ -688,115 +751,6 @@ class channels_component( BMI_base.BMI_component ):
         
     #   set_computed_input_vars()
     #-------------------------------------------------------------------
-##    def get_cca_port_info(self):
-##
-##        self.cca_port_names = ['meteorology', 'snow', 'evap',
-##                               'infil', 'satzone', 'diversions',
-##                               'ice']
-##        self.cca_port_short = ['mp', 'sp', 'ep', 'ip', 'gp',
-##                               'dp', 'iip']
-##        self.cca_port_type  = "IRFPort"
-##        self.cca_project    = "edu.csdms.models"
-##
-##    #   get_cca_port_info()
-##    #-------------------------------------------------------------------
-##    def embed_child_components(self):
-##
-##        #------------------------------------------------
-##        # Instantiate and embed "process components"
-##        # in the place of the CCA ports.
-##        #------------------------------------------------
-##        # But how do we choose a given process method
-##        # such as "kinematic wave" ??
-##        #------------------------------------------------
-##        import met_base
-##        import snow_degree_day
-##        import ET_priestley_taylor
-##        import infil_green_ampt
-##        import GW_darcy_layers
-##        import diversions_fraction_method
-##        import ice_base
-##
-##        self.mp = met_base.met_component()
-##        self.sp = snow_degree_day.snow_component()
-##        self.ep = ET_priestley_taylor.ET_component()
-##        self.ip = infil_green_ampt.infil_component()
-##        self.gp = GW_darcy_layers.GW_component()
-##        self.dp = diversions_fraction_method.diversions_component()
-##        self.iip= ice_base.ice_component()   ######
-##        
-##    #   embed_child_components()
-##    #-------------------------------------------------------------------
-##    def add_child_ports(self):
-##
-##        self.add_child_port('sp', 'mp')
-##        #----------------------------------
-##        self.add_child_port('ep', 'cp', SELF=True)
-##        self.add_child_port('ep', 'sp')
-##        self.add_child_port('ep', 'ip')
-##        self.add_child_port('ep', 'gp')
-##        self.add_child_port('ep', 'mp')
-##        #----------------------------------
-##        self.add_child_port('ip', 'mp')
-##        self.add_child_port('ip', 'sp')
-##        self.add_child_port('ip', 'ep')
-##        self.add_child_port('ip', 'gp')
-##        #----------------------------------
-##        self.add_child_port('gp', 'cp', SELF=True)
-##        self.add_child_port('gp', 'ip')
-##        #----------------------------------
-##        self.add_child_port('dp', 'cp', SELF=True)
-##        #----------------------------------
-##        self.add_child_port('mp', 'sp')
-##        ## self.add_child_port('mp', 'pp')   ##### in future ?
-##        #----------------------------------
-##        self.add_child_port('iip', 'mp')
-##        self.add_child_port('iip', 'sp')
-##        
-##    #   add_child_ports()
-##    #-------------------------------------------------------------------
-##    def initialize_ports(self):
-##
-##        #-------------------------------------------------
-##        # Initialize the process objects/components
-##        # This is also where output files are opened.
-##        #-------------------------------------------------
-##        DEBUG = True      
-##        if (self.mp.get_status() != 'initialized'):      # met vars + precip 
-##            self.mp.initialize( cfg_prefix=self.cfg_prefix )
-##            if (DEBUG): print 'CHANNELS component initialized METEOROLOGY.\n'
-##            
-####        if (self.pp.get_status() != 'initialized'):        # precip vars
-####            self.pp.initialize( cfg_prefix=self.cfg_prefix ) 
-##
-##        if (self.sp.get_status() != 'initialized'):        # snow vars         
-##            self.sp.initialize( cfg_prefix=self.cfg_prefix )
-##            if (DEBUG): print 'CHANNELS component initialized SNOW.\n'
-##            
-##        ## GW must get intialized before ET (9/25/09)
-##        if (self.gp.get_status() != 'initialized'):        # GW vars
-##            self.gp.initialize( cfg_prefix=self.cfg_prefix )
-##            if (DEBUG): print 'CHANNELS component initialized SATZONE.\n'
-##            
-##        if (self.ep.get_status() != 'initialized'):        # ET vars        
-##            self.ep.initialize( cfg_prefix=self.cfg_prefix )
-##            if (DEBUG): print 'CHANNELS component initialized EVAP.\n'
-##
-##        if (self.dp.get_status() != 'initialized'):        # diversions
-##            self.dp.initialize( cfg_prefix=self.cfg_prefix )
-##            if (DEBUG): print 'CHANNELS component initialized DIVERSIONS.\n'
-##            
-##        if (self.ip.get_status() != 'initialized'):        # infil vars
-##            self.ip.initialize( cfg_prefix=self.cfg_prefix )
-##            if (DEBUG): print 'CHANNELS component initialized INFIL.\n'
-##            
-##        if (self.iip.get_status() != 'initialized'):        # ice vars
-##            self.iip.initialize( cfg_prefix=self.cfg_prefix )
-##            if (DEBUG): print 'CHANNELS component initialized ICE.\n'
-##            
-##
-##    #   initialize_ports()
-    #-------------------------------------------------------------------
     def initialize_d8_vars(self):
 
         #---------------------------------------------
@@ -813,10 +767,13 @@ class channels_component( BMI_base.BMI_component ):
         # tf_d8_base.read_grid_info() also needs
         # in_directory to be set. (10/27/11)
         ###############################################
+        
+        #--------------------------------------------------         
+        # D8 component builds its cfg filename from these  
+        #--------------------------------------------------      
         self.d8.site_prefix  = self.site_prefix
         self.d8.in_directory = self.in_directory
- 
-        self.d8.initialize( cfg_prefix=self.cfg_prefix, 
+        self.d8.initialize( cfg_file=None,
                             SILENT=self.SILENT,
                             REPORT=self.REPORT )
         
@@ -882,6 +839,13 @@ class channels_component( BMI_base.BMI_component ):
         self.Q = np.zeros([self.ny, self.nx], dtype='Float64')
         self.R = np.zeros([self.ny, self.nx], dtype='Float64')
 
+        #---------------------------------------------------
+        # Initialize new grids. Is this needed?  (9/13/14)
+        #---------------------------------------------------
+        self.tau    = np.zeros([self.ny, self.nx], dtype='Float64')
+        self.u_star = np.zeros([self.ny, self.nx], dtype='Float64')
+        self.froude = np.zeros([self.ny, self.nx], dtype='Float64')
+                        
         #---------------------------------------
         # These are used to check mass balance
         #---------------------------------------
@@ -897,11 +861,25 @@ class channels_component( BMI_base.BMI_component ):
         
         #----------------------------------------
         # Initial volume of water in each pixel
-        #----------------------------------------
-        ## self.vol = zeros([self.ny, self.nx], dtype='Float64')
-        A_cross  = self.d * (self.width + (self.d * np.tan(self.angle)))
-        self.vol = A_cross * self.d8.ds   #[m^3]
+        #-----------------------------------------------------------
+        # Note: angles were read as degrees & converted to radians
+        #-----------------------------------------------------------
+        L2         = self.d * np.tan(self.angle)
+        self.A_wet = self.d * (self.width + L2)
+        self.P_wet = self.width + (np.float64(2) * self.d / np.cos(self.angle) )
+        self.vol   = self.A_wet * self.d8.ds   # [m3]
 
+        #-------------------------------------------------------        
+        # Note: depth is often zero at the start of a run, and
+        # both width and then P_wet are also zero in places.
+        # Therefore initialize Rh as shown.
+        #-------------------------------------------------------
+        self.Rh = np.zeros([self.ny, self.nx], dtype='Float64')
+        ## self.Rh = self.A_wet / self.P_wet   # [m]
+        ## print 'P_wet.min() =', self.P_wet.min()
+        ## print 'width.min() =', self.width.min()
+       
+        ## self.initialize_diversion_vars()    # (9/22/14)
         self.initialize_outlet_values()
         self.initialize_peak_values()
         self.initialize_min_and_max_values()  ## (2/3/13)
@@ -923,6 +901,48 @@ class channels_component( BMI_base.BMI_component ):
 ##            print ' '
 
     #   initialize_computed_vars()
+    #-------------------------------------------------------------
+    def initialize_diversion_vars(self):
+
+        #-----------------------------------------
+        # Compute source IDs from xy coordinates
+        #-----------------------------------------
+        source_rows     = np.int32( self.sources_y / self.ny )
+        source_cols     = np.int32( self.sources_x / self.nx )
+        self.source_IDs = (source_rows, source_cols)
+        ## self.source_IDs = (source_rows * self.nx) + source_cols
+   
+        #---------------------------------------
+        # Compute sink IDs from xy coordinates
+        #---------------------------------------
+        sink_rows     = np.int32( self.sinks_y / self.ny )
+        sink_cols     = np.int32( self.sinks_x / self.nx )
+        self.sink_IDs = (sink_rows, sink_cols)
+        ## self.sink_IDs = (sink_rows * self.nx) + sink_cols
+        
+        #-------------------------------------------------
+        # Compute canal entrance IDs from xy coordinates
+        #-------------------------------------------------
+        canal_in_rows     = np.int32( self.canals_in_y / self.ny )
+        canal_in_cols     = np.int32( self.canals_in_x / self.nx )
+        self.canal_in_IDs = (canal_in_rows, canal_in_cols)
+        ## self.canal_in_IDs = (canal_in_rows * self.nx) + canal_in_cols
+        
+        #---------------------------------------------
+        # Compute canal exit IDs from xy coordinates
+        #---------------------------------------------
+        canal_out_rows     = np.int32( self.canals_out_y / self.ny )
+        canal_out_cols     = np.int32( self.canals_out_x / self.nx )
+        self.canal_out_IDs = (canal_out_rows, canal_out_cols)
+        ## self.canal_out_IDs = (canal_out_rows * self.nx) + canal_out_cols
+
+        #--------------------------------------------------
+        # This will be computed from Q_canal_fraction and
+        # self.Q and then passed back to Diversions
+        #--------------------------------------------------
+        self.Q_canals_in = np.array( self.n_sources, dtype='float64' )
+
+    #   initialize_diversion_vars()
     #-------------------------------------------------------------------
     def initialize_outlet_values(self):
 
@@ -995,45 +1015,15 @@ class channels_component( BMI_base.BMI_component ):
         #------------------------------------------------------------
         # Use refs to other comp vars from new framework. (5/18/12)
         #------------------------------------------------------------         
-        P  = self.P
+        P  = self.P_rain  # (This is now liquid-only precip. 9/14/14)
         SM = self.SM
         GW = self.GW
         ET = self.ET
         IN = self.IN
         MR = self.MR
-        #--------------------------------------------------------------        
-##        P  = self.get_port_data('P',  self.mp,  'METEOROLOGY')
-##        SM = self.get_port_data('SM', self.sp,  'SNOW')
-##        GW = self.get_port_data('GW', self.gp,  'SATZONE')
-##        ET = self.get_port_data('ET', self.ep,  'EVAP')
-##        IN = self.get_port_data('IN', self.ip,  'INFIL')
-##        MR = self.get_port_data('MR', self.iip, 'ICE')
-
         
 ##        if (self.DEBUG):
 ##            print 'At time:', self.time_min, ', P =', P, '[m/s]'
-
-##        ########################
-##        # ONLY FOR TESTING
-##        ########################
-##        try:
-##            H = self.get_port_data('H', self.iip) ## (ice depth   [m/s])
-##        except:
-##            H = np.float64(0)
-##            print 'ERROR: Could not get "H" from ICE port.'
-            
-        #-------------------------------------------------------
-        # (10/1/09)  This type conversion should not be needed
-        # because it is done by get_port_data(), which is a
-        # "private/local" vs. interface function/method.
-        #-------------------------------------------------------
-##        P  = np.float64(P)
-##        SM = np.float64(SM)
-##        GW = np.float64(GW)
-##        ET = np.float64(ET)
-##        IN = np.float64(IN)
-##        MR = np.float64(MR)
-##        H  = np.float64(H)
 
         #--------------
         # For testing
@@ -1083,11 +1073,12 @@ class channels_component( BMI_base.BMI_component ):
 
         #-----------------------------
         # Compute the discharge grid
-        #-----------------------------
-        L2 = self.d * np.tan(self.angle)
-        Ac = self.d * (self.width + L2)
-        ### self.Q = np.float64(self.u * Ac)
-        self.Q[:] = self.u * Ac   ## (2/19/13, in place)
+        #------------------------------------------------------ 
+        # A_wet is initialized in initialize_computed_vars().
+        # A_wet is updated in update_trapezoid_Rh().
+        #------------------------------------------------------     
+        ### self.Q = np.float64(self.u * A_wet)
+        self.Q[:] = self.u * self.A_wet   ## (2/19/13, in place)
 
         #--------------
         # For testing
@@ -1100,29 +1091,7 @@ class channels_component( BMI_base.BMI_component ):
 ##        print '(Qmin,   Qmax)  =', self.Q.min(),  self.Q.max()
 ##        print '(L2min,  L2max) =', L2.min(), L2.max()
 ##        print '(Qmin,   Qmax)  =', self.Q.min(),  self.Q.max()
-        
-        #--------------------------------------
-        # Update Q and vol due to diversions
-        #--------------------------------------
-        # print 'Calling diversions.update() in update_discharge()...'
-
-        ############################################
-        ############################################  
-        # What to do about new framework ??
-        ############################################
-        ############################################        
-        ######## self.dp.update( self.time_sec )
-        ############################################
-        ############################################
-
-
-        # print 'Finished with call to diversions.update()...'
-
-        ############################################
-        ############################################        
-        ## print 'Updating DIVERSIONS...'
-        ## print ' '
-        
+     
         #--------------
         # For testing
         #--------------
@@ -1147,6 +1116,93 @@ class channels_component( BMI_base.BMI_component ):
 
     #   update_discharge()
     #-------------------------------------------------------------------
+    def update_diversions(self):
+
+        #--------------------------------------------------------------    
+        # Note: The Channel component requests the following input
+        #       vars from the Diversions component by including
+        #       them in its "get_input_vars()":
+        #       (1) Q_sources, Q_sources_x, Q_sources_y
+        #       (2) Q_sinks,   Q_sinks_x, Q_sinks_y
+        #       (3) Q_canals_out, Q_canals_out_x, Q_canals_out_y
+        #       (4) Q_canals_fraction, Q_canals_in_x, Q_canals_in_y.
+        
+        #       source_IDs are computed from (x,y) coordinates during
+        #       initialize().
+        #
+        #       Diversions component needs to get Q_canals_in from the
+        #       Channel component.
+        #--------------------------------------------------------------
+        # Note: This *must* be called after update_discharge() and
+        #       before update_flow_volume().
+        #--------------------------------------------------------------
+        # Note: The Q grid stores the volume flow rate *leaving* each
+        #       grid cell in the domain.  For sources, an extra amount
+        #       is leaving the cell which can flow into its D8 parent
+        #       cell.  For sinks, a lesser amount is leaving the cell
+        #       toward the D8 parent.
+        #--------------------------------------------------------------
+        # Note: It is not enough to just update Q and then call the
+        #       update_flow_volume() method.  This is because it
+        #       won't update the volume in the channels in the grid
+        #       cells that the extra discharge is leaving from.
+        #--------------------------------------------------------------
+        # If a grid cell contains a "source", then an additional Q
+        # will flow *into* that grid cell and increase flow volume.
+        #-------------------------------------------------------------- 
+
+        #-------------------------------------------------------------         
+        # This is not fully tested but runs.  However, the Diversion
+        # vars are still computed even when Diversions component is
+        # disabled. So it slows things down somewhat.
+        #-------------------------------------------------------------              
+        return
+        ########################
+        ########################
+        
+        #----------------------------------------            
+        # Update Q and vol due to point sources
+        #----------------------------------------
+        ## if (hasattr(self, 'source_IDs')): 
+        if (self.n_sources > 0): 
+			self.Q[ self.source_IDs ]   += self.Q_sources
+			self.vol[ self.source_IDs ] += (self.Q_sources * self.dt)
+
+        #--------------------------------------            
+        # Update Q and vol due to point sinks
+        #--------------------------------------
+        ## if (hasattr(self, 'sink_IDs')):
+        if (self.n_sinks > 0): 
+			self.Q[ self.sink_IDs ]   -= self.Q_sinks
+			self.vol[ self.sink_IDs ] -= (self.Q_sinks * self.dt)
+ 
+        #---------------------------------------            
+        # Update Q and vol due to point canals
+        #---------------------------------------    
+        ## if (hasattr(self, 'canal_in_IDs')):
+        if (self.n_canals > 0):   
+			#-----------------------------------------------------------------
+			# Q grid was just modified.  Apply the canal diversion fractions
+			# to compute the volume flow rate into upstream ends of canals.
+			#-----------------------------------------------------------------
+			Q_canals_in = self.Q_canals_fraction * self.Q[ self.canal_in_IDs ]
+			self.Q_canals_in = Q_canals_in
+
+			#----------------------------------------------------        
+			# Update Q and vol due to losses at canal entrances
+			#----------------------------------------------------
+			self.Q[ self.canal_in_IDs ]   -= Q_canals_in
+			self.vol[ self.canal_in_IDs ] -= (Q_canals_in * self.dt)        
+
+			#-------------------------------------------------       
+			# Update Q and vol due to gains at canal exits.
+			# Diversions component accounts for travel time.
+			#-------------------------------------------------        
+			self.Q[ self.canal_out_IDs ]   += self.Q_canals_out
+			self.vol[ self.canal_out_IDs ] += (self.Q_canals_out * self.dt)    
+        
+    #   update_diversions()
+    #-------------------------------------------------------------------
     def update_flow_volume(self):
 
         #-----------------------------------------------------------
@@ -1167,7 +1223,13 @@ class channels_component( BMI_base.BMI_component ):
         #----------------------------------------------------
         # Add contribution (or loss ?) from excess rainrate
         #----------------------------------------------------
-        self.vol += (self.R * self.da) * dt
+        # Contributions over entire grid cell from rainfall,
+        # snowmelt, icemelt and baseflow (minus losses from
+        # evaporation and infiltration) are assumed to flow
+        # into the channel within the grid cell.
+        # Note that R is allowed to be negative.
+        #----------------------------------------------------        
+        self.vol += (self.R * self.da) * dt   # (in place)
     
         #-----------------------------------------
         # Add contributions from neighbor pixels
@@ -1199,7 +1261,7 @@ class channels_component( BMI_base.BMI_component ):
         #----------------------------------------------------
         # Subtract the amount that flows out to D8 neighbor
         #----------------------------------------------------
-        self.vol -= (self.Q * dt)
+        self.vol -= (self.Q * dt)  # (in place)
    
         #--------------------------------------------------------
         # While R can be positive or negative, the surface flow
@@ -1231,14 +1293,25 @@ class channels_component( BMI_base.BMI_component ):
         #        Flow_Lengths function in utils_TF.pro never
         #        returns a value of zero.
         #----------------------------------------------------------
-        d = self.d   # (local alias)
-
+        #        Modified to avoid double where calls, which
+        #        reduced cProfile run time for this method from
+        #        1.391 to 0.644.  (9/23/14)
         #----------------------------------------------------------
         # Commented this out on (2/18/10) because it doesn't
         #           seem to be used anywhere now.  Checked all
         #           of the Channels components.
         #----------------------------------------------------------        
         # self.d_last = self.d.copy()
+
+        #-----------------------------------        
+        # Make some local aliases and vars
+        #-----------------------------------------------------------
+        # Note: angles were read as degrees & converted to radians
+        #-----------------------------------------------------------
+        d = self.d
+        width = self.width  ###
+        angle = self.angle
+        SCALAR_ANGLES = (np.size(angle) == 1)
         
         #------------------------------------------------------
         # (2/18/10) New code to deal with case where the flow
@@ -1247,28 +1320,34 @@ class channels_component( BMI_base.BMI_component ):
         #
         #           CHANGE Manning's n here, too?
         #------------------------------------------------------
-        width = self.width  ###
-        angle = self.angle
-        SCALAR_ANGLES = (np.size(angle) == 1)
-        #-------------------------------------
         d_bankfull = 4.0  # [meters]
         ################################
-        w_overbank = np.where( d > d_bankfull )
-        n_overbank = np.size( w_overbank[0] )
-        if (n_overbank != 0):
-            width[ w_overbank ] = self.d8.dw[ w_overbank ]
-            if not(SCALAR_ANGLES): angle[w_overbank] = 0.0
-    
+        wb = (self.d > d_bankfull)  # (array of True or False)
+        self.width[ wb ]  = self.d8.dw[ wb ]
+        if not(SCALAR_ANGLES):
+            self.angle[ wb ] = 0.0
+     
+#         w_overbank = np.where( d > d_bankfull )
+#         n_overbank = np.size( w_overbank[0] )
+#         if (n_overbank != 0):
+#             width[ w_overbank ] = self.d8.dw[ w_overbank ]
+#             if not(SCALAR_ANGLES): angle[w_overbank] = 0.0
+
         #------------------------------------------------------
         # (2/18/10) New code to deal with case where the top
         #           width exceeds the grid cell width, dw.
         #------------------------------------------------------            
-        top_width  = width + (2.0 * d * np.sin(self.angle))
-        w_bad      = np.where(top_width > self.d8.dw)
-        n_bad      = np.size(w_bad[0])
-        if (n_bad != 0):
-            width[w_bad] = self.d8.dw[w_bad]
-            if not(SCALAR_ANGLES): angle[w_bad] = 0.0
+        top_width = width + (2.0 * d * np.sin(self.angle))
+        wb = (top_width > self.d8.dw)  # (array of True or False)
+        self.width[ wb ] = self.d8.dw[ wb ]
+        if not(SCALAR_ANGLES):
+            self.angle[ wb ] = 0.0
+                    
+#         wb = np.where(top_width > self.d8.dw)
+#         nb = np.size(w_bad[0])
+#         if (nb != 0):
+#             width[ wb ] = self.d8.dw[ wb ]
+#             if not(SCALAR_ANGLES): angle[ wb ] = 0.0
 
         #----------------------------------
         # Is "angle" a scalar or a grid ?
@@ -1277,29 +1356,43 @@ class channels_component( BMI_base.BMI_component ):
             if (angle == 0.0):    
                 d = self.vol / (width * self.d8.ds)
             else:
-                term1 = 2.0 * np.tan(angle)
-                arg   = 2.0 * term1 * self.vol / self.d8.ds
+                denom = 2.0 * np.tan(angle)
+                arg   = 2.0 * denom * self.vol / self.d8.ds
                 arg  += width**(2.0)
-                d     = (np.sqrt(arg) - width) / term1
+                d     = (np.sqrt(arg) - width) / denom
         else:
             #-----------------------------------------------------
             # Pixels where angle is 0 must be handled separately
             #-----------------------------------------------------
-            wz   = np.where( angle == 0 )
-            nwz  = np.size( wz[0] )
-            wzc  = np.where( angle != 0 )
-            nwzc = np.size( wzc[0] )
-            
-            if (nwz != 0):
-                A_top = width[wz] * self.d8.ds[wz]
-                ## A_top = self.width[wz] * self.d8.ds_chan[wz]            
-                d[wz] = self.vol[wz] / A_top
-            
-            if (nwzc != 0):    
-                term1  = 2.0 * np.tan(angle[wzc])
-                arg    = 2.0 * term1 * self.vol[wzc] / self.d8.ds[wzc]
-                arg   += width[wzc]**(2.0)
-                d[wzc] = (np.sqrt(arg) - width[wzc]) / term1
+            w1 = ( angle == 0 )  # (arrays of True or False)
+            w2 = np.invert( w1 )
+            #-----------------------------------
+            A_top = width[w1] * self.d8.ds[w1]          
+            d[w1] = self.vol[w1] / A_top
+            #-----------------------------------               
+            denom  = 2.0 * np.tan(angle[w2])
+            arg    = 2.0 * denom * self.vol[w2] / self.d8.ds[w2]
+            arg   += width[w2]**(2.0)
+            d[w2] = (np.sqrt(arg) - width[w2]) / denom
+
+            #-----------------------------------------------------
+            # Pixels where angle is 0 must be handled separately
+            #-----------------------------------------------------
+#             wz   = np.where( angle == 0 )
+#             nwz  = np.size( wz[0] )
+#             wzc  = np.where( angle != 0 )
+#             nwzc = np.size( wzc[0] )
+#             
+#             if (nwz != 0):
+#                 A_top = width[wz] * self.d8.ds[wz]
+#                 ## A_top = self.width[wz] * self.d8.ds_chan[wz]            
+#                 d[wz] = self.vol[wz] / A_top
+#             
+#             if (nwzc != 0):    
+#                 term1  = 2.0 * np.tan(angle[wzc])
+#                 arg    = 2.0 * term1 * self.vol[wzc] / self.d8.ds[wzc]
+#                 arg   += width[wzc]**(2.0)
+#                 d[wzc] = (np.sqrt(arg) - width[wzc]) / term1
 
         #------------------------------------------
         # Set depth values on edges to zero since
@@ -1321,6 +1414,12 @@ class channels_component( BMI_base.BMI_component ):
         #------------------------------------------------
         ## self.d = np.maximum(d, 0.0)
         np.maximum(d, 0.0, self.d)  # (2/19/13, in place)
+
+        #-------------------------------------------------        
+        # Find where d <= 0 and save for later (9/23/14)
+        #-------------------------------------------------
+        self.d_is_pos = (self.d > 0)
+        self.d_is_neg = np.invert( self.d_is_pos )
         
     #   update_flow_depth
     #-------------------------------------------------------------------
@@ -1344,6 +1443,29 @@ class channels_component( BMI_base.BMI_component ):
 
     #   update_free_surface_slope()
     #-------------------------------------------------------------------
+    def update_shear_stress(self):
+
+        #--------------------------------------------------------
+        # Notes: 9/9/14.  Added so shear stress could be shared.
+        #        This uses the depth-slope product.
+        #--------------------------------------------------------
+        if (self.KINEMATIC_WAVE):
+        	slope = self.S_bed
+        else:
+            slope = self.S_free
+        self.tau[:] = self.rho_H2O * self.g * self.d * slope
+               
+    #   update_shear_stress()
+    #-------------------------------------------------------------------
+    def update_shear_speed(self):
+
+        #--------------------------------------------------------
+        # Notes: 9/9/14.  Added so shear speed could be shared.
+        #--------------------------------------------------------
+        self.u_star[:] = np.sqrt( self.tau / self.rho_H2O )
+               
+    #   update_shear_speed()
+    #-------------------------------------------------------------------
     def update_trapezoid_Rh(self):
 
         #-------------------------------------------------------------
@@ -1354,36 +1476,37 @@ class channels_component( BMI_base.BMI_component ):
         #        The units of wb and d are meters.  The units of
         #        theta are assumed to be degrees and are converted.
         #-------------------------------------------------------------
-        # NB!    wb should never be zero, so PW can never be 0,
+        # NB!    wb should never be zero, so P_wet can never be 0,
         #        which would produce a NaN (divide by zero).
         #-------------------------------------------------------------
         #        See Notes for TF_Tan function in utils_TF.pro
         #            AW = d * (wb + (d * TF_Tan(theta_rad)) )
         #-------------------------------------------------------------
-        d  = self.d        # (local synonyms)
-        wb = self.width   # (trapezoid bottom width)
-        
-        theta_rad = (self.angle * self.deg_to_rad)
+        # 9/9/14.  Bug fix.  Angles were already in radians but
+        #          were converted to radians again.
+        #--------------------------------------------------------------
 
-##        print 'dmin, dmax =', d.min(),  d.max()
-##        print 'wmin, wmax =', wb.min(), wb.max()
-##        print 'amin, amax =', theta_rad.min(), theta_rad.max()
-        
         #---------------------------------------------------------
         # Compute hydraulic radius grid for trapezoidal channels
-        #---------------------------------------------------------        
-        AW = d * (wb + (d * np.tan(theta_rad)) )      
-        PW = wb + (np.float64(2.0) * d / np.cos(theta_rad) )
+        #-----------------------------------------------------------
+        # Note: angles were read as degrees & converted to radians
+        #-----------------------------------------------------------
+        d     = self.d        # (local synonyms)
+        wb    = self.width    # (trapezoid bottom width)
+        L2    = d * np.tan( self.angle )          
+        A_wet = d * (wb + L2)      
+        P_wet = wb + (np.float64(2) * d / np.cos(self.angle) )
 
         #---------------------------------------------------
-        # At noflow_IDs (e.g. edges) PW may be zero
+        # At noflow_IDs (e.g. edges) P_wet may be zero
         # so do this to avoid "divide by zero". (10/29/11)
         #---------------------------------------------------
-        PW[ self.d8.noflow_IDs ] = np.float64(1)
-        Rh = (AW / PW)
-        # w = np.where(PW == 0)
+        P_wet[ self.d8.noflow_IDs ] = np.float64(1)
+        Rh = (A_wet / P_wet)
+        #--------------------------------
+        # w = np.where(P_wet == 0)
         # print 'In update_trapezoid_Rh():'
-        # print '   PW = 0 at', w[0].size, 'cells'
+        # print '   P_wet= 0 at', w[0].size, 'cells'
 
         #------------------------------------
         # Force edge pixels to have Rh = 0.
@@ -1394,9 +1517,130 @@ class channels_component( BMI_base.BMI_component ):
 ##        nw = np.size(w[0])
 ##        if (nw > 0): Rh[w] = np.float64(0)
         
-        self.Rh = Rh
+        self.Rh[:]    = Rh
+        self.A_wet[:] = A_wet   ## (Now shared: 9/9/14)
+        self.P_wet[:] = P_wet   ## (Now shared: 9/9/14)
+
+        #---------------
+        # For testing
+        #--------------
+##        print 'dmin, dmax =', d.min(),  d.max()
+##        print 'wmin, wmax =', wb.min(), wb.max()
+##        print 'amin, amax =', self.angle.min(), self.angle.max()
 
     #   update_trapezoid_Rh()
+    #-------------------------------------------------------------------
+    def update_friction_factor(self):    
+
+        #----------------------------------------    
+        # Note:  Added on 9/9/14 to streamline.
+        #----------------------------------------------------------
+        # Note:  f  = half of the Fanning friction factor
+        #        d  = flow depth [m]
+        #        z0 = roughness length
+        #        S  = bed slope (assumed equal to friction slope)
+        #        g  = 9.81 = gravitation constant [m/s^2]
+        #---------------------------------------------------------       
+        #        For law of the wall:
+        #        kappa = 0.41 = von Karman's constant
+        #        aval  = 0.48 = integration constant
+
+        #        law_const  = sqrt(g)/kappa = 7.6393d
+        #        smoothness = (aval / z0) * d
+        #        f = (kappa / alog(smoothness))^2d
+        #        tau_bed = rho_w * f * u^2 = rho_w * g * d * S
+
+        #        d, S, and z0 can be arrays.
+
+        #        To make default z0 correspond to default
+        #        Manning's n, can use this approximation:
+        #        z0 = a * (2.34 * sqrt(9.81) * n / kappa)^6d
+        #        For n=0.03, this gives: z0 = 0.011417
+        #########################################################
+        #        However, for n=0.3, it gives: z0 = 11417.413
+        #        which is 11.4 km!  So the approximation only
+        #        holds within some range of values.
+        #--------------------------------------------------------
+
+        ###############################################################
+        # cProfile:  This method took: 0.369 secs for topoflow_test()
+        ###############################################################            
+        #--------------------------------------
+        # Find where (d <= 0).  g=good, b=bad
+        #-------------------------------------- 
+        wg = self.d_is_pos
+        wb = self.d_is_neg
+#         wg = ( self.d > 0 )
+#         wb = np.invert( wg )
+        
+        #-----------------------------
+        # Compute f for Manning case
+        #-----------------------------------------
+		# This makes f=0 and du=0 where (d <= 0)
+		#-----------------------------------------
+        if (self.MANNING):
+            n2 = self.nval ** np.float64(2)  
+            self.f[ wg ] = self.g * (n2[wg] / (self.d[wg] ** self.one_third))
+            self.f[ wb ] = np.float64(0)
+ 
+        #---------------------------------
+        # Compute f for Law of Wall case
+        #---------------------------------
+        if (self.LAW_OF_WALL):
+            #------------------------------------------------
+            # Make sure (smoothness > 1) before taking log.
+            # Should issue a warning if this is used.
+            #------------------------------------------------
+            smoothness = (self.aval / self.z0val) * self.d
+            np.maximum(smoothness, np.float64(1.1), smoothness)  # (in place)
+            self.f[wg] = (self.kappa / np.log(smoothness[wg])) ** np.float64(2)
+            self.f[wb] = np.float64(0)
+
+        ##############################################################
+        # cProfile:  This method took: 0.93 secs for topoflow_test()
+        ##############################################################        
+#         #--------------------------------------
+#         # Find where (d <= 0).  g=good, b=bad
+#         #-------------------------------------- 
+#         wg = np.where( self.d > 0 )
+#         ng = np.size( wg[0])
+#         wb = np.where( self.d <= 0 )
+#         nb = np.size( wb[0] )
+# 
+#         #-----------------------------
+#         # Compute f for Manning case
+#         #-----------------------------------------
+# 		  # This makes f=0 and du=0 where (d <= 0)
+# 		  #-----------------------------------------
+#         if (self.MANNING):
+#             n2 = self.nval ** np.float64(2)  
+#             if (ng != 0):
+#                 self.f[wg] = self.g * (n2[wg] / (self.d[wg] ** self.one_third))
+#             if (nb != 0):
+#                 self.f[wb] = np.float64(0)
+# 
+#         #---------------------------------
+#         # Compute f for Law of Wall case
+#         #---------------------------------
+#         if (self.LAW_OF_WALL):
+#             #------------------------------------------------
+#             # Make sure (smoothness > 1) before taking log.
+#             # Should issue a warning if this is used.
+#             #------------------------------------------------
+#             smoothness = (self.aval / self.z0val) * self.d
+#             np.maximum(smoothness, np.float64(1.1), smoothness)  # (in place)
+#             ## smoothness = np.maximum(smoothness, np.float64(1.1))
+#             if (ng != 0):
+#                 self.f[wg] = (self.kappa / np.log(smoothness[wg])) ** np.float64(2)
+#             if (nb != 0):
+#                 self.f[wb] = np.float64(0)                       
+
+        #---------------------------------------------
+        # We could share the Fanning friction factor
+        #---------------------------------------------
+        ### self.fanning = (np.float64(2) * self.f)
+
+    #   update_friction_factor()       
     #-------------------------------------------------------------------
     def update_velocity(self):
 
@@ -1423,6 +1667,23 @@ class channels_component( BMI_base.BMI_component ):
         self.u[ self.d8.noflow_IDs ] = np.float64(0)
         
     #   update_velocity_on_edges()
+    #-------------------------------------------------------------------
+    def update_froude_number(self):
+
+        #----------------------------------------------------------
+        # Notes: 9/9/14.  Added so Froude number could be shared.
+        # This use of wg & wb reduced cProfile time from:
+        # 0.644 sec to: 0.121.  (9/23/14)
+        #----------------------------------------------------------
+        # g = good, b = bad
+        #-------------------- 
+        wg = self.d_is_pos
+        wb = self.d_is_neg
+
+        self.froude[ wg ] = self.u[wg] / np.sqrt( self.g * self.d[wg] )       
+        self.froude[ wb ] = np.float64(0)
+               
+    #   update_froude_number()
     #-------------------------------------------------------------
     def update_outlet_values(self):
         
@@ -1497,7 +1758,6 @@ class channels_component( BMI_base.BMI_component ):
         # Note: Renamed "volume_out" to "vol_Q" for consistency
         # with vol_P, vol_SM, vol_IN, vol_ET, etc. (5/18/12)
         #--------------------------------------------------------
-        ## self.vol_Q += (self.Q_outlet * self.dt)
         self.vol_Q += (self.Q_outlet * self.dt)  ## Experiment: 5/19/12.
         ## self.vol_Q += (self.Q[self.outlet_ID] * self.dt)
         
@@ -1790,7 +2050,12 @@ class channels_component( BMI_base.BMI_component ):
         if (width != None): self.width = width
         
         angle = model_input.read_next(self.angle_unit, self.angle_type, rti)
-        if (angle != None): self.angle = angle
+        if (angle != None):
+            #-----------------------------------------------
+            # Convert bank angles from degrees to radians. 
+            #-----------------------------------------------
+            self.angle = angle * self.deg_to_rad  # [radians]
+            ### self.angle = angle  # (before 9/9/14)
 
         sinu = model_input.read_next(self.sinu_unit, self.sinu_type, rti)
         if (sinu != None): self.sinu = sinu
@@ -1851,12 +2116,51 @@ class channels_component( BMI_base.BMI_component ):
         self.d_ts_file = (self.out_directory + self.d_ts_file) 
         self.f_ts_file = (self.out_directory + self.f_ts_file) 
 
-    #   update_outfile_names()     
+    #   update_outfile_names()
+    #-------------------------------------------------------------------  
+    def bundle_output_files(self):    
+
+        ###################################################
+        # NOT READY YET. Need "get_long_name()" and a new
+        # version of "get_var_units".  (9/21/14)
+        ###################################################
+                
+        #-------------------------------------------------------------       
+        # Bundle the output file info into an array for convenience.
+        # Then we just need one open_output_files(), in BMI_base.py,
+        # and one close_output_files().  Less to maintain. (9/21/14)
+        #-------------------------------------------------------------        
+        # gs = grid stack, ts = time series, ps = profile series.
+        #-------------------------------------------------------------
+        self.out_files = [
+        {var_name:'Q', 
+        save_gs:self.SAVE_Q_GRIDS,  gs_file:self.Q_gs_file,
+        save_ts:self.SAVE_Q_PIXELS, ts_file:self.Q_ts_file, 
+        long_name:get_long_name('Q'), units_name:get_var_units('Q')}, 
+        #-----------------------------------------------------------------
+        {var_name:'u',
+        save_gs:self.SAVE_U_GRIDS,  gs_file:self.u_gs_file,
+        save_ts:self.SAVE_U_PIXELS, ts_file:self.u_ts_file,
+        long_name:get_long_name('u'), units_name:get_var_units('u')},
+        #-----------------------------------------------------------------
+        {var_name:'d',
+        save_gs:self.SAVE_D_GRIDS,  gs_file:self.d_gs_file,
+        save_ts:self.SAVE_D_PIXELS, ts_file:self.d_ts_file,
+        long_name:get_long_name('d'), units_name:get_var_units('d')}, 
+        #-----------------------------------------------------------------
+        {var_name:'f',
+        save_gs:self.SAVE_F_GRIDS,  gs_file:self.f_gs_file,
+        save_ts:self.SAVE_F_PIXELS, ts_file:self.f_ts_file,
+        long_name:get_long_name('f'), units_name:get_var_units('f')} ]
+                        
+    #   bundle_output_files
     #-------------------------------------------------------------------  
     def open_output_files(self):
 
-        model_output.check_nio()
+        model_output.check_netcdf()
         self.update_outfile_names()
+        ## self.bundle_output_files()
+        
 
 ##        print 'self.SAVE_Q_GRIDS =', self.SAVE_Q_GRIDS
 ##        print 'self.SAVE_U_GRIDS =', self.SAVE_U_GRIDS
@@ -1868,6 +2172,19 @@ class channels_component( BMI_base.BMI_component ):
 ##        print 'self.SAVE_D_PIXELS =', self.SAVE_D_PIXELS
 ##        print 'self.SAVE_F_PIXELS =', self.SAVE_F_PIXELS
 
+#         IDs = self.outlet_IDs
+#         for k in xrange( len(self.out_files) ):
+# 			#--------------------------------------
+# 			# Open new files to write grid stacks
+# 			#--------------------------------------
+#             if (self.out_files[k].save_gs):
+#                 model_output.open_new_gs_file( self, self.out_files[k], self.rti )
+# 			#--------------------------------------
+# 			# Open new files to write time series
+# 			#--------------------------------------
+#             if (self.out_files[k].save_ts):
+#                 model_output.open_new_ts_file( self, self.out_files[k], IDs )
+                                                          
         #--------------------------------------
         # Open new files to write grid stacks
         #--------------------------------------
@@ -2021,13 +2338,13 @@ class channels_component( BMI_base.BMI_component ):
         
     #   save_pixel_values()
     #-------------------------------------------------------------------
-    def manning_formula(self, S):
+    def manning_formula(self):
 
         #---------------------------------------------------------
         # Notes: R = (A/P) = hydraulic radius [m]
         #        N = Manning's roughness coefficient
         #            (usually in the range 0.012 to 0.035)
-        #        S = bed slope (assumed equal to friction slope)
+        #        S = bed slope or free slope
 
         #        R,S, and N may be 2D arrays.
 
@@ -2038,39 +2355,34 @@ class channels_component( BMI_base.BMI_component ):
         #        Note that Q = Ac * u, where Ac is cross-section
         #        area.  For a trapezoid, Ac does not equal w*d.
         #---------------------------------------------------------
-        ##  if (N == None): N = np.float64(0.03)
-        
+        if (self.KINEMATIC_WAVE):
+            S = self.S_bed
+        else:
+        	S = self.S_free
+
         u = (self.Rh ** self.two_thirds) * np.sqrt(S) / self.nval
         
-        #------------------------------
-        # Add a hydraulic jump option
-        # for when u gets too big ??
-        #------------------------------
-        
-        #--------------------------------------
-        # Option to return friction factor, f
-        # (Correct this for Rh vs. d.)
-        # **** See update_velocity_dynamic()
-        #--------------------------------------
-        #*** self.f = (self.g * self.d * self.S) / (u^2d)
-        
+        #--------------------------------------------------------
+        # Add a hydraulic jump option for when u gets too big ?
+        #--------------------------------------------------------
+          
         return u
     
     #   manning_formula()
     #-------------------------------------------------------------------
-    def law_of_the_wall(self, S):
+    def law_of_the_wall(self):
 
         #---------------------------------------------------------
         # Notes: u  = flow velocity  [m/s]
         #        d  = flow depth [m]
-        #        z0 = roughness height
-        #        S  = bed slope (assumed equal to friction slope)
+        #        z0 = roughness length
+        #        S  = bed slope or free slope
 
         #        g     = 9.81 = gravitation constant [m/s^2]
         #        kappa = 0.41 = von Karman's constant
         #        aval  = 0.48 = integration constant
 
-        #        sqrt(g)/kappa = 7.6393d
+        #        law_const  = sqrt(g)/kappa = 7.6393d
         #        smoothness = (aval / z0) * d
         #        f = (kappa / alog(smoothness))^2d
         #        tau_bed = rho_w * f * u^2 = rho_w * g * d * S
@@ -2081,36 +2393,30 @@ class channels_component( BMI_base.BMI_component ):
         #        Manning's n, can use this approximation:
         #        z0 = a * (2.34 * sqrt(9.81) * n / kappa)^6d
         #        For n=0.03, this gives: z0 = 0.011417
+        #########################################################
         #        However, for n=0.3, it gives: z0 = 11417.413
         #        which is 11.4 km!  So the approximation only
         #        holds within some range of values.
         #--------------------------------------------------------
-##        if (self.z0val == None):    
-##            self.z0val = np.float64(0.011417)   # (about 1 cm)
+        if (self.KINEMATIC_WAVE):
+            S = self.S_bed
+        else:
+        	S = self.S_free
 
         smoothness = (self.aval / self.z0val) * self.d
           
-        #-----------------------------
-        # Make sure (smoothness > 1)
-        #-----------------------------
+        #------------------------------------------------
+        # Make sure (smoothness > 1) before taking log.
+        # Should issue a warning if this is used.
+        #------------------------------------------------
         smoothness = np.maximum(smoothness, np.float64(1.1))
 
         u = self.law_const * np.sqrt(self.Rh * S) * np.log(smoothness)
-                   
-        ## d = self.d
-        ## u = np.float64(7.676) * np.sqrt(d * S) * np.log(smoothness)
         
-        #------------------------------
-        # Add a hydraulic jump option
-        # for when u gets too big ??
-        #------------------------------
-        
-        #--------------------------------------
-        # Option to return friction factor, f
-        # **** See update_velocity_dynamic()
-        #--------------------------------------
-        ## self.f = (self.kappa / np.log(smoothness)) ** 2
-        
+        #--------------------------------------------------------
+        # Add a hydraulic jump option for when u gets too big ?
+        #--------------------------------------------------------
+  
         return u
     
     #   law_of_the_wall()

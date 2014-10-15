@@ -2,7 +2,7 @@
 ###### 
 ###### channels_base.py called diversions.update() COMMENTED OUT !!!!!
 
-## Copyright (c) 2001-2013, Scott D. Peckham
+## Copyright (c) 2001-2014, Scott D. Peckham
 ##
 ## Jan 2013. Revised handling of input/output names.
 ##
@@ -120,63 +120,47 @@ class topoflow_driver( BMI_base.BMI_component ):
     # But source and sink files provide "dt" for Diversions, so check.
     #------------------------------------------------------------------------------
     _input_var_names = [
-        #----------------------------------------------
-        # The next few are really for the watershed;
-        # maybe start them with "watershed_" ?
-        #----------------------------------------------
-        'atmosphere_water__max_over_domain_and_time_of_liquid_equivalent_precipitation_rate',
-        # P_max@meteorology
-        'atmosphere_water__area_time_integral_of_liquid_equivalent_precipitation_rate',   # vol_P@meteorology
-        'channel_model__time_step', 
-        'glacier__area_time_integral_of_melt_rate',                                       # vol_MR@ice
-        'land_water__area_time_integral_of_baseflow_emergence_rate',       # vol_GW@satzone
-        'land_water__area_time_integral_of_evaporation_rate',              # vol_ET@evap
-        'land_water__area_time_integral_of_infiltration_rate',             # vol_IN@infil
-        'land_water__baseflow_emergence_rate',                             # GW@satzone
-        'soil_water_table__area_time_integral_of_recharge_rate',           # vol_Rg
-        'snow__area_time_integral_of_melt_rate',                           # vol_SM
-        'watershed_outlet_water__time_integral_of_discharge',              # vol_Q@channels
-        'watershed_water__area_time_integral_of_runoff_rate',              # vol_R@channels
-         #-----------------------------------------------------------------------------------       
-##        'basin_cumulative_discharged_water_volume',                   # vol_Q@channels
-##        'basin_cumulative_evaporated_water_volume',                   # vol_ET@evaporation
-##        'basin_cumulative_ice_meltwater_volume',                      # vol_MR@ice
-##        'basin_cumulative_infiltrated_water_volume',                  # vol_IN@infiltration
-##        'basin_cumulative_lwe_precipitated_water_volume',             # vol_P@meteorology
-##        'basin_cumulative_runoff_water_volume',                       # vol_R@channels
-##        'basin_cumulative_saturated_zone_infiltrated_water_volume',   # vol_Rg@infiltration
-##        'basin_cumulative_snow_meltwater_volume',                     # vol_SM@snow 
-##        'basin_cumulative_subsurface_to_surface_seeped_water_volume', # vol_GW@satzone
-        #-----------------------------------------------------------------------------------
-        'channel_bed__max_over_domain_of_manning_coefficient',     # nval_max@channels
-        'channel_bed__max_over_domain_of_roughness_length',        # z0val_max@channels
-        'channel_bed__min_over_domain_of_manning_coefficient',     # nval_min@channels
-        'channel_bed__min_over_domain_of_roughness_length',        # z0val_min@channels
-        #-----------------------------------------------------------------------------------
-        'land_water__runoff_rate',                                 # R@channels
-        'watershed_outlet_water__depth',                           # d_outlet@channels
-        'watershed_outlet_water__discharge',                       # Q_outlet@channels
-        'watershed_outlet_water__friction_factor',                 # f_outlet@channels
-        #'watershed_outlet_water__time_integral_of_discharge',     # vol_Q@channels  (moved up)
-        'watershed_outlet_water__max_over_time_of_depth',          # d_peak@channels
-        'watershed_outlet_water__max_over_time_of_discharge',      # Q_peak@channels
-        'watershed_outlet_water__max_over_time_of_speed',          # u_peak@channels
-        'watershed_outlet_water__speed',                           # u_outlet@channels
-        'watershed_outlet_water__time_of_max_of_depth',            # Td_peak@channels
-        'watershed_outlet_water__time_of_max_of_discharge',        # T_peak@channels
-        'watershed_outlet_water__time_of_max_of_speed',            # Tu_peak@channels
-        'watershed_water__area_time_integral_of_runoff_rate',      # vol_R
+        'atmosphere_water__domain_time_integral_of_precipitation_leq-volume_flux', # vol_P@meteorology
+        'atmosphere_water__domain_time_max_of_precipitation_leq-volume_flux',    # P_max@meteorology
+        'basin_outlet_water_flow__half_of_fanning_friction_factor',              # f_outlet@channels
+        'basin_outlet_water_x-section__mean_depth',                              # d_outlet@channels
+        'basin_outlet_water_x-section__peak_time_of_depth',                      # Td_peak@channels
+        'basin_outlet_water_x-section__peak_time_of_volume_flow_rate',           # T_peak@channels
+        'basin_outlet_water_x-section__peak_time_of_volume_flux',                # Tu_peak@channels
+        'basin_outlet_water_x-section__time_integral_of_volume_flow_rate',       # vol_Q@channels
+        'basin_outlet_water_x-section__time_max_of_mean_depth',                  # d_peak@channels
+        'basin_outlet_water_x-section__time_max_of_volume_flow_rate',            # Q_peak@channels
+        'basin_outlet_water_x-section__time_max_of_volume_flux',                 # u_peak@channels
+        'basin_outlet_water_x-section__volume_flow_rate',                        # Q_outlet@channels
+        'basin_outlet_water_x-section__volume_flux',                             # u_outlet@channels
+        'channel_bottom_water_flow__domain_max_of_log_law_roughness_length',     # z0val_max@channels
+        'channel_bottom_water_flow__domain_min_of_log_law_roughness_length',     # z0val_min@channels
+        ## 'channel_model__time_step',  ####################### (no longer needed?)
+        'channel_water_flow__domain_max_of_manning_n_parameter',                 # nval_max@channels
+        'channel_water_flow__domain_min_of_manning_n_parameter',                 # nval_min@channels
         #-----------------------------------------------------
         # These might only be available at the end of run ??
+        # These are now over the entire domain (or DEM).
         #-----------------------------------------------------
-        # CHECK if these are for watershed or entire DEM.
-        ###################################################
-        'watershed_water__max_over_domain_of_depth',        # d_max
-        'watershed_water__max_over_domain_of_discharge',    # Q_max
-        'watershed_water__max_over_domain_of_speed',        # u_max
-        'watershed_water__min_over_domain_of_depth',        # d_min
-        'watershed_water__min_over_domain_of_discharge',    # Q_min
-        'watershed_water__min_over_domain_of_speed' ]       # u_min
+        'channel_water_x-section__domain_max_of_mean_depth',                     # d_max
+        'channel_water_x-section__domain_max_of_volume_flow_rate',               # Q_max
+        'channel_water_x-section__domain_max_of_volume_flux',                    # u_max
+        'channel_water_x-section__domain_min_of_mean_depth',                     # d_min
+        'channel_water_x-section__domain_min_of_volume_flow_rate',               # Q_min
+        'channel_water_x-section__domain_min_of_volume_flux',                    # u_min
+#         'snowpack__domain_max_of_depth',                                       # hs_max
+#         'snowpack__domain_min_of_depth',                                       # hs_min
+        #-----------------------------------------------------------       
+        'glacier_ice__domain_time_integral_of_melt_volume_flux',                 # vol_MR@ice
+        'land_surface_water__baseflow_volume_flux',                              # GW@satzone
+        'land_surface_water__domain_time_integral_of_baseflow_volume_flux',      # vol_GW@satzone
+        'land_surface_water__domain_time_integral_of_evaporation_volume_flux',   # vol_ET@evap
+        'land_surface_water__domain_time_integral_of_runoff_volume_flux',        # vol_R@channels
+        'land_surface_water__runoff_volume_flux',                                # R@channels
+        'snowpack__domain_time_integral_of_melt_volume_flux',                    # vol_SM
+        'soil_surface_water__domain_time_integral_of_infiltration_volume_flux',  # vol_IN@infil
+        'soil_water_sat-zone_top__domain_time_integral_of_recharge_volume_flux'] # vol_Rg
+
         #----------------------------------------------------------------
         # The TopoFlow driver no longer needs to get the time_steps of
         # the other model components; this is now the framework's job.
@@ -194,7 +178,7 @@ class topoflow_driver( BMI_base.BMI_component ):
         ###################################################################
         #### Bolton comments, 5/12/2012  ---
         ####          Not sure what to do with these missing /unknow vars
- 	####          cp.get_status()
+ 	    ####          cp.get_status()
         ####          save_pixels_dt@channels    'model__save_pixels_flag' ? 
         ####          MANNING@channels           'model__manning_flag' ?
         ####          LAW_OF_WALL@channels       'model__wall_law_flag ?
@@ -205,90 +189,90 @@ class topoflow_driver( BMI_base.BMI_component ):
         'model__time_step' ]   # dt
 
     _var_name_map = {
-        'atmosphere_water__max_over_domain_and_time_of_liquid_equivalent_precipitation_rate': 'P_max',
-        'atmosphere_water__area_time_integral_of_liquid_equivalent_precipitation_rate': 'vol_P',
-        'channel_model__time_step': 'channel_dt', ##### (2/3/13)
-        'glacier__area_time_integral_of_melt_rate': 'vol_MR',
-        'land_water__area_time_integral_of_baseflow_emergence_rate': 'vol_GW',
-        'land_water__area_time_integral_of_evaporation_rate': 'vol_ET',
-        'land_water__area_time_integral_of_infiltration_rate': 'vol_IN',
-        'land_water__baseflow_emergence_rate': 'GW',
-        'soil_water_table__area_time_integral_of_recharge_rate': 'vol_Rg',
-        'snow__area_time_integral_of_melt_rate': 'vol_SM',
-        'watershed_outlet_water__time_integral_of_discharge': 'vol_Q',
-        'watershed_water__area_time_integral_of_runoff_rate': 'vol_R',
-        #----------------------------------------------------------------------
-        'channel_bed__max_over_domain_of_manning_coefficient': 'nval_max',
-        'channel_bed__max_over_domain_of_roughness_length': 'z0val_max',
-        'channel_bed__min_over_domain_of_manning_coefficient': 'nval_min',
-        'channel_bed__min_over_domain_of_roughness_length': 'z0val_min',
-        #----------------------------------------------------------------------
-        'land_water__runoff_rate': 'R',
-        'watershed_outlet_water__depth': 'd_outlet',
-        'watershed_outlet_water__discharge': 'Q_outlet',
-        'watershed_outlet_water__friction_factor': 'f_outlet',
-        'watershed_outlet_water__max_over_time_of_depth': 'd_peak',
-        'watershed_outlet_water__max_over_time_of_discharge': 'Q_peak',
-        'watershed_outlet_water__max_over_time_of_speed': 'u_peak',
-        'watershed_outlet_water__speed': 'u_outlet',
-        'watershed_outlet_water__time_of_max_of_depth': 'Td_peak',
-        'watershed_outlet_water__time_of_max_of_discharge': 'T_peak',
-        'watershed_outlet_water__time_of_max_of_speed': 'Tu_peak',
-        'watershed_water__area_time_integral_of_runoff_rate': 'vol_R',
-        #-----------------------------------------------------
-        # These might only be available at the end of run ??
-        #-----------------------------------------------------
-        'watershed_water__max_over_domain_of_depth':     'd_max',
-        'watershed_water__max_over_domain_of_discharge': 'Q_max',
-        'watershed_water__max_over_domain_of_speed':     'u_max',
-        'watershed_water__min_over_domain_of_depth':     'd_min',
-        'watershed_water__min_over_domain_of_discharge': 'Q_min',
-        'watershed_water__min_over_domain_of_speed':     'u_min',
-        #----------------------------------------------------------
-        'model__time_step': 'dt' }
-    
+        'atmosphere_water__domain_time_integral_of_precipitation_leq-volume_flux': 'vol_P',
+        'atmosphere_water__domain_time_max_of_precipitation_leq-volume_flux':      'P_max',
+        'basin_outlet_water_flow__half_of_fanning_friction_factor':          'f_outlet', 
+        'basin_outlet_water_x-section__mean_depth':                          'd_outlet',
+        'basin_outlet_water_x-section__peak_time_of_depth':                  'Td_peak',
+        'basin_outlet_water_x-section__peak_time_of_volume_flow_rate':       'T_peak',
+        'basin_outlet_water_x-section__peak_time_of_volume_flux':            'Tu_peak',
+        'basin_outlet_water_x-section__time_integral_of_volume_flow_rate':   'vol_Q',
+        'basin_outlet_water_x-section__time_max_of_mean_depth':              'd_peak',
+        'basin_outlet_water_x-section__time_max_of_volume_flow_rate':        'Q_peak',
+        'basin_outlet_water_x-section__time_max_of_volume_flux':             'u_peak',
+        'basin_outlet_water_x-section__volume_flow_rate':                    'Q_outlet',
+        'basin_outlet_water_x-section__volume_flux':                         'u_outlet', 
+        'channel_bottom_water_flow__domain_max_of_log_law_roughness_length': 'z0val_max',
+        'channel_bottom_water_flow__domain_min_of_log_law_roughness_length': 'z0val_min',   
+        ## 'channel_model__time_step':                                          'channel_dt', ## (2/3/13)
+        'channel_water_flow__domain_max_of_manning_n_parameter':             'nval_max',
+        'channel_water_flow__domain_min_of_manning_n_parameter':             'nval_min',        
+        #-------------------------------------------------------
+        # These 6 might only be available at the end of run ??
+        #-------------------------------------------------------
+        'channel_water_x-section__domain_max_of_mean_depth':                     'd_max',
+        'channel_water_x-section__domain_max_of_volume_flow_rate':               'Q_max',
+        'channel_water_x-section__domain_max_of_volume_flux':                    'u_max',
+        'channel_water_x-section__domain_min_of_mean_depth':                     'd_min',
+        'channel_water_x-section__domain_min_of_volume_flow_rate':               'Q_min',
+        'channel_water_x-section__domain_min_of_volume_flux':                    'u_min',
+#         'snowpack__domain_max_of_depth':                                       'hs_max',
+#         'snowpack__domain_min_of_depth':                                       'hs_min',
+        #------------------------------------------------------------                
+        'glacier_ice__domain_time_integral_of_melt_volume_flux':                 'vol_MR',
+        'land_surface_water__baseflow_volume_flux':                              'GW',
+        'land_surface_water__domain_time_integral_of_baseflow_volume_flux':      'vol_GW',
+        'land_surface_water__domain_time_integral_of_evaporation_volume_flux':   'vol_ET',
+        'land_surface_water__domain_time_integral_of_runoff_volume_flux':        'vol_R',
+        'land_surface_water__runoff_volume_flux':                                'R',         
+        'snowpack__domain_time_integral_of_melt_volume_flux':                    'vol_SM',       
+        'soil_surface_water__domain_time_integral_of_infiltration_volume_flux':  'vol_IN',
+        'soil_water_sat-zone_top__domain_time_integral_of_recharge_volume_flux': 'vol_Rg',
+        #---------------------
+        'model__time_step':                                                      'dt' }
+            
     _var_units_map = {
-        'atmosphere_water__max_over_domain_and_time_of_liquid_equivalent_precipitation_rate': 'm s-1',
-        'atmosphere_water__area_time_integral_of_liquid_equivalent_precipitation_rate':       'm3',
-        'channel_model__time_step':                                  's', ##### (2/3/13)
-        'glacier__area_time_integral_of_melt_rate':                  'm3',
-        'land_water__area_time_integral_of_baseflow_emergence_rate': 'm3',
-        'land_water__area_time_integral_of_evaporation_rate':        'm3',
-        'land_water__area_time_integral_of_infiltration_rate':       'm3',
-        'land_water__baseflow_emergence_rate':                       'm s-1',
-        'soil_water_table__area_time_integral_of_recharge_rate':     'm3',
-        'snow__area_time_integral_of_melt_rate':                     'm3',
-        'watershed_outlet_water__time_integral_of_discharge':        'm3',
-        'watershed_water__area_time_integral_of_runoff_rate':        'm3',
-        #-----------------------------------------------------------------------------------
-        'channel_bed__max_over_domain_of_manning_coefficient': 'm-1/3 s',
-        'channel_bed__max_over_domain_of_roughness_length':    'm',
-        'channel_bed__min_over_domain_of_manning_coefficient': 'm-1/3 s',
-        'channel_bed__min_over_domain_of_roughness_length':    'm',
-        #-----------------------------------------------------------------------------------
-        'land_water__runoff_rate':                            'm s-1',
-        'watershed_outlet_water__depth':                      'm',
-        'watershed_outlet_water__discharge':                  'm3 s-1',
-        'watershed_outlet_water__friction_factor':            '1',
-        'watershed_outlet_water__max_over_time_of_depth':     'm',
-        'watershed_outlet_water__max_over_time_of_discharge': 'm3 s-1',
-        'watershed_outlet_water__max_over_time_of_speed':     'm s-1',
-        'watershed_outlet_water__speed':                      'm s-1',
-        'watershed_outlet_water__time_of_max_of_depth':       'min',
-        'watershed_outlet_water__time_of_max_of_discharge':   'min',
-        'watershed_outlet_water__time_of_max_of_speed':       'min',
-        'watershed_water__area_time_integral_of_runoff_rate': 'm3',
+        'atmosphere_water__domain_time_integral_of_precipitation_leq-volume_flux': 'm3',
+        'atmosphere_water__domain_time_max_of_precipitation_leq-volume_flux':      'm s-1',
+        'basin_outlet_water_flow__half_of_fanning_friction_factor':                '1',
+        'basin_outlet_water_x-section__mean_depth':                                'm',
+        'basin_outlet_water_x-section__peak_time_of_depth':                        'min',
+        'basin_outlet_water_x-section__peak_time_of_volume_flow_rate':             'min',
+        'basin_outlet_water_x-section__peak_time_of_volume_flux':                  'min',
+        'basin_outlet_water_x-section__time_integral_of_volume_flow_rate':         'm3',
+        'basin_outlet_water_x-section__time_max_of_mean_depth':                    'm',
+        'basin_outlet_water_x-section__time_max_of_volume_flow_rate':              'm3 s-1',
+        'basin_outlet_water_x-section__time_max_of_volume_flux':                   'm s-1',
+        'basin_outlet_water_x-section__volume_flow_rate':                          'm3 s-1',
+        'basin_outlet_water_x-section__volume_flux':                               'm s-1',
+        'channel_bottom_water_flow__domain_max_of_log_law_roughness_length':       'm',
+        'channel_bottom_water_flow__domain_min_of_log_law_roughness_length':       'm',        
+        ## 'channel_model__time_step':                                                's', ### (2/3/13)
+        'channel_water_flow__domain_max_of_manning_n_parameter':                   'm-1/3 s',        
+        'channel_water_flow__domain_min_of_manning_n_parameter':                   'm-1/3 s',
         #-----------------------------------------------------
         # These might only be available at the end of run ??
         #-----------------------------------------------------
-        'watershed_water__max_over_domain_of_depth': 'm',
-        'watershed_water__max_over_domain_of_discharge': 'm3 s-1',
-        'watershed_water__max_over_domain_of_speed': 'm s-1',
-        'watershed_water__min_over_domain_of_depth': 'm',
-        'watershed_water__min_over_domain_of_discharge': 'm3 s-1',
-        'watershed_water__min_over_domain_of_speed': 'm s-1',
-        #-----------------------------------------------------------
-        'model__time_step': 'dt' }
+        'channel_water_x-section__domain_max_of_mean_depth':                       'm',
+        'channel_water_x-section__domain_max_of_volume_flow_rate':                 'm3 s-1',
+        'channel_water_x-section__domain_max_of_volume_flux':                      'm s-1',
+        'channel_water_x-section__domain_min_of_mean_depth':                       'm',
+        'channel_water_x-section__domain_min_of_volume_flow_rate':                 'm3 s-1',
+        'channel_water_x-section__domain_min_of_volume_flux':                      'm s-1',
+#         'snowpack__domain_max_of_depth':                                         'm',
+#         'snowpack__domain_min_of_depth':                                         'm',
+        #------------------------------------------------------------                
+        'glacier_ice__domain_time_integral_of_melt_volume_flux':                   'm3',
+        'land_surface_water__baseflow_volume_flux':                                'm s-1',
+        'land_surface_water__domain_time_integral_of_baseflow_volume_flux':        'm3',
+        'land_surface_water__domain_time_integral_of_evaporation_volume_flux':     'm3',
+        'land_surface_water__domain_time_integral_of_runoff_volume_flux':          'm3',
+        'land_surface_water__runoff_volume_flux':                                  'm s-1',
+        'snowpack__domain_time_integral_of_melt_volume_flux':                      'm3',        
+        'soil_surface_water__domain_time_integral_of_infiltration_volume_flux':    'm3',
+        'soil_water_sat-zone_top__domain_time_integral_of_recharge_volume_flux':   'm3',
+        #----------------------------
+        'model__time_step': 's' }
     
     #------------------------------------------------    
     # Return NumPy string arrays vs. Python lists ?
@@ -343,7 +327,7 @@ class topoflow_driver( BMI_base.BMI_component ):
 ##        # So far, all vars have type "double",
 ##        # but use the one in BMI_base instead.
 ##        #---------------------------------------
-##        return 'double'
+##        return 'float64'
 ##    
 ##    #   get_var_type()
 
@@ -464,7 +448,7 @@ class topoflow_driver( BMI_base.BMI_component ):
        
     #   set_constants()       
     #-------------------------------------------------------------------
-    def initialize(self, cfg_prefix=None, mode="nondriver",
+    def initialize(self, cfg_file=None, mode="nondriver",
                    SILENT=False):
 
         #------------------------------------------------------
@@ -478,7 +462,7 @@ class topoflow_driver( BMI_base.BMI_component ):
         
         self.status     = 'initializing'  # (OpenMI 2.0 convention)
         self.mode       = mode
-        self.cfg_prefix = cfg_prefix
+        self.cfg_file   = cfg_file
         
         #-----------------------------------------------
         # Load component parameters from a config file
@@ -502,34 +486,14 @@ class topoflow_driver( BMI_base.BMI_component ):
         self.comment_file = dc + '_comments.txt'
         self.log_file     = dc + '.log'
 
-        #############################################################        
-        #############################################################
-        # This will be done by PortQueue in the future. (10/26/11)
-        # Correct "mode" must be used when CMT.initialize() calls
-        # BMI.initialize().
-        #############################################################
-        #############################################################
-        # self.initialize_required_components(mode) (5/17/12)
-    
         #-----------------------
         # Initialize variables
         #-----------------------
         self.initialize_time_vars()  # (uses cp.dt from above)
         self.initialize_stop_vars()   #### (do this with CFG file ?)
-
-        #########################################################
-        # (2/3/13) This is now done by the new framework.
-        #########################################################        
-        #-------------------------
-        # Compute "update steps"
-        #--------------------------------------------
-        # Process modules must be initialized first
-        #--------------------------------------------
-        # self.compute_update_steps()
-
                           
         #### self.nz = self.ip.get_scalar_long('nz')   #######
-        
+
         #------------------------------------
         # Check if output options are valid
         #------------------------------------
@@ -969,8 +933,7 @@ class topoflow_driver( BMI_base.BMI_component ):
         # Set the model run timestep to that
         # of the "channel_flow" process [secs]
         #---------------------------------------
-        self.dt = self.channel_dt  # (5/17/12.  New framework approach.)
-        ## self.dt = self.cp.get_scalar_double('dt')
+        ### self.dt = self.channel_dt  # (5/17/12.  New framework approach.)
         
     #   initialize_time_vars()
     #-------------------------------------------------------------
@@ -1218,46 +1181,14 @@ class topoflow_driver( BMI_base.BMI_component ):
         vol_IN = self.vol_IN
         vol_Rg = self.vol_Rg
         vol_GW = self.vol_GW
-        
-        #----------------------------------------
-        # New framework method with 1-d numpy
-        # arrays for mutable scalars (2/6/13).
-        # Subscript to avoid printing brackets.
-        #----------------------------------------
-##        Q_peak     = self.Q_peak[0]
-##        T_peak     = self.T_peak[0]
-##        u_peak     = self.u_peak[0]
-##        Tu_peak    = self.Tu_peak[0]
-##        d_peak     = self.d_peak[0]
-##        Td_peak    = self.Td_peak[0]
-##        #-----------------------------
-##        P_max      = self.P_max[0]
-##
-##        vol_P  = self.vol_P[0]
-##        vol_Q  = self.vol_Q[0] 
-##        vol_SM = self.vol_SM[0]
-##        vol_MR = self.vol_MR[0]
-##        vol_ET = self.vol_ET[0]
-##        vol_IN = self.vol_IN[0]
-##        vol_Rg = self.vol_Rg[0]
-##        vol_GW = self.vol_GW[0]
-                
-##        vol_Q      = self.cp.get_scalar_double('vol_Q')
-##        Q_peak     = self.cp.get_scalar_double('Q_peak')
-##        T_peak     = self.cp.get_scalar_double('T_peak')
-##        u_peak     = self.cp.get_scalar_double('u_peak')
-##        Tu_peak    = self.cp.get_scalar_double('Tu_peak')
-##        d_peak     = self.cp.get_scalar_double('d_peak')
-##        Td_peak    = self.cp.get_scalar_double('Td_peak')
-##        sample_dt  = self.cp.get_scalar_double('save_pixels_dt')   ## (needed ?)
-##        P_max      = self.mp.get_scalar_double('P_max')
+        vol_R  = self.vol_R
         
         #-----------------------------------------------------------------
         # (2/6/13) BMI_base.py has an "initialize_basin_vars()" method
         # that embeds an instance of the "basin" component in the caller
         # as "bp".  So this block of code should still work.
         #-----------------------------------------------------------------
-        basin_area = self.bp.basin_area
+        basin_area = self.basin_area
         ##################################################################
         # We need an "update_basin_vars()" method to be called from each
         # component's update() method in order to compute "volume_in".
@@ -1267,33 +1198,6 @@ class topoflow_driver( BMI_base.BMI_component ):
         TRACK_VOLUME = False    ##### (since not ready yet) ######
         volume_in    = self.initialize_scalar( 0, dtype='float64')
 
-        #------------------
-        # See Note below.
-        #------------------
-##        mp_dt = np.float64(0)
-##        cp_dt = np.float64(0)
-##        sp_dt = np.float64(0)
-##        ep_dt = np.float64(0)
-##        ip_dt = np.float64(0)
-##        gp_dt = np.float64(0)
-##        iip_dt= np.float64(0)
-        
-##        mp_dt = self.meteorology_dt
-##        cp_dt = self.channels_dt
-##        sp_dt = self.snow_dt
-##        ep_dt = self.evap_dt
-##        ip_dt = self.infil_dt
-##        gp_dt = self.satzone_dt
-##        iip_dt= self.ice_dt
-      
-##        mp_dt = self.mp.get_scalar_double('dt') 
-##        cp_dt = self.cp.get_scalar_double('dt')
-##        sp_dt = self.sp.get_scalar_double('dt')
-##        ep_dt = self.ep.get_scalar_double('dt')
-##        ip_dt = self.ip.get_scalar_double('dt')
-##        gp_dt = self.gp.get_scalar_double('dt')
-##        iip_dt= self.iip.get_scalar_double('dt')
-        
         #----------------------------
         # Construct run time string
         #----------------------------
@@ -1344,7 +1248,7 @@ class topoflow_driver( BMI_base.BMI_component ):
         # it can request "model__time_step" from the framework, but
         # cannot specify which component(s) that it wants it from.
         # The framework has no trouble getting and printing this
-        # info however, and this now done instead.  But current
+        # info however, and this is now done instead.  But current
         # approach does not write time steps to the log_file.
         #------------------------------------------------------------
 ##        TF_Print('Channel timestep:    ' + str(cp_dt) + ' [s]')
@@ -1365,21 +1269,6 @@ class topoflow_driver( BMI_base.BMI_component ):
         TF_Print('Basin_area:        ' + str(basin_area) + ' [km^2] ')
         #*** TF_Print,'Basin_length:      ' + TF_String(basin_length) + ' [m]'
         TF_Print(' ')
-
-##        MANNING     = self.cp.get_scalar_long('MANNING')
-##        LAW_OF_WALL = self.cp.get_scalar_long('LAW_OF_WALL')
-##       
-##        if (MANNING):
-##            nmin = self.cp.get_scalar_double('nval_min')
-##            nmax = self.cp.get_scalar_double('nval_max')
-##            TF_Print("Min Manning's n:   " + str(nmin))
-##            TF_Print("Max Manning's n:   " + str(nmax))
-##        
-##        if (LAW_OF_WALL):    
-##            z0min = self.cp.get_scalar_double('z0val_min')  ####
-##            z0max = self.cp.get_scalar_double('z0val_max')  ####
-##            TF_Print("Min z0 value:      " + str(z0min) + ' [m]')
-##            TF_Print("Max z0 value:      " + str(z0max) + ' [m]')
             
         if (hasattr(self, 'nval_min')):
             TF_Print("Min Manning's n:   " + str(self.nval_min))
@@ -1424,6 +1313,7 @@ class topoflow_driver( BMI_base.BMI_component ):
         TF_Print('vol_IN:          ' + str(vol_IN) + ' [m^3]')
         TF_Print('vol_Rg:          ' + str(vol_Rg) + ' [m^3]')
         TF_Print('vol_GW:          ' + str(vol_GW) + ' [m^3]')
+        TF_Print('vol_R:           ' + str(vol_R)  + ' [m^3]')
         TF_Print(' ')
         
         #---------------------
@@ -1528,18 +1418,6 @@ class topoflow_driver( BMI_base.BMI_component ):
     #   print_final_report()
     #-------------------------------------------------------------
     def print_mins_and_maxes(self, FINAL=False):
-  
-        #-----------------------------
-        # Compute the mins and maxes
-        #-----------------------------
-##        nx = self.nx
-##        ny = self.ny
-##        Q_min = self.cp.Q[1:(ny - 2)+1,1:(nx - 2)+1].min()
-##        Q_max = self.cp.Q[1:(ny - 2)+1,1:(nx - 2)+1].max()
-##        u_min = self.cp.u[1:(ny - 2)+1,1:(nx - 2)+1].min()
-##        u_max = self.cp.u[1:(ny - 2)+1,1:(nx - 2)+1].max()
-##        d_min = self.cp.d[1:(ny - 2)+1,1:(nx - 2)+1].min()
-##        d_max = self.cp.d[1:(ny - 2)+1,1:(nx - 2)+1].max()
 
         #-------------------------------
         # New framework method, 2/6/13
@@ -1706,15 +1584,6 @@ class topoflow_driver( BMI_base.BMI_component ):
     #   print_dimless_number_data()
     #-------------------------------------------------------------
     def print_mass_balance_report(self):            
-
-##        ## vol_P  = self.pp.get_scalar_double('vol_P')
-##        vol_P  = self.mp.get_scalar_double('vol_P')
-##        vol_SM = self.sp.get_scalar_double('vol_SM')
-##        vol_IN = self.ip.get_scalar_double('vol_IN')
-##        vol_Rg = self.ip.get_scalar_double('vol_Rg')
-##        vol_ET = self.ep.get_scalar_double('vol_ET')
-##        vol_GW = self.gp.get_scalar_double('vol_GW')
-##        vol_R  = self.cp.get_scalar_double('vol_R')
 
         #--------------------------------------
         # Updated for new framework. (2/5/13)
