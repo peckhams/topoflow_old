@@ -250,8 +250,49 @@ class BMI_component:
 ##
 ##    #   set_attribute()
     #-------------------------------------------------------------------
+
+    def get_component_name(self):
+        """Name of the component.
+
+        Returns
+        -------
+        str
+            The name of the component.
+        """
+        return self.get_attribute('model_name')
+
+    def get_grid_rank(self, grid_id):
+        """Get number of dimensions of the computational grid.
+
+        Parameters
+        ----------
+        grid_id : int
+          A grid identifier.
+
+        Returns
+        -------
+        int
+          Rank of the grid.
+        """
+        return len(self.get_grid_shape(grid_id))
+
+    def get_grid_type(self, grid_id):
+        """Get the grid type as a string.
+
+        Parameters
+        ----------
+        grid_id : int
+          A grid identifier.
+
+        Returns
+        -------
+        str
+          Type of grid as a string.
+        """
+        return self.get_attribute('grid_type')
+
     #-------------------------------------------------------------------
-    def get_grid_shape(self, long_var_name):
+    def get_grid_shape(self, grid_id):
 
         #-------------------------------------------------------
         # Note: This assumes same grid info for all var_names.
@@ -264,14 +305,14 @@ class BMI_component:
             self.read_grid_info()
 
         info  = self.grid_info
-        shape = np.array( [info.nx, info.ny, 0] )
+        shape = np.array( [info.ny, info.nx, 0] )
         ## shape = np.array( [info.ncols, info.nrows, 0] )
         
         return shape
     
     #   get_grid_shape()
     #-------------------------------------------------------------------
-    def get_grid_spacing(self, long_var_name):
+    def get_grid_spacing(self, grid_id):
 
         #-------------------------------------------------------
         # Note: This assumes same grid info for all var_names.
@@ -285,13 +326,13 @@ class BMI_component:
             self.read_grid_info()
 
         info = self.grid_info
-        spacing = np.array( [info.xres, info.yres, 0] )
+        spacing = np.array( [info.yres, info.xres, 0] )
         
         return spacing
 
     #   get_grid_spacing()
     #-------------------------------------------------------------------
-    def get_grid_lower_left_corner(self, long_var_name):
+    def get_grid_origin(self, grid_id):
 
         #-------------------------------------------------------
         # Note: This assumes same grid info for all var_names.
@@ -300,7 +341,7 @@ class BMI_component:
             self.read_grid_info()
 
         info = self.grid_info
-        corner = np.array( [info.x_west_edge, info.y_south_edge, 0] )
+        corner = np.array( [info.y_south_edge, info.x_west_edge, 0] )
         
         return corner
 
@@ -547,8 +588,39 @@ class BMI_component:
         
     #   get_var_name()
     #-------------------------------------------------------------------
-    def get_var_units(self, long_var_name):
 
+    def get_var_grid(self, long_var_name):
+        """Get grid identifier for a variable name.
+
+        Parameters
+        ----------
+        long_var_name : str
+            An input or output variable name as a CSDMS standard name.
+
+        Returns
+        -------
+        int
+            The grid identifier.
+        """
+        return 0
+
+    def get_var_itemsize(self, long_var_name):
+        """The memory use of each array element in bytes.
+
+        Parameters
+        ----------
+        long_var_name : str
+            An input or output variable name as a CSDMS standard name.
+
+        Returns
+        -------
+        int
+            Item size in bytes.
+        """
+        var_name = self.get_var_name(long_var_name)
+        return getattr(self, var_name).itemsize
+
+    def get_var_units(self, long_var_name):
         #-------------------------------------------------
         # Define this map just once in "__init__()"  ??
         #-------------------------------------------------
@@ -616,6 +688,7 @@ class BMI_component:
     
     #   get_var_type() 
     #-------------------------------------------------------------------     
+
     def get_values(self, long_var_name):
 
         #------------------------------------------------------- 
