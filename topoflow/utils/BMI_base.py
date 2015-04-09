@@ -305,7 +305,7 @@ class BMI_component:
             self.read_grid_info()
 
         info  = self.grid_info
-        shape = np.array( [info.ny, info.nx, 0] )
+        shape = np.array([info.ny, info.nx])
         ## shape = np.array( [info.ncols, info.nrows, 0] )
         
         return shape
@@ -326,7 +326,7 @@ class BMI_component:
             self.read_grid_info()
 
         info = self.grid_info
-        spacing = np.array( [info.yres, info.xres, 0] )
+        spacing = np.array([info.yres, info.xres])
         
         return spacing
 
@@ -341,7 +341,7 @@ class BMI_component:
             self.read_grid_info()
 
         info = self.grid_info
-        corner = np.array( [info.y_south_edge, info.x_west_edge, 0] )
+        corner = np.array([info.y_south_edge, info.x_west_edge])
         
         return corner
 
