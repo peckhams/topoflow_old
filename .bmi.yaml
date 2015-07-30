@@ -1,5 +1,5 @@
 bmi_paths:
-  - .bmi/bmi-ice-gc2d
+  - .bmi/ice_gc2d
 
 build:
-  - python setup.py install
+  - python setup.py develop
