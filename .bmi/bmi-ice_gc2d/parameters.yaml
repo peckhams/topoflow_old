@@ -1,0 +1,45 @@
+%YAML 1.2
+---
+run_duration:
+  description: Simulation run time
+  value:
+    type: int
+    default: 365
+    units: d
+    range:
+      max: 1000000
+      min: 0
+site_prefix:
+  description: File prefix for the study site
+  value:
+    type: string
+    default: Treynor
+    units: '-'
+case_prefix:
+  description: File prefix for the model scenario
+  value:
+    type: string
+    default: Case5
+    units: '-'
+---
+DEM_file:
+  description: Binary file containing a dem
+  value:
+    type: string
+    default: '[site_prefix]_DEM.rtg'
+    units: m
+H0_file:
+  description: Binary file containing initial ice depth
+  value:
+    type: string
+    default: None
+    units: m
+min_glacier_thick:
+  description: Min glacier thickness
+  value:
+    type: float
+    default: 1.0
+    units: '-'
+    range:
+      max: 1000.0
+      min: 0.0
