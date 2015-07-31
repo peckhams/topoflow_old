@@ -1,5 +1,5 @@
 name: GC2D
 language: python
 
-package: topoflow.components
-class: ice_base
+package: topoflow.components.ice_base
+class: ice_component
