@@ -1,5 +1,22 @@
 bmi_paths:
+  - .bmi/channels_kinematic_wave
+  - .bmi/channels_diffusive_wave
+  - .bmi/channels_dynamic_wave
+  - .bmi/diversions_fraction_method
+  - .bmi/diversions_standard
+  - .bmi/evap_energy_balance
+  - .bmi/evap_priestley_taylor
+  - .bmi/evap_read_file
   - .bmi/ice_gc2d
+  - .bmi/infil_beven
+  - .bmi/infil_green_ampt
+  - .bmi/infil_richards_1d
+  - .bmi/infil_smith_parlange
+  - .bmi/meteorology
+  - .bmi/satzone_darcy_layers
+  - .bmi/snow_degree_day
+  - .bmi/snow_energy_balance
+  - .bmi/topoflow
 
 build:
   - python setup.py develop
