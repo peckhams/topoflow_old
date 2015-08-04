@@ -1,0 +1,5 @@
+name: DiversionsFraction
+language: python
+
+package: topoflow.components.diversions_fraction_method
+class: diversions_component

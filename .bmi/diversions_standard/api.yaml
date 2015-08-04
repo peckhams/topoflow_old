@@ -1,0 +1,5 @@
+name: Diversions
+language: python
+
+package: topoflow.components.diversions_base
+class: diversions_component

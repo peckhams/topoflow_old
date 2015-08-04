@@ -1,0 +1,5 @@
+name: InfilGreenAmpt
+language: python
+
+package: topoflow.components.infil_green_ampt
+class: infil_component

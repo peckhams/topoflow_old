@@ -1,0 +1,5 @@
+name: ChannelsDiffWave
+language: python
+
+package: topoflow.components.channels_diffusive_wave
+class: channels_component

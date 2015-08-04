@@ -1,0 +1,131 @@
+#===============================================================================
+# Topoflow Config File for: infil_richards_1d
+#===============================================================================
+# Input
+comp_status         | Enabled             | choice    | Component status [-] {Enabled; Disabled}
+in_directory        | {in_directory}      | string    | Input directory [-]
+out_directory       | {out_directory}     | string    | Output directory [-]
+site_prefix         | {site_prefix}       | string    | File prefix for the study site [-]
+case_prefix         | {case_prefix}       | string    | File prefix for the model scenario [-]
+n_steps             | {n_steps}           | long      | Number of time steps [-]
+n_layers            | {n_layers}          | int       | Number of soil layers [-]
+dt                  | {dt}                | float     | Timestep for infiltration process [sec]
+#===============================================================================
+# Layer 1
+Ks_type_0           | {Ks_type_0}         | choice    | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+Ks_val_0            | {Ks_val_0}          | float     | Sat. hydraulic conductivity [m/s]
+Ki_type_0           | {Ki_type_0}         | choice    | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+Ki_val_0            | {Ki_val_0}          | float     | Init. hydraulic conductivity (< k_sat) [m/s]
+qs_type_0           | {qs_type_0}         | choice    | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+qs_val_0            | {qs_val_0}          | float     | Sat. soil water content [-]
+qi_type_0           | {qi_type_0}         | choice    | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+qi_val_0            | {qi_val_0}          | float     | Init. soil water content (< theta_sat) [-]
+qr_type_0           | {qr_type_0}         | choice    | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+qr_val_0            | {qr_val_0}          | float     | Residual soil water content (< theta_init) [-]
+pB_type_0           | {pB_type_0}         | choice    | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+pB_val_0            | {pB_val_0}          | float     | Bubbling pressure head [m]
+pA_type_0           | {pA_type_0}         | choice    | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+pA_val_0            | {pA_val_0}          | float     | Pressure head offset parameter [m]
+lam_type_0          | {lam_type_0}        | choice    | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+lam_val_0           | {lam_val_0}         | float     | Pore-size distribution parameter [-]
+c_type_0            | {c_type_0}          | choice    | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+c_val_0             | {c_val_0}           | float     | Trans. brooks-corey curvature [-]
+dz_val_0            | {dz_val_0}          | float     | Vertical distance between nodes [m]
+nz_val_0            | {nz_val_0}          | int       | Number of vertical nodes in layer [-]
+soil_type_0         | {soil_type_0}       | choice    | Closest standard soil type [-] {sand; loamy_sand; sandy_loam; silty_loam; loam; sandy_clay_loam; silty_clay_loam; clay_loam; sandy_clay; silty_clay; clay}
+#===============================================================================
+# Layer 2
+Ks_type[1]          | {Ks_type[1]}        | choice    | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+Ks_val[1]           | {Ks_val[1]}         | float     | Sat. hydraulic conductivity [m/s]
+Ki_type[1]          | {Ki_type[1]}        | choice    | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+Ki_val[1]           | {Ki_val[1]}         | float     | Init. hydraulic conductivity (< k_sat) [m/s]
+qs_type[1]          | {qs_type[1]}        | choice    | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+qs_val[1]           | {qs_val[1]}         | float     | Sat. soil water content [-]
+qi_type[1]          | {qi_type[1]}        | choice    | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+qi_val[1]           | {qi_val[1]}         | float     | Init. soil water content (< theta_sat) [-]
+qr_type[1]          | {qr_type[1]}        | choice    | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+qr_val[1]           | {qr_val[1]}         | float     | Residual soil water content (< theta_init) [-]
+pB_type[1]          | {pB_type[1]}        | choice    | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+pB_val[1]           | {pB_val[1]}         | float     | Bubbling pressure head [m]
+pA_type[1]          | {pA_type[1]}        | choice    | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+pA_val[1]           | {pA_val[1]}         | float     | Pressure head offset parameter [m]
+lam_type[1]         | {lam_type[1]}       | choice    | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+lam_val[1]          | {lam_val[1]}        | float     | Pore-size distribution parameter [-]
+c_type[1]           | {c_type[1]}         | choice    | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+c_val[1]            | {c_val[1]}          | float     | Trans. brooks-corey curvature [-]
+dz_val[1]           | {dz_val[1]}         | float     | Vertical distance between nodes [m]
+nz_val[1]           | {nz_val[1]}         | int       | Number of vertical nodes in layer [-]
+soil_type[1]        | {soil_type[1]}      | choice    | Closest standard soil type [-] {sand; loamy_sand; sandy_loam; silty_loam; loam; sandy_clay_loam; silty_clay_loam; clay_loam; sandy_clay; silty_clay; clay}
+#===============================================================================
+# Layer 3
+Ks_type[2]          | {Ks_type[2]}        | choice    | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+Ks_val[2]           | {Ks_val[2]}         | float     | Sat. hydraulic conductivity [m/s]
+Ki_type[2]          | {Ki_type[2]}        | choice    | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+Ki_val[2]           | {Ki_val[2]}         | float     | Init. hydraulic conductivity (< k_sat) [m/s]
+qs_type[2]          | {qs_type[2]}        | choice    | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+qs_val[2]           | {qs_val[2]}         | float     | Sat. soil water content [-]
+qi_type[2]          | {qi_type[2]}        | choice    | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+qi_val[2]           | {qi_val[2]}         | float     | Init. soil water content (< theta_sat) [-]
+qr_type[2]          | {qr_type[2]}        | choice    | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+qr_val[2]           | {qr_val[2]}         | float     | Residual soil water content (< theta_init) [-]
+pB_type[2]          | {pB_type[2]}        | choice    | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+pB_val[2]           | {pB_val[2]}         | float     | Bubbling pressure head [m]
+pA_type[2]          | {pA_type[2]}        | choice    | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+pA_val[2]           | {pA_val[2]}         | float     | Pressure head offset parameter [m]
+lam_type[2]         | {lam_type[2]}       | choice    | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+lam_val[2]          | {lam_val[2]}        | float     | Pore-size distribution parameter [-]
+c_type[2]           | {c_type[2]}         | choice    | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+c_val[2]            | {c_val[2]}          | float     | Trans. brooks-corey curvature [-]
+dz_val[2]           | {dz_val[2]}         | float     | Vertical distance between nodes [m]
+nz_val[2]           | {nz_val[2]}         | int       | Number of vertical nodes in layer [-]
+soil_type[2]        | {soil_type[2]}      | choice    | Closest standard soil type [-] {sand; loamy_sand; sandy_loam; silty_loam; loam; sandy_clay_loam; silty_clay_loam; clay_loam; sandy_clay; silty_clay; clay}
+#===============================================================================
+# Output 1
+save_grid_dt        | {save_grid_dt}      | float     | Time interval between saved grids [sec]
+SAVE_V0_GRIDS       | {SAVE_V0_GRIDS}     | choice    | Option to save grids of infil. rate (at surf) [-] {Yes; No}
+v0_gs_file          | {v0_gs_file}        | string    | Filename for grid stack of v0 [m/s]
+SAVE_I_GRIDS        | {SAVE_I_GRIDS}      | choice    | Option to save grids of cumul. infil. depth [-] {Yes; No}
+I_gs_file           | {I_gs_file}         | string    | Filename for grid stack of i [m]
+SAVE_Q0_GRIDS       | {SAVE_Q0_GRIDS}     | choice    | Option to save grids of soil water content (at surf) [-] {Yes; No}
+q0_gs_file          | {q0_gs_file}        | string    | Filename for grid stack of q0 [-]
+SAVE_ZW_GRIDS       | {SAVE_ZW_GRIDS}     | choice    | Option to save grids of depth to wetting front [-] {Yes; No}
+Zw_gs_file          | {Zw_gs_file}        | string    | Filename for grid stack of zw [m]
+#===============================================================================
+# Output 2
+save_pixels_dt      | {save_pixels_dt}    | float     | Time interval between time series values [sec]
+pixel_file          | {pixel_file}        | string    | Filename for monitored pixel file [-]
+SAVE_V0_PIXELS      | {SAVE_V0_PIXELS}    | choice    | Option to save time series of infil. rate (at surf) [-] {Yes; No}
+v0_ts_file          | {v0_ts_file}        | string    | Filename for time series of v0 [m/s]
+SAVE_I_PIXELS       | {SAVE_I_PIXELS}     | choice    | Option to save time series of cumul. infil. depth [-] {Yes; No}
+I_ts_file           | {I_ts_file}         | string    | Filename for time series of i [m]
+SAVE_Q0_PIXELS      | {SAVE_Q0_PIXELS}    | choice    | Option to save time series of soil water content (at surf) [-] {Yes; No}
+q0_ts_file          | {q0_ts_file}        | string    | Filename for time series of q0 [-]
+SAVE_ZW_PIXELS      | {SAVE_ZW_PIXELS}    | choice    | Option to save time series of depth to wetting front [-] {Yes; No}
+Zw_ts_file          | {Zw_ts_file}        | string    | Filename for time series of zw [m]
+#===============================================================================
+# Output 3
+save_profile_dt     | {save_profile_dt}   | float     | Time interval between saved 1d profiles [sec]
+SAVE_Q_PROFILES     | {SAVE_Q_PROFILES}   | choice    | Option to save 1d profile of soil water content [-] {Yes; No}
+q_ps_file           | {q_ps_file}         | string    | Filename for 1d profile of theta [-]
+SAVE_P_PROFILES     | {SAVE_P_PROFILES}   | choice    | Option to save 1d profile of pressure head [-] {Yes; No}
+p_ps_file           | {p_ps_file}         | string    | Filename for 1d profile of psi [m]
+SAVE_K_PROFILES     | {SAVE_K_PROFILES}   | choice    | Option to save 1d profile of hydr. conductivity [-] {Yes; No}
+K_ps_file           | {K_ps_file}         | string    | Filename for 1d profile of k [m/s]
+SAVE_V_PROFILES     | {SAVE_V_PROFILES}   | choice    | Option to save 1d profile of vert. flow rate [-] {Yes; No}
+v_ps_file           | {v_ps_file}         | string    | Filename for 1d profile of v [m/s]
+#===============================================================================
+# Output 4
+save_cube_dt        | {save_cube_dt}      | float     | Time interval between saved 3d cubes [sec]
+SAVE_Q_CUBES        | {SAVE_Q_CUBES}      | choice    | Option to save 3d cubes of soil water content [-] {Yes; No}
+q_cs_file           | {q_cs_file}         | string    | Filename for 3d cubes of theta [-]
+SAVE_P_CUBES        | {SAVE_P_CUBES}      | choice    | Option to save 3d cubes of pressure head [-] {Yes; No}
+p_cs_file           | {p_cs_file}         | string    | Filename for 3d cubes of psi [m]
+SAVE_K_CUBES        | {SAVE_K_CUBES}      | choice    | Option to save 3d cubes of hydr. conductivity [-] {Yes; No}
+K_cs_file           | {K_cs_file}         | string    | Filename for 3d cubes of k [m/s]
+SAVE_V_CUBES        | {SAVE_V_CUBES}      | choice    | Option to save 3d cubes of vert. flow rate [-] {Yes; No}
+v_cs_file           | {v_cs_file}         | string    | Filename for 3d cubes of v [m/s]
+#===============================================================================
+# About
+ModelName           | {ModelName}         | String    | Name of the model [-]
+ModelAuthor         | {ModelAuthor}       | String    | Name of the model author [-]
+HTML_HELP_FILE      | {HTML_HELP_FILE}    | String    | Url for html help file [-]
