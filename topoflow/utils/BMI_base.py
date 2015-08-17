@@ -909,6 +909,31 @@ class BMI_component:
 ##        
 ##    #   update()
     #-------------------------------------------------------------------
+
+    def update(self):
+        """Advance model state by one time step."""
+        pass
+
+    def update_until(self, then):
+        """Advance model state until the given time.
+
+        Parameters
+        ----------
+        then : float
+          A model time value.
+        """
+        pass
+
+    def update_frac(self, time_frac):
+        """Advance model state by a fraction of a time step.
+
+        Parameters
+        ----------
+        time_frac : float
+          A fraction of a model time step value.
+        """
+        pass
+
     def finalize(self):
 
         self.status = 'finalizing'  # (OpenMI 2.0 convention)
