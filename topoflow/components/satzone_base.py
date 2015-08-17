@@ -324,6 +324,18 @@ class satzone_component( BMI_base.BMI_component ):
         
     #   update()
     #-------------------------------------------------------------------
+
+    def update_until(self, then):
+        """Advance model state until the given time.
+
+        Parameters
+        ----------
+        then : float
+          A model time value.
+        """
+        while self.get_current_time() < then:
+            self.update()
+
     def finalize(self):
 
         self.status = 'finalizing'  # (OpenMI 2.0 convention)
