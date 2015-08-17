@@ -14,13 +14,13 @@ from os import makedirs, listdir
 from os.path import join, dirname, exists
 from nose.tools import raises, assert_is_instance, assert_is_not_none
 import numpy as np
-from topoflow.components.infil_green_ampt import infil_component
+from topoflow.components.infil_green_ampt import infil_component as Model
 from . import input_dir, output_dir
 
 
 def setup_module():
     global comp
-    comp = infil_component()
+    comp = Model()
     if exists(output_dir) is False:
         makedirs(output_dir)
 
@@ -32,7 +32,7 @@ def teardown_module():
 
 
 def test_is_instance():
-    assert_is_instance(comp, infil_component)
+    assert_is_instance(comp, Model)
 
 
 def test_irf():

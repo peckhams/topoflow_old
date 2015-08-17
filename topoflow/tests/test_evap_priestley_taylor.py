@@ -13,13 +13,13 @@ from shutil import rmtree
 from os import makedirs, listdir
 from os.path import join, dirname, exists
 from nose.tools import assert_is_instance, assert_is_not_none
-from topoflow.components.evap_priestley_taylor import evap_component
+from topoflow.components.evap_priestley_taylor import evap_component as Model
 from . import input_dir, output_dir
 
 
 def setup_module():
     global comp
-    comp = evap_component()
+    comp = Model()
     if exists(output_dir) is False:
         makedirs(output_dir)
 
@@ -31,7 +31,7 @@ def teardown_module():
 
 
 def test_is_instance():
-    assert_is_instance(comp, evap_component)
+    assert_is_instance(comp, Model)
 
 
 def test_irf():

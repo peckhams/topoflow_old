@@ -14,13 +14,13 @@ from shutil import rmtree
 from os import makedirs, listdir
 from os.path import join, dirname, exists
 from nose.tools import raises, assert_is_instance, assert_is_not_none
-from topoflow.components.ice_base import ice_component
+from topoflow.components.ice_base import ice_component as Model
 from . import input_dir, output_dir
 
 
 def setup_module():
     global comp
-    comp = ice_component()
+    comp = Model()
     if exists(output_dir) is False:
         makedirs(output_dir)
 
@@ -32,7 +32,7 @@ def teardown_module():
 
 
 def test_is_instance():
-    assert_is_instance(comp, ice_component)
+    assert_is_instance(comp, Model)
 
 
 # Error using filter2d in gc2d.py, line 985.

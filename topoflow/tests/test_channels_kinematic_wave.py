@@ -18,13 +18,14 @@ from os import makedirs, listdir
 from os.path import join, dirname, exists
 from shutil import rmtree
 from nose.tools import assert_is_instance, assert_is_not_none
-from topoflow.components.channels_kinematic_wave import channels_component
+from topoflow.components.channels_kinematic_wave \
+    import channels_component as Model
 from . import input_dir, output_dir
 
 
 def setup_module():
     global comp
-    comp = channels_component()
+    comp = Model()
     if not exists(output_dir):
         makedirs(output_dir)
 
@@ -36,7 +37,7 @@ def teardown_module():
 
 
 def test_is_instance():
-    assert_is_instance(comp, channels_component)
+    assert_is_instance(comp, Model)
 
 
 def test_irf():

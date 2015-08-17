@@ -13,13 +13,14 @@ from shutil import rmtree
 from os import makedirs, listdir
 from os.path import join, dirname, exists
 from nose.tools import raises, assert_is_instance, assert_is_not_none
-from topoflow.components.diversions_fraction_method import diversions_component
+from topoflow.components.diversions_fraction_method \
+    import diversions_component as Model
 from . import input_dir, output_dir
 
 
 def setup_module():
     global comp
-    comp = diversions_component()
+    comp = Model()
     if not exists(output_dir):
         makedirs(output_dir)
 
@@ -31,7 +32,7 @@ def teardown_module():
 
 
 def test_is_instance():
-    assert_is_instance(comp, diversions_component)
+    assert_is_instance(comp, Model)
 
 
 def test_irf():

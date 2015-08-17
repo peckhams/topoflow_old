@@ -15,13 +15,13 @@ from os import makedirs, listdir
 from os.path import join, dirname, exists
 from nose.tools import raises, assert_is_instance, assert_is_not_none
 import numpy as np
-from topoflow.components.evap_read_file import evap_component
+from topoflow.components.evap_read_file import evap_component as Model
 from . import input_dir, output_dir
 
 
 def setup_module():
     global comp
-    comp = evap_component()
+    comp = Model()
     if not exists(output_dir):
         makedirs(output_dir)
 
@@ -33,7 +33,7 @@ def teardown_module():
 
 
 def test_is_instance():
-    assert_is_instance(comp, evap_component)
+    assert_is_instance(comp, Model)
 
 
 # The file '[case_prefix]_2D-ETrate-in.nc' is missing.
