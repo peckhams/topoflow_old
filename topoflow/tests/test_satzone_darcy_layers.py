@@ -37,10 +37,6 @@ def test_is_instance():
 
 def test_irf():
     cfg_file = join(input_dir, 'June_20_67_satzone_darcy_layers.cfg')
-
-    # @mperignon found these attributes are needed but not provided.
-    comp.Rg = 1
-
     comp.initialize(cfg_file)
     comp.update()
     comp.finalize()
