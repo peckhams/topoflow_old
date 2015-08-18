@@ -13,7 +13,7 @@
 from shutil import rmtree
 from os import makedirs, listdir
 from os.path import join, dirname, exists
-from nose.tools import raises, assert_is_instance, assert_is_not_none
+from nose.tools import assert_is_instance, assert_is_not_none
 from topoflow.components.ice_base import ice_component as Model
 from . import input_dir, output_dir
 
@@ -35,11 +35,8 @@ def test_is_instance():
     assert_is_instance(comp, Model)
 
 
-# Error using filter2d in gc2d.py, line 985.
-@raises(ValueError)
 def test_irf():
     cfg_file = join(input_dir, 'June_20_67_ice_valley_glacier.cfg')
-
     comp.initialize(cfg_file)
     comp.update()
     comp.finalize()

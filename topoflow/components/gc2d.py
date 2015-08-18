@@ -982,8 +982,8 @@ def get_timestep( H, Zi_ext, Zi , dHdt, Bxy,
             
     # something like standard deviation of 3x3 cell areas around each cell
     filt   = numpy.ones( (3,3) , dtype='Float64' ) / 9.
-    ZiMean = filter2d( filt , Zi_ext , 'valid' )
-    dHmax  = numpy.sqrt( filter2d( filt, (ZiMean - Zi)**2 ) )
+    ZiMean = filter2d(Zi_ext, filt, 'valid')
+    dHmax  = numpy.sqrt(filter2d((ZiMean - Zi)**2, filt))
             
     # only consider cells with ice thickness > 10 m
     isGlac = (H > 10.)
