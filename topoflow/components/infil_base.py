@@ -196,6 +196,31 @@ class infil_component( BMI_base.BMI_component):
         self.open_input_files()
         self.read_input_files()
 
+        # Attempt to define default values for running infiltration
+        # components in standalone mode. The h_table and elev
+        # attributes in particular should be reviewed in light of the
+        # comment block beginning on line 589. (@mdpiper, 8/18/15)
+        try:
+            self.P_rain
+        except AttributeError:
+            self.P_rain = np.float64(0.0)
+        try:
+            self.SM
+        except AttributeError:
+            self.SM = np.float64(0.0)
+        try:
+            self.ET
+        except AttributeError:
+            self.ET = np.float64(0.0)
+        try:
+            self.h_table
+        except AttributeError:
+            self.h_table = np.float64(0.0)
+        try:
+            self.elev
+        except AttributeError:
+            self.elev = np.float64(0.0)
+
         #----------------------------------------------
         # Must come before initialize_computed_vars()
         # because it uses ALL_SCALARS.

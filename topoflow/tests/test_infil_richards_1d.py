@@ -37,12 +37,6 @@ def test_is_instance():
 
 def test_irf():
     cfg_file = join(input_dir, 'June_20_67_infil_richards_1d.cfg')
-
-    # @mperignon found these attributes are needed but not provided.
-    comp.P_rain = 1
-    comp.SM = 0
-    comp.ET = 1        
-
     comp.initialize(cfg_file)
     comp.update()
     comp.finalize()
