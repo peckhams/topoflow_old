@@ -947,7 +947,7 @@ class satzone_component( BMI_base.BMI_component ):
         try:
             Rg = self.Rg
         except AttributeError:
-            Rg = self.Rg = 0.0
+            Rg = self.Rg = np.float64(0.0)
         
         dzw = self.dt * (Rg - self.Q_gw / self.da)    ### USE gp.dt vs. main_dt !! ###
         

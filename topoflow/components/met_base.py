@@ -1134,7 +1134,7 @@ class met_component( BMI_base.BMI_component ):
         try:
             self.h_snow
         except AttributeError:
-            self.h_snow = 0.0
+            self.h_snow = np.float64(0.0)
         h_snow = self.h_snow  # (ref from new framework)
         
         #---------------------------------------------------
