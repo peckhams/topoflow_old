@@ -39,10 +39,6 @@ def test_is_instance():
 
 def test_irf():
     cfg_file = join(input_dir, 'June_20_67_meteorology.cfg')
-
-    # This attributes is needed but not provided.
-    comp.h_snow = 1
-
     comp.initialize(cfg_file)
     comp.update()
     comp.finalize()

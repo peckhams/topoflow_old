@@ -1131,6 +1131,10 @@ class met_component( BMI_base.BMI_component ):
         #        kappa    = 0.408 = von Karman's constant [unitless]
         #        RI       = Richardson's number (see function)
         #----------------------------------------------------------------
+        try:
+            self.h_snow
+        except AttributeError:
+            self.h_snow = 0.0
         h_snow = self.h_snow  # (ref from new framework)
         
         #---------------------------------------------------
