@@ -161,6 +161,21 @@ class snow_component( BMI_base.BMI_component ):
         self.open_input_files()
         self.read_input_files()
 
+        # Supply default values when running as standalone component.
+        # The T_air choice should be reviewed. (@mdpiper, 8/18/15)
+        try:
+            self.P_snow
+        except AttributeError:
+            self.P_snow = 0  # from met_base.py
+        try:
+            self.rho_H2O
+        except AttributeError:
+            self.rho_H2O = 1000  # also from met_base.py
+        try:
+            self.T_air
+        except AttributeError:
+            self.T_air = 0  # iffy: T_air <= 0 needed for P_snow
+
         #---------------------------
         # Initialize computed vars
         #---------------------------
