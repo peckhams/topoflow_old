@@ -17,7 +17,6 @@
 from os import makedirs, listdir
 from os.path import join, dirname, exists
 from shutil import rmtree
-import numpy as np
 from nose.tools import assert_is_instance, assert_is_not_none
 from topoflow.components.channels_dynamic_wave \
     import channels_component as Model
