@@ -37,14 +37,6 @@ def test_is_instance():
 
 def test_irf():
     cfg_file = join(input_dir, 'June_20_67_evap_energy_balance.cfg')
-
-    # @mperignon found these attributes are needed but not provided.
-    comp.h_snow = 1
-    comp.Q_sum = 1
-    comp.Qe = 1
-    comp.T_air = 10
-    comp.T_surf = 20
-
     comp.initialize(cfg_file)
     comp.update()
     comp.finalize()
