@@ -42,16 +42,6 @@ def test_is_instance():
 
 def test_irf():
     cfg_file = join(input_dir, 'June_20_67_channels_kinematic_wave.cfg')
-
-    # @mperignon found these attributes are needed but not provided.
-    comp.P_rain = 100
-    comp.SM = 0
-    comp.ET = 0
-    comp.GW = 0
-    comp.IN = 0
-    comp.MR = 0
-    comp.rho_H2O = 1000
-
     comp.initialize(cfg_file)
     comp.update()
     comp.finalize()
