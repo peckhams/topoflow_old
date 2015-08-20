@@ -325,16 +325,32 @@ class satzone_component( BMI_base.BMI_component ):
     #   update()
     #-------------------------------------------------------------------
 
+    def update_frac(self, time_frac):
+        """Update model by a fraction of a time step.
+
+        Parameters
+        ----------
+        time_frac : float
+            Fraction of a time step.
+        """
+        time_step = self.get_time_step()
+        self.dt = time_frac * time_step
+        self.update()
+        self.dt = time_step
+
     def update_until(self, then):
         """Advance model state until the given time.
 
         Parameters
         ----------
         then : float
-          A model time value.
+            Time to run model until.
         """
-        while self.get_current_time() < then:
+        n_steps = (then - self.get_current_time()) / self.get_time_step()
+
+        for _ in xrange(int(n_steps)):
             self.update()
+        self.update_frac(n_steps - int(n_steps))
 
     def finalize(self):
 

@@ -50,9 +50,20 @@ def test_has_output():
     assert_is_not_none(listdir(output_dir))
 
 
+def test_update_frac():
+    time_step = comp.get_time_step()
+    frac_time = 1.0 / time_factor
+
+    comp.initialize(cfg_file)
+    comp.update_frac(frac_time)
+    end_time = comp.get_current_time()
+    comp.finalize()
+    assert_almost_equal(end_time, frac_time*time_step)
+
+
 def test_update_until():
     time_step = comp.get_time_step()
-    until_time = time_step * time_factor
+    until_time = time_step*time_factor + time_step/time_factor
 
     comp.initialize(cfg_file)
     comp.update_until(until_time)
