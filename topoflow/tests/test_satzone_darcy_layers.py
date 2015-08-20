@@ -16,11 +16,10 @@ from os.path import join, dirname, exists
 from nose.tools import assert_is_instance, assert_is_not_none
 from numpy.testing import assert_almost_equal
 from topoflow.components.satzone_darcy_layers import satzone_component as Model
-from . import input_dir, output_dir
+from . import input_dir, output_dir, time_factor
 
 
 cfg_file = join(input_dir, 'June_20_67_satzone_darcy_layers.cfg')
-time_factor = 5.0
 
 
 def setup_module():
