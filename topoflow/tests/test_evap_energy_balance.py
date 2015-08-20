@@ -13,7 +13,6 @@ from shutil import rmtree
 from os import makedirs, listdir
 from os.path import join, dirname, exists
 from nose.tools import assert_is_instance, assert_is_not_none
-import numpy as np
 from topoflow.components.evap_energy_balance import evap_component as Model
 from . import input_dir, output_dir
 

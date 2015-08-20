@@ -18,7 +18,6 @@ from os import makedirs, listdir
 from os.path import join, dirname, exists
 from shutil import rmtree
 from nose.tools import assert_is_instance, assert_is_not_none
-import numpy as np
 from topoflow.components.channels_diffusive_wave \
     import channels_component as Model
 from . import input_dir, output_dir
