@@ -1825,7 +1825,7 @@ class BMI_component:
             ## print 'cfg_directory =', cfg_directory
             self.cfg_directory = cfg_directory
             if (self.in_directory[0] == '.'):
-                self.in_directory = self.cfg_directory
+                self.in_directory = os.path.abspath('.')
                 
         #------------------------------------------------------
         # Expand path abbreviations: "." and "..", but NOT
