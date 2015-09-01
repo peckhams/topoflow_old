@@ -801,6 +801,75 @@ class BMI_component:
         
     #   set_values_at_indices()          
     #-------------------------------------------------------------------
+
+    def get_value(self, var_name):
+        """Get a copy of the values of the given variable.
+
+        This is a getter for the model, used to access the model's
+        current state. It returns a *copy* of a model variable, with
+        the return type, size and rank dependent on the variable.
+
+        Parameters
+        ----------
+        var_name : str
+          An input or output variable name, a CSDMS Standard Name.
+
+        Returns
+        -------
+        array_like
+          The value of a model variable.
+        """
+        return self.get_values(var_name)
+
+    def set_value(self, var_name, src):
+        """Specify a new value for a model variable.
+
+        This is the setter for the model, used to change the model's
+        current state. It accepts, through *src*, a new value for a
+        model variable, with the type, size and rank of *src*
+        dependent on the variable.
+
+        Parameters
+        ----------
+        var_name : str
+          An input or output variable name, a CSDMS Standard Name.
+        src : array_like
+          The new value for the specified variable.
+        """
+        self.set_values(var_name, src)
+
+    def get_value_at_indices(self, var_name, indices):
+        """Get values at particular indices.
+
+        Parameters
+        ----------
+        var_name : str
+          An input or output variable name, a CSDMS Standard Name.
+        indices : array_like
+          The indices into the variable array.
+
+        Returns
+        -------
+        array_like
+            Value of the model variable at the given location.
+        """
+        return self.get_values_at_indices(var_name, indices)
+
+    def set_value_at_indices(self, var_name, indices, src):
+        """Specify a new value for a model variable at particular indices.
+
+        Parameters
+        ----------
+        var_name : str
+          An input or output variable name, a CSDMS Standard Name.
+        indices : array_like
+          The indices into the variable array.
+        src : array_like
+          The new value for the specified variable.
+        """
+        self.set_values_at_indices(var_name, indices, src)
+
+    #-------------------------------------------------------------------
     # BMI methods to get time-related info
     #-------------------------------------------------------------------
     def get_time_step(self):
