@@ -276,6 +276,21 @@ class BMI_component:
         """
         return len(self.get_grid_shape(grid_id))
 
+    def get_grid_size(self, grid_id):
+        """Get number of elements in the computational grid.
+
+        Parameters
+        ----------
+        grid_id : int
+          A grid identifier.
+
+        Returns
+        -------
+        int
+          Size of the grid.
+        """
+        return np.prod(self.get_grid_shape(grid_id))
+
     def get_grid_type(self, grid_id):
         """Get the grid type as a string.
 
