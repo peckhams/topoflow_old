@@ -1,0 +1,5 @@
+name: ErodeD8Local
+language: python
+
+package: topoflow.components.erode_d8_local
+class: erosion_component

@@ -1,0 +1,75 @@
+#===============================================================================
+# TopoFlow Config File for: Erode_D8_Global
+#===============================================================================
+# Input 1
+comp_status         | Enabled         | string    | component status {Enabled; Disabled}
+in_directory        | {in_directory}  | string    | input directory
+out_directory       | {out_directory} | string    | output directory
+site_prefix         | {site_prefix}   | string    | prefix for the study site
+case_prefix         | {case_prefix}   | string    | prefix for a given scenario
+stop_code           | {stop_code}     | long      | 0=n_steps, 1=stop_time, 2=steady_state
+n_steps             | {n_steps}       | long      | number of time steps, if stop_code=0
+stop_time           | {stop_time}     | float     | time to stop [years], if stop_code=1
+nx                  | {nx}            | long      | number of cols in DEM
+ny                  | {ny}            | long      | number of rows in DEM
+dx                  | {dx}            | float     | grid cell xsize [meters]
+dy                  | {dy}            | float     | grid cell ysize [meters]
+#===============================================================================
+# Input 2
+CFL_factor          | {CFL_factor} | float     | prefactor for CFL stability condition
+m                   | {m}          | float     | area exponent
+n                   | {n}          | float     | slope exponent
+K                   | {K}          | float     | erodibility
+p                   | {p}          | float     | Q-A exponent
+R                   | {R}          | float     | geomorphically effective rainrate [m/yr]
+U                   | {U}          | float     | uplift rate [mm/yr]
+BLR                 | {BLR}        | float     | base-level lowering rate [mm/yr]
+BC_method           | {BC_method}  | string    | boundary-condition method {BOTTOM; RIGHT; FOUR_SIDES}
+#===============================================================================
+# Z0 Options
+make_z0_method      | {make_z0_method}  | string    | method to make initial DEM {FLAT; PLANE; CORNER_PLANE; READ_FILE}
+z0_plane_dz_dx      | {z0_plane_dz_dx}  | float     | dz/dx for make_z0_method=PLANE
+z0_plane_dz_dy      | {z0_plane_dz_dy}  | float     | dz/dy for make_z0_method=PLANE
+z0_file             | [site_prefix]_2D-z0.rtg  | string    | filename for make_z0_method=READ_FILE
+noise_method        | {noise_method}    | string    | noise method {MIDPOINTS; GAUSSIAN; NO_NOISE}
+noise_scale         | {noise_scale}     | float     | scale factor for random noise
+seed                | {seed}            | long      | random number seed (long int)
+#===============================================================================
+# Output 1
+save_grid_dt        | {save_grid_dt}     | float     | time interval between saved grids [years]
+SAVE_Z_GRIDS        | {SAVE_Z_GRIDS}     | string    | option to save computed z grids {Yes; No}
+z_gs_file           | [case_prefix]_2D-z.nc        | string    | filename for z grid stack
+SAVE_S_GRIDS        | {SAVE_S_GRIDS}     | string    | option to save computed S grids {Yes; No}
+S_gs_file           | [case_prefix]_2D-S.nc        | string    | filename for S grid stack
+SAVE_A_GRIDS        | {SAVE_A_GRIDS}     | string    | option to save computed A grids {Yes; No}
+A_gs_file           | [case_prefix]_2D-A.nc        | string    | filename for A grid stack
+SAVE_Q_GRIDS        | {SAVE_Q_GRIDS}     | string    | option to save computed Q grids {Yes; No}
+Q_gs_file           | [case_prefix]_2D-Q.nc        | string    | filename for Q grid stack
+SAVE_QS_GRIDS       | {SAVE_QS_GRIDS}    | string    | option to save computed Qs grids {Yes; No}
+Qs_gs_file          | [case_prefix]_2D-Qs.nc       | string    | filename for Qs grid stack
+SAVE_DZ_GRIDS       | {SAVE_DZ_GRIDS}    | string    | option to save computed dz grids {Yes; No}
+dz_gs_file          | [case_prefix]_2D-dz.nc       | string    | filename for dz grid stack
+SAVE_DT_GRIDS       | {SAVE_DT_GRIDS}    | string    | option to save computed dt grids {Yes; No}
+dt_gs_file          | [case_prefix]_2D-dt.nc       | string    | filename for dt grid stack
+SAVE_DZ_DT_GRIDS    | {SAVE_DZ_DT_GRIDS} | string    | option to save computed dz_dt grids {Yes; No}
+dz_dt_gs_file       | [case_prefix]_2D-dzdt.nc     | string    | filename for dz_dt grid stack
+#===============================================================================
+# Output 2
+save_pixels_dt      | {save_pixels_dt}   | float     | time interval between time series values [years]
+pixel_file          | [case_prefix]_outlets.txt       | string    | filename for monitored pixel info
+SAVE_Z_PIXELS       | {SAVE_Z_PIXELS}    | string    | option to save computed z time series {Yes; No}
+z_ts_file           | [case_prefix]_0D-z.txt        | string    | filename for time series of z
+SAVE_S_PIXELS       | {SAVE_S_PIXELS}    | string    | option to save computed S time series {Yes; No}
+S_ts_file           | [case_prefix]_0D-S.txt        | string    | filename for time series of S
+SAVE_A_PIXELS       | {SAVE_A_PIXELS}    | string    | option to save computed A time series {Yes; No}
+A_ts_file           | [case_prefix]_0D-A.txt        | string    | filename for time series of A
+SAVE_Q_PIXELS       | {SAVE_Q_PIXELS}    | string    | option to save computed Q time series {Yes; No}
+Q_ts_file           | [case_prefix]_0D-Q.txt        | string    | filename for time series of Q
+SAVE_QS_PIXELS      | {SAVE_QS_PIXELS}   | string    | option to save computed Qs time series {Yes; No}
+Qs_ts_file          | [case_prefix]_0D-Qs.txt       | string    | filename for time series of Qs
+SAVE_DZ_PIXELS      | {SAVE_DZ_PIXELS}   | string    | option to save computed dz time series {Yes; No}
+dz_ts_file          | [case_prefix]_0D-dz.nc       | string    | filename for time series of dz
+SAVE_DT_PIXELS      | {SAVE_DT_PIXELS}   | string    | option to save computed dt time series {Yes; No}
+dt_ts_file          | [case_prefix]_0D-dt.nc       | string    | filename for time series of dt
+SAVE_DZ_DT_PIXELS   | {SAVE_DZ_DT_PIXELS}   | string    | option to save computed dz_dt time series {Yes; No}
+dz_dt_ts_file       | [case_prefix]_0D-dzdt.nc    | string    | filename for time series of dz_dt

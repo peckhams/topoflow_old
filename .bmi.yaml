@@ -2,8 +2,12 @@ bmi_paths:
   - .bmi/channels_kinematic_wave
   - .bmi/channels_diffusive_wave
   - .bmi/channels_dynamic_wave
+  - .bmi/d8_global
+  - .bmi/d8_local
   - .bmi/diversions_fraction_method
   - .bmi/diversions_standard
+  - .bmi/erode_d8_global
+  - .bmi/erode_d8_local
   - .bmi/evap_energy_balance
   - .bmi/evap_priestley_taylor
   - .bmi/evap_read_file
