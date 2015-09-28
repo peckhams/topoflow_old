@@ -2008,8 +2008,8 @@ class d8_component(d8_base.d8_component):
             while (True):
                 pIDs = self.parent_ID_grid.flat[ kIDs ]
                 pIDs = np.unique( pIDs )
-                nk   = kIDs.size  # (2/29/12)
-                np   = pIDs.size
+                nkIDs   = kIDs.size  # (2/29/12)
+                npIDs   = pIDs.size
 
                 #---------------------------------------------------
                 # NOTE: This block is costly as written and kept
@@ -2059,7 +2059,7 @@ class d8_component(d8_base.d8_component):
                 ##     print 'pIDs =', pIDs 
                 # if (np == 1): break  # (parent_ID[0] = 0)
                 #############################################
-                if (np == 1) and (pIDs[0] == 0):
+                if (npIDs == 1) and (pIDs[0] == 0):
                     break
                 #############################################
 
