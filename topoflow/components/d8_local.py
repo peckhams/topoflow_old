@@ -115,7 +115,7 @@ class d8_component(d8_base.d8_component):
                'cmt_var_prefix':     '/D8Local/Input/Var/',
                'gui_xml_file':       '/home/csdms/cca/erode/0.5/src/share/cmt/gui/D8_Local.xml',
                'dialog_title':       'D8: Local-Timestep Method Parameters',
-               'time_step_type':     'local',
+               'time_step_type':     'fixed',
                'time_units':         'years',
                'mesh_type':          'uniform',
                'grid_type':          'uniform',
