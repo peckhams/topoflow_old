@@ -118,6 +118,7 @@ class d8_component(d8_base.d8_component):
                'time_step_type':     'local',
                'time_units':         'years',
                'mesh_type':          'uniform',
+               'grid_type':          'uniform',
                'author_name':        'Scott Peckham'}
      
         try:
