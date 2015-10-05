@@ -687,6 +687,9 @@ class erosion_component( BMI_base.BMI_component ):
         #----------------------------------
         # self.DEM = np.float32( self.DEM )
         self.DEM = np.float64( self.DEM )
+
+        # Define initial elevation attribute. (2015-10-05, @mdpiper)
+        self.z0 = self.DEM
         
         #-------------------------
         # Save new DEM to a file
