@@ -78,6 +78,12 @@ class diversions_component( BMI_base.BMI_component ):
         self.read_grid_info()  # (need this, 5/19/10)
         self.initialize_basin_vars()  # (5/14/10)
         
+        # DiversionsFraction uses self.dx and self.dx, which aren't
+        # defined, but they can be derived from self.grid_info.
+        # (2015-10-08, @mdpiper)
+        self.dx = self.grid_info.xres
+        self.dy = self.grid_info.yres
+
         ############################################################   
         # With new framework approach, we can't request the time
         # step for a specific component as "dt" (due to conflicts).
