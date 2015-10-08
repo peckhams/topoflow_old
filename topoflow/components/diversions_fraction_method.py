@@ -285,6 +285,9 @@ class diversions_component( diversions_base.diversions_component ):
         self.Q_sources_all  = np.zeros([n_sources, nt_max], dtype='Float64')
         self.n_sources      = n_sources
         self.nt_max_sources = nt_max
+
+        # Define Q_sources. (2015-10-08, @mdpiper)
+        self.Q_sources = np.zeros(n_sources, dtype='Float64')
         
         #-----------------------------------
         # Read information for each source
