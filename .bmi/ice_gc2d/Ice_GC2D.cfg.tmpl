@@ -1,0 +1,67 @@
+#===============================================================================
+# Topoflow Config File for: ice_gc2d
+#===============================================================================
+# Input 1
+comp_status         | Enabled             | string    | Component status [-] {Enabled; Disabled}
+in_directory        | .                   | string    | Input directory [-]
+out_directory       | .                   | string    | Output directory [-]
+site_prefix         | {site_prefix}       | string    | File prefix for the study site [-]
+case_prefix         | {case_prefix}       | string    | File prefix for the model scenario [-]
+n_steps             | {n_steps}           | int       | Number of time steps for simulation [-]
+dt                  | {dt}                | float     | Ice process timestep [years]
+dt_max              | {dt_max}            | float     | Max timestep [years]
+t_max               | {t_max}             | float     | Max time to simulate [years]
+#===============================================================================
+# Input 2
+DEM_file            | {DEM_file}          | string    | Binary file containing a dem [m]
+H0_file             | {H0_file}           | string    | Binary file containing initial ice depth [m]
+min_glacier_thick   | {min_glacier_thick} | float     | Min glacier thickness [-]
+glens_A             | {glens_A}           | float     | Glen's law exponent [-]
+B                   | {B}                 | float     | , see macgregor (2000) [m/(Pa*yr)]
+char_sliding_vel    | {char_sliding_vel}  | float     | Characteristic sliding velocity [***unitsneeded]
+char_tau_bed        | {char_tau_bed}      | float     | Characteristic shear stress at the bed [****unitsneeded]
+depth_to_water_table| {depth_to_water_table}| float     | Distance from ice surface to water table [meters]
+max_float_fraction  | {max_float_fraction}| float     | Limits the water level in ice [percent]
+Hp_eff              | {Hp_eff}            | float     | Effective pressure of water [meters]
+#===============================================================================
+# Input 3
+init_ELA            | {init_ELA}          | float     | Equilibrium line altitude [meters]
+ELA_step_size       | {ELA_step_size}     | float     | Ela step size [meters]
+ELA_step_interval   | {ELA_step_interval} | float     | Ela step interval [meters]
+grad_Bz             | {grad_Bz}           | float     | Mass balance gradient in z [***unitsneeded]
+max_Bz              | {max_Bz}            | float     | Maximum allowed mass balance [***unitsneeded]
+spinup_time         | {spinup_time}       | float     | Spinup time [years]
+sea_level           | {sea_level}         | float     | Sea level [meters]
+Cp_ice              | {Cp_ice}            | float     | Specific heat capacity [J/(kg*K)]
+geothermal_heat_flux| {geothermal_heat_flux}| float     | Geothermal heat flux [(J/year)/m^2]
+geothermal_gradient | {geothermal_gradient}| float     | Geothermal gradient [***deg_C/meter??]
+#===============================================================================
+# Toggles
+VARIABLE_DT_TOGGLE  | {VARIABLE_DT_TOGGLE}| int       | Use variable/adaptive timestep (0 = no, 1 = yes) [-]
+INIT_COND_TOGGLE    | {INIT_COND_TOGGLE}  | int       | 0 = ??, 1 = ??, 2 = ?? [-]
+GENERIC_ICE_TOGGLE  | {GENERIC_ICE_TOGGLE}| int       | Start w/ generic ice surface (0 = no, 1 = yes) [-]
+ICEFLOW_TOGGLE      | {ICEFLOW_TOGGLE}    | int       | Ice motion by deformation (0 = no, 1 = yes) [-]
+ICESLIDE_TOGGLE     | {ICESLIDE_TOGGLE}   | int       | Ice motion by sliding (0 = no, 1 = yes) [-]
+FREEZE_ON_TOGGLE    | {FREEZE_ON_TOGGLE}  | int       | Basal ice frozen to bed (0 = no, 1 = yes) [-]
+MASS_BALANCE_TOGGLE | {MASS_BALANCE_TOGGLE}| string    | Climate scenario [-] {ZERO_BALANCE; CONSTANT_ELA; ELA_LOWERING; ELA_TIME_SERIES; EXTERNAL_FUNC; ELA_LOWERING2; BALANCE_FILE; D18O_TIME_SERIES}
+WEST_BC_TOGGLE      | {WEST_BC_TOGGLE}    | string    | Boundary condition [-] {ICE_FREE_BOUND; ZERO_FLUX_BOUND; CONST_FLUX_BOUND; SURF_ELEV_BOUND; SURF_SLOPE_BOUND}
+EAST_BC_TOGGLE      | {EAST_BC_TOGGLE}    | string    | Boundary condition [-] {ICE_FREE_BOUND; ZERO_FLUX_BOUND; CONST_FLUX_BOUND; SURF_ELEV_BOUND; SURF_SLOPE_BOUND}
+SOUTH_BC_TOGGLE     | {SOUTH_BC_TOGGLE}   | string    | Boundary condition [-] {ICE_FREE_BOUND; ZERO_FLUX_BOUND; CONST_FLUX_BOUND; SURF_ELEV_BOUND; SURF_SLOPE_BOUND}
+NORTH_BC_TOGGLE     | {NORTH_BC_TOGGLE}   | string    | Boundary condition [-] {ICE_FREE_BOUND; ZERO_FLUX_BOUND; CONST_FLUX_BOUND; SURF_ELEV_BOUND; SURF_SLOPE_BOUND}
+#===============================================================================
+# Output
+save_grid_dt        | {save_grid_dt}      | float     | Interval to save grids, years [-]
+SAVE_HI_GRIDS       | No     | string    | Option to save computed hi grids [-] {Yes; No}
+hi_gs_file          | {hi_gs_file}        | string    | Filename for hi grid stack [-]
+SAVE_ZI_GRIDS       | No     | string    | Option to save computed zi grids [-] {Yes; No}
+zi_gs_file          | {zi_gs_file}        | string    | Filename for zi grid stack [-]
+SAVE_MR_GRIDS       | No     | string    | Option to save computed mr grids [-] {Yes; No}
+mr_gs_file          | {mr_gs_file}        | string    | Filename for mr grid stack [-]
+save_pixels_dt      | {save_pixels_dt}    | float     | Interval to save time series values, years [-]
+pixel_file          | {pixel_file}        | string    | Filename for monitored pixel file [-]
+SAVE_HI_PIXELS      | No    | string    | Option to save computed hi time series [-] {Yes; No}
+hi_ts_file          | {hi_ts_file}        | string    | Filename for hi time series [-]
+SAVE_ZI_PIXELS      | No    | string    | Option to save computed zi time series [-] {Yes; No}
+zi_ts_file          | {zi_ts_file}        | string    | Filename for zi time series [-]
+SAVE_MR_PIXELS      | No    | string    | Option to save computed mr time series [-] {Yes; No}
+mr_ts_file          | {mr_ts_file}        | string    | Filename for mr time series [-]

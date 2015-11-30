@@ -1,0 +1,81 @@
+#===============================================================================
+# Topoflow Config File for: Meteorology
+#===============================================================================
+# Input 1
+comp_status         | Enabled             | string    | Component status [-] {Enabled; Disabled}
+in_directory        | .                   | string    | Input directory [-]
+out_directory       | .                   | string    | Output directory [-]
+site_prefix         | {site_prefix}       | string    | File prefix for the study site [-]
+case_prefix         | {case_prefix}       | string    | File prefix for the model scenario [-]
+n_steps             | {n_steps}           | long      | Number of time steps [-]
+dt                  | {dt}                | float     | Meteorology time step [sec]
+rho_H2O_type        | {rho_H2O_type}      | string           | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+rho_H2O             | {rho_H2O}           | {typeof_rho_H2O} | Density of water [kg/m^3]
+Cp_air_type         | {Cp_air_type}       | string           | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+Cp_air              | {Cp_air}            | {typeof_Cp_air}  | Heat capacity of air [J/kg/K]
+rho_air_type        | {rho_air_type}      | string           | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+rho_air             | {rho_air}           | {typeof_rho_air} | Density of air [kg/m^3]
+P_type              | {P_type}            | string           | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+P                   | {P}                 | {typeof_P}       | Precipitation rate [mm/hr]
+PRECIP_ONLY         | {PRECIP_ONLY}       | string    | Toggle to turn off all variable updates except precip. [-] {Yes; No}
+#===============================================================================
+# Input 2
+T_air_type          | {T_air_type}        | string          | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+T_air               | {T_air}             | {typeof_T_air}  | Temperature of air [degC]
+T_surf_type         | {T_surf_type}       | string          | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+T_surf              | {T_surf}            | {typeof_T_surf} | Temperature of surface [degC]
+RH_type             | {RH_type}           | string          | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+RH                  | {RH}                | {typeof_RH}     | Relative humidity [-]
+p0_type             | {p0_type}           | string          | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+p0                  | {p0}                | {typeof_p0}     | Atmospheric pressure [mbar]
+uz_type             | {uz_type}           | string          | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+uz                  | {uz}                | {typeof_uz}     | Wind velocity at height z [m/s]
+z_type              | {z_type}            | string          | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+z                   | {z}                 | {typeof_z}      | Wind reference height [m]
+z0_air_type         | {z0_air_type}       | string          | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+z0_air              | {z0_air}            | {typeof_z0_air} | Surface roughness length scale for wind [m]
+#===============================================================================
+# Input 3
+albedo_type         | {albedo_type}       | string                 | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+albedo              | {albedo}            | {typeof_albedo}        | Surface albedo in [unitless]
+em_surf_type        | {em_surf_type}      | string                 | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+em_surf             | {em_surf}           | {typeof_em_surf}       | Surface emissivity in [unitless]
+dust_atten_type     | {dust_atten_type}   | string                 | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+dust_atten          | {dust_atten}        | {typeof_dust_atten}    | Dust attenuation factor in [unitless]
+cloud_factor_type   | {cloud_factor_type} | string                 | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+cloud_factor        | {cloud_factor}      | {typeof_cloud_factor}  | Cloudiness factor, c, in [unitless]
+canopy_factor_type  | {canopy_factor_type}| string                 | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+canopy_factor       | {canopy_factor}     | {typeof_canopy_factor} | Canopy coverage factor, f, in [unitless]
+slope_grid_file     | {slope_grid_file}   | string    | Flat binary, row-major file with grid of 4-byte slopes [-]
+aspect_grid_file    | {aspect_grid_file}  | string    | Flat binary, row-major file with grid of 4-byte aspects [-]
+GMT_offset          | {GMT_offset}        | string    | Time zone offset from gmt [-] {-12; -11; -10; -9; -8; -7; -6; -5; -4; -3; -2; -1; 0; 1; 2; 3; 4; 5; 6; 7; 8; 9; 10; 11; 12}
+start_month         | {start_month}       | string    | Start month [-] {January; February; March; April; May; June; July; August; September; October; November; December}
+start_day           | {start_day}         | int       | Start day [-]
+start_hour          | {start_hour}        | float     | Start hour [-]
+#===============================================================================
+# Output 1
+save_grid_dt        | {save_grid_dt}      | float     | Time interval between saved grids [sec]
+SAVE_EA_GRIDS       | No                  | string    | Option to save grids of vapor pressure (in air) [-] {Yes; No}
+ea_gs_file          | {ea_gs_file}        | string    | Filename for grid stack of vapor pressure (air) [mbar]
+SAVE_ES_GRIDS       | No                  | string    | Option to save grids of vapor pressure (at surf) [-] {Yes; No}
+es_gs_file          | {es_gs_file}        | string    | Filename for grid stack of vapor pressure (surf) [mbar]
+SAVE_QSW_GRIDS      | No                  | string    | Option to save grids of net shortwave radiation [-] {Yes; No}
+Qsw_gs_file         | {Qsw_gs_file}       | string    | Filename for grid stack of net shortwave radiation [W/m^2]
+SAVE_QLW_GRIDS      | No                  | string    | Option to save grids of net longwave radiation [-] {Yes; No}
+Qlw_gs_file         | {Qlw_gs_file}       | string    | Filename for grid stack of net longwave radiation [W/m^2]
+SAVE_EMA_GRIDS      | No                  | string    | Option to save grids of air emissivity [-] {Yes; No}
+ema_gs_file         | {ema_gs_file}       | string    | Filename for grid stack of air emissivity in [unitless]
+#===============================================================================
+# Output 2
+save_pixels_dt      | {save_pixels_dt}    | float     | Time interval between time series values [sec]
+pixel_file          | {pixel_file}        | string    | Filename for monitored pixel file [-]
+SAVE_EA_PIXELS      | No                  | string    | Option to save time series of sat. vapor press. (in air) [-] {Yes; No}
+ea_ts_file          | {ea_ts_file}        | string    | Filename for time series of sat. vapor press. (in air) [mbar]
+SAVE_ES_PIXELS      | No                  | string    | Option to save time series of sat. vapor press. (at surf) [-] {Yes; No}
+es_ts_file          | {es_ts_file}        | string    | Filename for time series of sat. vapor press. (at surf) [mbar]
+SAVE_QSW_PIXELS     | No                  | string    | Option to save time series of net shortwave radiation [-] {Yes; No}
+Qsw_ts_file         | {Qsw_ts_file}       | string    | Filename for time series of net shortwave radiation [W/m^2]
+SAVE_QLW_PIXELS     | No                  | string    | Option to save time series of net longwave radiation [-] {Yes; No}
+Qlw_ts_file         | {Qlw_ts_file}       | string    | Filename for time series of net longwave radiation [W/m^2]
+SAVE_EMA_PIXELS     | No                  | string    | Option to save time series of air emissivity [-] {Yes; No}
+ema_ts_file         | {ema_ts_file}       | string    | Filename for time series of air emissivity in [unitless]

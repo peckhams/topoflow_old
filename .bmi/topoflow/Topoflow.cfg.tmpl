@@ -1,0 +1,14 @@
+#===============================================================================
+# Topoflow Config File for: topoflow
+#===============================================================================
+# Input Parameters
+comp_status         | Enabled             | string    | Component status [-] {Enabled; Disabled}
+in_directory        | .                   | string    | Input directory [-]
+out_directory       | .                   | string    | Output directory [-]
+site_prefix         | {site_prefix}       | string    | File prefix for the study site [-]
+case_prefix         | {case_prefix}       | string    | File prefix for the model scenario [-]
+stop_method         | {stop_method}       | string    | Stopping method [-] {Q_peak_fraction; Until_model_time; Until_n_steps}
+Qp_fraction         | {Qp_fraction}       | float     | Value for q_peak_fraction method [-]
+T_stop_model        | {T_stop_model}      | float     | Value for until_model_time method [minutes]
+n_steps             | {n_steps}           | int       | Value for until_n_steps method [-]
+dt                  | {dt}        	  | float     | TopoFlow driver timestep [sec] (Must match Channel comp.)
