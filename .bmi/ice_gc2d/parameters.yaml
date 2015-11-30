@@ -1,45 +1,344 @@
 %YAML 1.2
 ---
+_name: Run
 run_duration:
   description: Simulation run time
   value:
     type: int
-    default: 365
-    units: d
+    default: 100.0
     range:
-      max: 1000000
       min: 0
-site_prefix:
-  description: File prefix for the study site
+      max: 1000000
+    units: y
+dt:
+  description: Model time step
   value:
-    type: string
-    default: Treynor
-    units: '-'
-case_prefix:
-  description: File prefix for the model scenario
+    type: float
+    default: 1.0
+    range:
+      min: 1
+      max: 365.0
+    units: y
+pixel_file:
+  description: Monitored pixel/grid file
   value:
-    type: string
-    default: Case5
-    units: '-'
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+rti_file:
+  description: RiverTools info file
+  value:
+    type: file
+    default: default.rti
+    files:
+    - default.rti
+dt_max:
+  description: Max time step
+  value:
+    type: float
+    default: 1.0
+    range:
+      min: 1
+      max: 5.0
+    units: y
+t_max:
+  description: Max time to simulate
+  value:
+    type: float
+    default: 100.0
+    range:
+      min: 1
+      max: 1000.0
+    units: y
+
 ---
+_name: Input
 DEM_file:
-  description: Binary file containing a dem
+  description: Binary file containing a DEM
   value:
-    type: string
-    default: '[site_prefix]_DEM.rtg'
-    units: m
+    type: file
+    default: default_DEM.rtg
+    files:
+    - default_DEM.rtg
 H0_file:
   description: Binary file containing initial ice depth
   value:
-    type: string
-    default: None
-    units: m
+    type: file
+    default: 'off'
+    files:
+    - 'off'
 min_glacier_thick:
   description: Min glacier thickness
   value:
     type: float
-    default: 1.0
-    units: '-'
+    default: '1.0'
     range:
-      max: 1000.0
-      min: 0.0
+      min: '0.0'
+      max: '1000'
+    units: '-'
+glens_A:
+  description: Glen's Law exponent, a
+  value:
+    type: float
+    default: '2.142e-16'
+    range:
+      min: '0.0'
+      max: 3e-15
+    units: '-'
+B:
+  description: Glen's Law coefficient, B
+  value:
+    type: float
+    default: '0.0012'
+    range:
+      min: 1e-3
+      max: '0.01'
+    units: m Pa-1 yr-1
+char_sliding_vel:
+  description: Characteristic sliding velocity
+  value:
+    type: float
+    default: '10.0'
+    range:
+      min: '0.0'
+      max: '100.0'
+    units: m s-1
+char_tau_bed:
+  description: Characteristic shear stress at the bed
+  value:
+    type: float
+    default: '100000.0'
+    range:
+      min: '0.0'
+      max: 1e6
+    units: Pa
+depth_to_water_table:
+  description: Distance from ice surface to water table
+  value:
+    type: float
+    default: '20.0'
+    range:
+      min: '0'
+      max: '1000.0'
+    units: m
+max_float_fraction:
+  description: Limits the water level in ice
+  value:
+    type: float
+    default: '80.0'
+    range:
+      min: '0'
+      max: '100.0'
+    units: percent
+Hp_eff:
+  description: Effective pressure of water
+  value:
+    type: float
+    default: '20.0'
+    range:
+      min: '0'
+      max: '100.0'
+    units: m
+init_ELA:
+  description: Equilibrium line altitude (ELA)
+  value:
+    type: float
+    default: '3350.0'
+    range:
+      min: '2500.0'
+      max: '4500.0'
+    units: m
+ELA_step_size:
+  description: ELA step size
+  value:
+    type: float
+    default: '-10.0'
+    range:
+      min: '-100'
+      max: '100.0'
+    units: m
+ELA_step_interval:
+  description: ELA step interval
+  value:
+    type: float
+    default: '500.0'
+    range:
+      min: '50.0'
+      max: '1000.0'
+    units: m
+grad_Bz:
+  description: Mass balance gradient in z
+  value:
+    type: float
+    default: '0.01'
+    range:
+      min: 1e-3
+      max: '0.1'
+    units: m water equivalent m-1
+max_Bz:
+  description: Maximum allowed mass balance
+  value:
+    type: float
+    default: '2.0'
+    range:
+      min: '1.0'
+      max: '10.0'
+    units: m water equivalent
+spinup_time:
+  description: Spinup time
+  value:
+    type: float
+    default: '200.0'
+    range:
+      min: '0.0'
+      max: 1e3
+    units: yr
+sea_level:
+  description: Sea level
+  value:
+    type: float
+    default: '-100'
+    range:
+      min: '-200.0'
+      max: '200.0'
+    units: m
+Cp_ice:
+  description: Specific heat capacity
+  value:
+    type: float
+    default: '2060.0'
+    range:
+      min: '2000.0'
+      max: '2100.0'
+    units: J kg-1 K-1
+geothermal_heat_flux:
+  description: Geothermal heat flux
+  value:
+    type: float
+    default: 1.575e6
+    range:
+      min: 1e5
+      max: 1e7
+    units: J yr-1 m-2
+geothermal_gradient:
+  description: Geothermal gradient
+  value:
+    type: float
+    default: '-0.0255'
+    range:
+      min: '-0.1'
+      max: '0.0'
+    units: degC m-1
+VARIABLE_DT_TOGGLE:
+  description: Use variable/adaptive timestep
+  value:
+    type: choice
+    default: 'No'
+    choices:
+    - 'Yes'
+    - 'No'
+INIT_COND_TOGGLE:
+  description: Initial condition (chose not clear to me)
+  value:
+    type: choice
+    default: 'No'
+    choices:
+    - 'Yes'
+    - 'No'
+GENERIC_ICE_TOGGLE:
+  description: Start w/ generic ice surface
+  value:
+    type: choice
+    default: 'No'
+    choices:
+    - 'Yes'
+    - 'No'
+ICEFLOW_TOGGLE:
+  description: Ice motion by deformation
+  value:
+    type: choice
+    default: 'No'
+    choices:
+    - 'Yes'
+    - 'No'
+ICESLIDE_TOGGLE:
+  description: Ice motion by sliding
+  value:
+    type: choice
+    default: 'No'
+    choices:
+    - 'Yes'
+    - 'No'
+FREEZE_ON_TOGGLE:
+  description: 'Basal ice frozen to bed '
+  value:
+    type: choice
+    default: 'No'
+    choices:
+    - 'Yes'
+    - 'No'
+MASS_BALANCE_TOGGLE:
+  description: Climate scenario
+  value:
+    type: choice
+    default: ZERO_BALANCE
+    choices:
+    - ZERO_BALANCE
+    - CONSTANT_ELA
+    - ELA_LOWERING
+    - ELA_TIME_SERIES
+    - EXTERNAL_FUNC
+    - ELA_LOWERING2
+    - BALANCE_FILE
+    - D18O_TIME_SERIES
+    units: '-'
+WEST_BC_TOGGLE:
+  description: Boundary condition west
+  value:
+    type: choice
+    default: ICE_FREE_BOUND
+    choices:
+    - ICE_FREE_BOUND
+    - ICE_FLUX_BOUND
+    - CONST_FLUX_BOUND
+    - SURF_ELEV_BOUND
+    - SURF_SLOPE_BOUND
+    units: '-'
+EAST_BC_TOGGLE:
+  description: Boundary condition east
+  value:
+    type: choice
+    default: ICE_FREE_BOUND
+    choices:
+    - ICE_FREE_BOUND
+    - ICE_FLUX_BOUND
+    - CONST_FLUX_BOUND
+    - SURF_ELEV_BOUND
+    - SURF_SLOPE_BOUND
+    units: '-'
+SOUTH_BC_TOGGLE:
+  description: Boundary condition south
+  value:
+    type: choice
+    default: ICE_FREE_BOUND
+    choices:
+    - ICE_FREE_BOUND
+    - ICE_FLUX_BOUND
+    - CONST_FLUX_BOUND
+    - SURF_ELEV_BOUND
+    - SURF_SLOPE_BOUND
+    units: '-'
+NORTH_BC_TOGGLE:
+  description: Boundary condition north
+  value:
+    type: choice
+    default: ICE_FREE_BOUND
+    choices:
+    - ICE_FREE_BOUND
+    - ICE_FLUX_BOUND
+    - CONST_FLUX_BOUND
+    - SURF_ELEV_BOUND
+    - SURF_SLOPE_BOUND
+    units: '-'
+

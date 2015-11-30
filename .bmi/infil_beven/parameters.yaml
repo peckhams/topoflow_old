@@ -1,14 +1,15 @@
 %YAML 1.2
 ---
+_name: Run
 run_duration:
   description: Simulation run time
   value:
     type: int
     default: 1
-    units: d
     range:
-      max: 1000000
       min: 0
+      max: 1000000
+    units: d
 site_prefix:
   description: File prefix for the study site
   value:
@@ -19,5 +20,6 @@ case_prefix:
   description: File prefix for the model scenario
   value:
     type: string
-    default: Case5
+    default: June_20_67
     units: '-'
+
