@@ -1,23 +1,1080 @@
 %YAML 1.2
 ---
+_name: Run
 run_duration:
   description: Simulation run time
   value:
     type: int
-    default: 1
-    units: d
+    default: 3600
     range:
-      max: 1000000
       min: 0
-site_prefix:
-  description: File prefix for the study site
+      max: 3153600000
+    units: s
+n_layers:
+  description: Number of soil layers
   value:
-    type: string
-    default: Treynor
+    type: int
+    default: '1'
+    range:
+      min: '1'
+      max: '3'
     units: '-'
-case_prefix:
-  description: File prefix for the model scenario
+dt:
+  description: Timestep for infiltration process
   value:
-    type: string
-    default: Case5
+    type: float
+    default: '60.000'
+    range:
+      min: '0'
+      max: 1e3
+    units: s
+rti_file:
+  description: RiverTools info file
+  value:
+    type: file
+    default: default.rti
+    files:
+    - default.rti
+pixel_file:
+  description: Monitored pixel/grid file (outlets)
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+
+---
+_name: soil layer 0
+Ks_val_0_type:
+  description: Saturated hydraulic conductivity
+  group:
+    name: Ks_val_0_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: m s-1
+Ks_val_0_scalar:
+  description: Scalar value
+  group:
+    name: Ks_val_0_group
+  value:
+    type: float
+    default: 5E-5
+    range:
+      min: 1E-8
+      max: 1E-0
+Ks_val_0_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: Ks_val_0_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+Ki_val_0_type:
+  description: Initial hydraulic conductivity
+  group:
+    name: Ki_val_0_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: m s-1
+Ki_val_0_scalar:
+  description: Scalar value
+  group:
+    name: Ki_val_0_group
+  value:
+    type: float
+    default: 5E-5
+    range:
+      min: 1E-8
+      max: 1E-0
+Ki_val_0_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: Ki_val_0_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+qs_val_0_type:
+  description: Saturated soil water content
+  group:
+    name: qs_val_0_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
     units: '-'
+qs_val_0_scalar:
+  description: Scalar value
+  group:
+    name: qs_val_0_group
+  value:
+    type: float
+    default: 0.5
+    range:
+      min: 0.0
+      max: 1.0
+qs_val_0_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: qs_val_0_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+qi_val_0_type:
+  description: Initial soil water content (< theta_sat)
+  group:
+    name: qi_val_0_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: '-'
+qi_val_0_scalar:
+  description: Scalar value
+  group:
+    name: qi_val_0_group
+  value:
+    type: float
+    default: 0.5
+    range:
+      min: 0.0
+      max: 1.0
+qi_val_0_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: qi_val_0_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+qr_val_0_type:
+  description: Residual soil water content (< theta_init)
+  group:
+    name: qr_val_0_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: '-'
+qr_val_0_scalar:
+  description: Scalar value
+  group:
+    name: qr_val_0_group
+  value:
+    type: float
+    default: 0.5
+    range:
+      min: 0.0
+      max: 1.0
+qr_val_0_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: qr_val_0_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+pB_val_0_type:
+  description: Bubbling pressure head
+  group:
+    name: pB_val_0_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: m
+pB_val_0_scalar:
+  description: Scalar value
+  group:
+    name: pB_val_0_group
+  value:
+    type: float
+    default: 0.5
+    range:
+      min: 0.0
+      max: 1.0
+pB_val_0_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: pB_val_0_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+pA_val_0_type:
+  description: Pressure head offset parameter
+  group:
+    name: pA_val_0_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: m
+pA_val_0_scalar:
+  description: Scalar value
+  group:
+    name: pA_val_0_group
+  value:
+    type: float
+    default: 0.5
+    range:
+      min: 0.0
+      max: 1.0
+pA_val_0_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: pA_val_0_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+lam_val_0_type:
+  description: Pore size distribution
+  group:
+    name: lam_val_0_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: '-'
+lam_val_0_scalar:
+  description: Scalar value
+  group:
+    name: lam_val_0_group
+  value:
+    type: float
+    default: 0.5
+    range:
+      min: 0.0
+      max: 1.0
+lam_val_0_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: lam_val_0_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+c_val_0_type:
+  description: Trans. brooks-corey curvature
+  group:
+    name: c_val_0_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: '-'
+c_val_0_scalar:
+  description: Scalar value
+  group:
+    name: c_val_0_group
+  value:
+    type: float
+    default: 0.5
+    range:
+      min: 0.0
+      max: 1.0
+c_val_0_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: c_val_0_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+dz_val_0:
+  description: Vertical distance between nodes
+  value:
+    type: float
+    default: '0.1'
+    range:
+      min: '0'
+      max: 1e3
+    units: m
+nz_val_0:
+  description: Number of vertical layer
+  value:
+    type: int
+    default: '3'
+    range:
+      min: '1'
+      max: '20'
+    units: '-'
+type_of_soil_layer_0:
+  description: Closest standard soil type
+  value:
+    type: choice
+    default: sand
+    choices:
+    - sand
+    - loamy_sand
+    - sandy_loam
+    - silty_loam
+    - loam
+    - sandy_clay_loam
+    - silty_clay_loam
+    - clay_loam
+    - sandy_clay
+    - silty_clay
+    - clay
+    units: '-'
+
+---
+_name: soil layer 1
+Ks_val_1_type:
+  description: Saturated hydraulic conductivity
+  group:
+    name: Ks_val_1_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: m s-1
+Ks_val_1_scalar:
+  description: Scalar value
+  group:
+    name: Ks_val_1_group
+  value:
+    type: float
+    default: 5E-5
+    range:
+      min: 1E-8
+      max: 1E-0
+Ks_val_1_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: Ks_val_1_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+Ki_val_1_type:
+  description: Initial hydraulic conductivity
+  group:
+    name: Ki_val_1_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: m s-1
+Ki_val_1_scalar:
+  description: Scalar value
+  group:
+    name: Ki_val_1_group
+  value:
+    type: float
+    default: 5E-5
+    range:
+      min: 1E-8
+      max: 1E-0
+Ki_val_1_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: Ki_val_1_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+qs_val_1_type:
+  description: Saturated soil water content
+  group:
+    name: qs_val_1_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: '-'
+qs_val_1_scalar:
+  description: Scalar value
+  group:
+    name: qs_val_1_group
+  value:
+    type: float
+    default: 0.5
+    range:
+      min: 0.0
+      max: 1.0
+qs_val_1_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: qs_val_1_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+qi_val_1_type:
+  description: Initial soil water content (< theta_sat)
+  group:
+    name: qi_val_1_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: '-'
+qi_val_1_scalar:
+  description: Scalar value
+  group:
+    name: qi_val_1_group
+  value:
+    type: float
+    default: 0.5
+    range:
+      min: 0.0
+      max: 1.0
+qi_val_1_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: qi_val_1_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+qr_val_1_type:
+  description: Residual soil water content (< theta_init)
+  group:
+    name: qr_val_1_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: '-'
+qr_val_1_scalar:
+  description: Scalar value
+  group:
+    name: qr_val_1_group
+  value:
+    type: float
+    default: 0.5
+    range:
+      min: 0.0
+      max: 1.0
+qr_val_1_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: qr_val_1_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+pB_val_1_type:
+  description: Bubbling pressure head
+  group:
+    name: pB_val_1_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: m
+pB_val_1_scalar:
+  description: Scalar value
+  group:
+    name: pB_val_1_group
+  value:
+    type: float
+    default: 0.5
+    range:
+      min: 0.0
+      max: 1.0
+pB_val_1_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: pB_val_1_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+pA_val_1_type:
+  description: Pressure head offset parameter
+  group:
+    name: pA_val_1_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: m
+pA_val_1_scalar:
+  description: Scalar value
+  group:
+    name: pA_val_1_group
+  value:
+    type: float
+    default: 0.5
+    range:
+      min: 0.0
+      max: 1.0
+pA_val_1_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: pA_val_1_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+lam_val_1_type:
+  description: Pore size distribution
+  group:
+    name: lam_val_1_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: '-'
+lam_val_1_scalar:
+  description: Scalar value
+  group:
+    name: lam_val_1_group
+  value:
+    type: float
+    default: 0.5
+    range:
+      min: 0.0
+      max: 1.0
+lam_val_1_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: lam_val_1_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+c_val_1_type:
+  description: Trans. brooks-corey curvature
+  group:
+    name: c_val_1_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: '-'
+c_val_1_scalar:
+  description: Scalar value
+  group:
+    name: c_val_1_group
+  value:
+    type: float
+    default: 0.5
+    range:
+      min: 0.0
+      max: 1.0
+c_val_1_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: c_val_1_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+dz_val_1:
+  description: Vertical distance between nodes
+  value:
+    type: float
+    default: '0.1'
+    range:
+      min: '0'
+      max: 1e3
+    units: m
+nz_val_1:
+  description: Number of vertical layer
+  value:
+    type: int
+    default: '3'
+    range:
+      min: '1'
+      max: '20'
+    units: '-'
+type_of_soil_layer_1:
+  description: Closest standard soil type
+  value:
+    type: choice
+    default: sand
+    choices:
+    - sand
+    - loamy_sand
+    - sandy_loam
+    - silty_loam
+    - loam
+    - sandy_clay_loam
+    - silty_clay_loam
+    - clay_loam
+    - sandy_clay
+    - silty_clay
+    - clay
+    units: '-'
+
+---
+_name: soil layer 2
+Ks_val_2_type:
+  description: Saturated hydraulic conductivity
+  group:
+    name: Ks_val_2_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: m s-1
+Ks_val_2_scalar:
+  description: Scalar value
+  group:
+    name: Ks_val_2_group
+  value:
+    type: float
+    default: 5E-5
+    range:
+      min: 1E-8
+      max: 1E-0
+Ks_val_2_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: Ks_val_2_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+Ki_val_2_type:
+  description: Initial hydraulic conductivity
+  group:
+    name: Ki_val_2_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: m s-1
+Ki_val_2_scalar:
+  description: Scalar value
+  group:
+    name: Ki_val_2_group
+  value:
+    type: float
+    default: 5E-5
+    range:
+      min: 1E-8
+      max: 1E-0
+Ki_val_2_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: Ki_val_2_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+qs_val_2_type:
+  description: Saturated soil water content
+  group:
+    name: qs_val_2_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: '-'
+qs_val_2_scalar:
+  description: Scalar value
+  group:
+    name: qs_val_2_group
+  value:
+    type: float
+    default: 0.5
+    range:
+      min: 0.0
+      max: 1.0
+qs_val_2_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: qs_val_2_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+qi_val_2_type:
+  description: Initial soil water content (< theta_sat)
+  group:
+    name: qi_val_2_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: '-'
+qi_val_2_scalar:
+  description: Scalar value
+  group:
+    name: qi_val_2_group
+  value:
+    type: float
+    default: 0.5
+    range:
+      min: 0.0
+      max: 1.0
+qi_val_2_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: qi_val_2_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+qr_val_2_type:
+  description: Residual soil water content (< theta_init)
+  group:
+    name: qr_val_2_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: '-'
+qr_val_2_scalar:
+  description: Scalar value
+  group:
+    name: qr_val_2_group
+  value:
+    type: float
+    default: 0.5
+    range:
+      min: 0.0
+      max: 1.0
+qr_val_2_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: qr_val_2_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+pB_val_2_type:
+  description: Bubbling pressure head
+  group:
+    name: pB_val_2_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: m
+pB_val_2_scalar:
+  description: Scalar value
+  group:
+    name: pB_val_2_group
+  value:
+    type: float
+    default: 0.5
+    range:
+      min: 0.0
+      max: 1.0
+pB_val_2_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: pB_val_2_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+pA_val_2_type:
+  description: Pressure head offset parameter
+  group:
+    name: pA_val_2_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: m
+pA_val_2_scalar:
+  description: Scalar value
+  group:
+    name: pA_val_2_group
+  value:
+    type: float
+    default: 0.5
+    range:
+      min: 0.0
+      max: 1.0
+pA_val_2_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: pA_val_2_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+lam_val_2_type:
+  description: Pore size distribution
+  group:
+    name: lam_val_2_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: '-'
+lam_val_2_scalar:
+  description: Scalar value
+  group:
+    name: lam_val_2_group
+  value:
+    type: float
+    default: 0.5
+    range:
+      min: 0.0
+      max: 1.0
+lam_val_2_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: lam_val_2_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+c_val_2_type:
+  description: Trans. brooks-corey curvature
+  group:
+    name: c_val_2_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: '-'
+c_val_2_scalar:
+  description: Scalar value
+  group:
+    name: c_val_2_group
+  value:
+    type: float
+    default: 0.5
+    range:
+      min: 0.0
+      max: 1.0
+c_val_2_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: c_val_2_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+dz_val_2:
+  description: Vertical distance between nodes
+  value:
+    type: float
+    default: '0.1'
+    range:
+      min: '0'
+      max: 1e3
+    units: m
+nz_val_2:
+  description: Number of vertical layer
+  value:
+    type: int
+    default: '3'
+    range:
+      min: '1'
+      max: '20'
+    units: '-'
+type_of_soil_layer_2:
+  description: Closest standard soil type
+  value:
+    type: choice
+    default: sand
+    choices:
+    - sand
+    - loamy_sand
+    - sandy_loam
+    - silty_loam
+    - loam
+    - sandy_clay_loam
+    - silty_clay_loam
+    - clay_loam
+    - sandy_clay
+    - silty_clay
+    - clay
+    units: '-'
+

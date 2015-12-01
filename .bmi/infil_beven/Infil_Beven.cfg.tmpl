@@ -1,0 +1,23 @@
+#===============================================================================
+# Topoflow Config File for: infil_beven
+#===============================================================================
+# Input
+comp_status         | Enabled             | string    | Component status [-] {Enabled; Disabled}
+in_directory        | .                   | string    | Input directory [-]
+out_directory       | .                   | string    | Output directory [-]
+site_prefix         | {site_prefix}       | string    | File prefix for the study site [-]
+case_prefix         | {case_prefix}       | string    | File prefix for the model scenario [-]
+n_steps             | {n_steps}           | long      | Number of time steps [-]
+#===============================================================================
+# Output
+save_grid_dt        | {save_grid_dt}      | float     | Time interval between saved grids [sec]
+SAVE_V0_GRIDS       | No     | string    | Option to save grids of infil. rate (at surf) [-] {Yes; No}
+v0_gs_file          | {v0_gs_file}        | string    | Filename for grid stack of v0 [m/s]
+SAVE_I_GRIDS        | No      | string    | Option to save grids of cumul. infil. depth [-] {Yes; No}
+I_gs_file           | {I_gs_file}         | string    | Filename for grid stack of i [m]
+save_pixels_dt      | {save_pixels_dt}    | float     | Time interval between time series values [sec]
+pixel_file          | {pixel_file}        | string    | Filename for monitored pixel file [-]
+SAVE_V0_PIXELS      | No    | string    | Option to save time series of infil. rate (at surf) [-] {Yes; No}
+v0_ts_file          | {v0_ts_file}        | string    | Filename for time series of v0 [m/s]
+SAVE_I_PIXELS       | No     | string    | Option to save time series of cumul. infil. depth [-] {Yes; No}
+I_ts_file           | {I_ts_file}         | string    | Filename for time series of i [m]

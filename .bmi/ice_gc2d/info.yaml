@@ -1,4 +1,12 @@
-url: https://github.com/peckhams/topoflow
-author: Mark Kessler, Eric Hutton, Scott Peckham
+author: 'Mark Kessler, Eric Hutton, Scott Peckham '
+doi: 10.1594/IEDA/100174
 email: scott.peckham@colorado.edu
+license: Apache
+summary: GC2D is a two-dimensional finite difference numerical model that
+  is driven by a calculations of glacier mass balance (snow precipitation
+  - melt rate). The model calculates ice surface elevations above a two-dimensional
+  terrain by solving equations for ice flux and mass conservation using
+  explicit methods.
+url: http://csdms.colorado.edu/wiki/Model_help:Gc2d
 version: 3.1.0
+
