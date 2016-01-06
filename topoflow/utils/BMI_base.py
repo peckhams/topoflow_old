@@ -1081,7 +1081,8 @@ class BMI_component:
         """
         time_step = self.get_time_step()
         self.dt = time_frac * time_step
-        self.update()
+        if self.dt > 0.0:
+            self.update()
         self.dt = time_step
 
     def update_until(self, then):
