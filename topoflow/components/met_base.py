@@ -634,6 +634,10 @@ class met_component( BMI_base.BMI_component ):
             self.Ri
         except AttributeError:
             self.Ri = np.float64(0.0)
+        try:
+            self.h_snow
+        except AttributeError:
+            self.h_snow = np.float64(0.0)
         
         ## self.check_input_types()  # (not needed so far)
         
@@ -1138,10 +1142,6 @@ class met_component( BMI_base.BMI_component ):
         #        kappa    = 0.408 = von Karman's constant [unitless]
         #        RI       = Richardson's number (see function)
         #----------------------------------------------------------------
-        try:
-            self.h_snow
-        except AttributeError:
-            self.h_snow = np.float64(0.0)
         h_snow = self.h_snow  # (ref from new framework)
         
         #---------------------------------------------------
