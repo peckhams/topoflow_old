@@ -851,6 +851,8 @@ class BMI_component:
         src : array_like
           The new value for the specified variable.
         """
+        if src.shape == (1,):
+            src = np.array(src[0])
         self.set_values(var_name, src)
 
     def get_value_at_indices(self, var_name, indices):
