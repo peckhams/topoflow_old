@@ -1,0 +1,47 @@
+%YAML 1.2
+---
+_name: Run
+run_duration:
+  description: Simulation run time
+  value:
+    type: int
+    default: 3600
+    range:
+      min: 1
+      max: 3153600000
+    units: s
+dt:
+  description: Model time step
+  value:
+    type: float
+    default: 600.0
+    range:
+      min: 1.0
+      max: 31536000.0
+    units: s
+rti_file:
+  description: RiverTools info file
+  value:
+    type: file
+    default: default.rti
+    files:
+    - default.rti
+pixel_file:
+  description: Monitored pixel/grid file
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+
+---
+_name: Input
+ET_file:
+  description: Grid sequence file of evapotranspiration rates
+  value:
+    type: file
+    default: default_2D-ETrate.nc
+    files:
+    - default_2D-ETrate.nc
+    units: mm hr-1
+

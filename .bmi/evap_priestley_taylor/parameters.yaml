@@ -1,0 +1,175 @@
+%YAML 1.2
+---
+_name: Run
+run_duration:
+  description: Simulation run time
+  value:
+    type: int
+    default: 3600
+    range:
+      min: 1
+      max: 3153600000
+    units: s
+dt:
+  description: Model time step
+  value:
+    type: float
+    default: 600.0
+    range:
+      min: 1.0
+      max: 31536000.0
+    units: s
+rti_file:
+  description: RiverTools info file
+  value:
+    type: file
+    default: default.rti
+    files:
+    - default.rti
+pixel_file:
+  description: Monitored pixel/grid file
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+
+---
+_name: Input
+alpha_type:
+  description: Priestley-Taylor coefficient
+  group:
+    name: alpha_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: '-'
+alpha_scalar:
+  description: Scalar value
+  group:
+    name: alpha_group
+  value:
+    type: float
+    default: 1.2
+    range:
+      min: 0.0
+      max: 3.0
+alpha_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: alpha_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+K_soil_type:
+  description: Thermal conductivity of soil
+  group:
+    name: K_soil_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: W m-1 degC-1
+K_soil_scalar:
+  description: Scalar value
+  group:
+    name: K_soil_group
+  value:
+    type: float
+    default: 0.45
+    range:
+      min: 0.0
+      max: 100.0
+K_soil_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: K_soil_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+soil_x_type:
+  description: Soil reference depth
+  group:
+    name: soil_x_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: m
+soil_x_scalar:
+  description: Scalar value
+  group:
+    name: soil_x_group
+  value:
+    type: float
+    default: 0.05
+    range:
+      min: 0.0
+      max: 10.0
+soil_x_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: soil_x_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+T_soil_x_type:
+  description: Temperature of soil at reference depth
+  group:
+    name: T_soil_x_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: degC
+T_soil_x_scalar:
+  description: Scalar value
+  group:
+    name: T_soil_x_group
+  value:
+    type: float
+    default: 0.0
+    range:
+      min: -100.0
+      max: 50.0
+T_soil_x_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: T_soil_x_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+

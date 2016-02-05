@@ -563,7 +563,7 @@ class CMI_component:
 	#         each cell in the grid has a unique, long-integer
 	#         ID and these are used for indices.
 	#-------------------------------------------------------------
-    self.bmi.get_values_at_indices( long_var_name, indices )
+        self.bmi.get_values_at_indices( long_var_name, indices )
     
 # 	#----------------------------------------------
 # 	# Get data type and rank for long_var_name.

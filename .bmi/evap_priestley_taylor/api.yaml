@@ -1,0 +1,5 @@
+name: EvapPriestleyTaylor
+language: python
+
+package: topoflow.components.evap_priestley_taylor
+class: evap_component

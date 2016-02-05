@@ -1,0 +1,5 @@
+name: InfilBeven
+language: python
+
+package: topoflow.components.infil_beven
+class: infil_component

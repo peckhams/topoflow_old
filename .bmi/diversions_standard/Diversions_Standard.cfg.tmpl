@@ -1,0 +1,17 @@
+#===============================================================================
+# Topoflow Config File for: Diversions_Standard
+#===============================================================================
+# Input
+comp_status         | Enabled             | string    | Component status [-] {Enabled; Disabled}
+in_directory        | .                   | string    | Input directory [-]
+out_directory       | .                   | string    | Output directory [-]
+site_prefix         | {site_prefix}       | string    | File prefix for the study site [-]
+case_prefix         | {case_prefix}       | string    | File prefix for the model scenario [-]
+dt                  | {dt}                | float     | Timestep for diversion process [sec]
+#===============================================================================
+use_sources         | {use_sources}       | string    | Option to use sources [-] {Yes; No}
+source_file         | {source_file}       | string    | Source information file [-]
+use_sinks           | {use_sinks}         | string    | Option to use sinks [-] {Yes; No}
+sink_file           | {sink_file}         | string    | Sink information file [-]
+use_canals          | {use_canals}        | string    | Option to use canals [-] {Yes; No}
+canal_file          | {canal_file}        | string    | Canal information file [-]

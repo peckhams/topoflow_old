@@ -1,0 +1,17 @@
+author: 'Scott D. Peckham '
+doi: 10.1594/IEDA/100174
+email: scott.peckham@colorado.edu
+license: Apache
+summary: This process component is part of a spatially-distributed hydrologic
+  model called TopoFlow, but it can now be used as a stand-alone model.
+  The kinematic wave method (Lighthill and Whitham, 1955) is the simplest
+  method for modeling flow in open channels. This method combines mass conservation
+  with the simplest possible treatment of momentum conservation, namely
+  that all terms in the general momentum equation (pressure gradient, local
+  acceleration and convective acceleration) are neglible except the friction
+  and gravity terms. A flow in which gravitational acceleration is exactly
+  balanced by friction is referred to as steady, uniform flow. For these
+  flows the water surface slope, energy slope and bed slope are all equal.
+url: http://csdms.colorado.edu/wiki/Model_help:TopoFlow-Channels-Kinematic_Wave
+version: 3.1.0
+

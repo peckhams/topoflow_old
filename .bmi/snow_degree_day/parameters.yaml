@@ -1,0 +1,243 @@
+%YAML 1.2
+---
+_name: Run
+run_duration:
+  description: Simulation run time
+  value:
+    type: int
+    default: 3600
+    range:
+      min: 0
+      max: 3153600000
+    units: s
+dt:
+  description: Model time step
+  value:
+    type: float
+    default: 600
+    range:
+      min: 1
+      max: 31536000
+    units: s
+rti_file:
+  description: RiverTools info file
+  value:
+    type: file
+    default: default.rti
+    files:
+    - default.rti
+pixel_file:
+  description: Monitored pixel/grid file (outlets)
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+
+---
+_name: Input
+Cp_snow_type:
+  description: Heat capacity of snow
+  group:
+    name: Cp_snow_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: J kg-1 K-1
+Cp_snow_scalar:
+  description: Scalar value
+  group:
+    name: Cp_snow_group
+  value:
+    type: float
+    default: 2090.0
+    range:
+      min: 0.0
+      max: 3000.0
+Cp_snow_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: Cp_snow_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+rho_snow_type:
+  description: Density of snow
+  group:
+    name: rho_snow_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: kg m-3
+rho_snow_scalar:
+  description: Scalar value
+  group:
+    name: rho_snow_group
+  value:
+    type: float
+    default: 300.0
+    range:
+      min: 0.0
+      max: 1e3
+rho_snow_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: rho_snow_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+c0_type:
+  description: Degree day coefficient
+  group:
+    name: c0_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: mm d-1 degC-1
+c0_scalar:
+  description: Scalar value
+  group:
+    name: c0_group
+  value:
+    type: float
+    default: 2.7
+    range:
+      min: 0.0
+      max: 1e2
+c0_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: c0_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+T0_type:
+  description: Reference temperature
+  group:
+    name: T0_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: degC
+T0_scalar:
+  description: Scalar value
+  group:
+    name: T0_group
+  value:
+    type: float
+    default: -0.2
+    range:
+      min: -100.0
+      max: 100
+T0_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: T0_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+h0_snow_type:
+  description: Depth of snow
+  group:
+    name: h0_snow_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: m
+h0_snow_scalar:
+  description: Scalar value
+  group:
+    name: h0_snow_group
+  value:
+    type: float
+    default: 0.5
+    range:
+      min: 0.0
+      max: 20.0
+h0_snow_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: h0_snow_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+h0_swe_type:
+  description: Depth of snow water equivalent (SWE)
+  group:
+    name: h0_swe_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: m
+h0_swe_scalar:
+  description: Scalar value
+  group:
+    name: h0_swe_group
+  value:
+    type: float
+    default: 0.15
+    range:
+      min: 0.0
+      max: 20.0
+h0_swe_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: h0_swe_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+

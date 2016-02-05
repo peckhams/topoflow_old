@@ -928,7 +928,14 @@ class satzone_component( BMI_base.BMI_component ):
         # Initialize dzw with outflow term.
         # Doesn't involve neighbor pixels.
         #------------------------------------
-        Rg  = self.Rg   # (using new framework, 5/18/12)
+        # Rg  = self.Rg   # (using new framework, 5/18/12)
+
+        # Use default value of Rg from infil_base.py if running as
+        # standalone component. (@mdpiper, 8/17/15)
+        try:
+            Rg = self.Rg
+        except AttributeError:
+            Rg = self.Rg = np.float64(0.0)
         
         dzw = self.dt * (Rg - self.Q_gw / self.da)    ### USE gp.dt vs. main_dt !! ###
         

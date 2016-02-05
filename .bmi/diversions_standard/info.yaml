@@ -1,0 +1,18 @@
+author: 'Scott D. Peckham '
+doi: 10.1594/IEDA/100174
+email: scott.peckham@colorado.edu
+license: Apache
+summary: 'This process component is part of a spatially-distributed hydrologic
+  model called TopoFlow, but it can now be used as a stand-alone model.
+  TopoFlow supports three different types of flow diversions: sources, sinks
+  and canals. Sources are locations such as natural springs where water
+  enters the watershed at a point by some process other than those that
+  are otherwise modeled. Similarly, sinks are locations where water leaves
+  the watershed at a point. Canals are generally man-made reaches such as
+  tunnels or irrigation ditches that transport water from one point to another,
+  typically without following the natural gradient of the terrain that is
+  indicated by the DEM. The upstream end is essentially a sink and the downstream
+  end a source.'
+url: http://csdms.colorado.edu/wiki/Model_help:TopoFlow-Diversions
+version: 3.1.0
+

@@ -1,0 +1,227 @@
+%YAML 1.2
+---
+_name: Run
+run_duration:
+  description: Simulation run time
+  value:
+    type: int
+    default: 3600
+    range:
+      min: 1
+      max: 3153600000
+    units: s
+dt:
+  description: Model time step
+  value:
+    type: float
+    default: 600.0
+    range:
+      min: 1
+      max: 31536000.0
+    units: s
+rti_file:
+  description: RiverTools info file
+  value:
+    type: file
+    default: default.rti
+    files:
+    - default.rti
+pixel_file:
+  description: Monitored pixel/grid file (outlets)
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+
+---
+_name: soil layer 0
+Ks_0_type:
+  description: Saturated hydraulic conductivity
+  group:
+    name: Ks_0_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: m s-1
+Ks_0_scalar:
+  description: Scalar value
+  group:
+    name: Ks_0_group
+  value:
+    type: float
+    default: 7.2e-06
+    range:
+      min: 1E-8
+      max: 1E-0
+Ks_0_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: Ks_0_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+Ki_0_type:
+  description: Initial hydraulic conductivity
+  group:
+    name: Ki_0_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: m s-1
+Ki_0_scalar:
+  description: Scalar value
+  group:
+    name: Ki_0_group
+  value:
+    type: float
+    default: 5.0e-07
+    range:
+      min: 1.0e-08
+      max: 1.0
+Ki_0_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: Ki_0_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+qs_0_type:
+  description: Saturated soil water content
+  group:
+    name: qs_0_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: '-'
+qs_0_scalar:
+  description: Scalar value
+  group:
+    name: qs_0_group
+  value:
+    type: float
+    default: 0.485
+    range:
+      min: 0.0
+      max: 1.0
+qs_0_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: qs_0_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+qi_0_type:
+  description: Initial soil water content (< theta_sat)
+  group:
+    name: qi_0_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: '-'
+qi_0_scalar:
+  description: Scalar value
+  group:
+    name: qi_0_group
+  value:
+    type: float
+    default: 0.375
+    range:
+      min: 0.0
+      max: 1.0
+qi_0_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: qi_0_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+G_0_type:
+  description: Capillary length scale
+  group:
+    name: G_0_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: m
+G_0_scalar:
+  description: Scalar value
+  group:
+    name: G_0_group
+  value:
+    type: float
+    default: 0.725
+    range:
+      min: 0.0
+      max: 1.0
+G_0_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: G_0_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+soil_type_0:
+  description: Closest standard soil type
+  value:
+    type: choice
+    default: Sand
+    choices:
+    - Sand
+    - Loamy Sand
+    - Sandy Loam
+    - Silty Loam
+    - Loam
+    - Sandy Clay Loam
+    - Silty Clay Loam
+    - Clay Loam
+    - Sandy Clay
+    - Silty Clay
+    - Clay
+    units: '-'
+

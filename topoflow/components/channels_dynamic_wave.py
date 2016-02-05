@@ -151,6 +151,10 @@ class channels_component(channels_base.channels_component):
 ##        A2 = ds_chan * Pw                           #(wetted surf. area)
         Atrm = (u * Q) * ((np.float64(1) / Atop) - (np.float64(1) / A2))
         #---------------------------------------
+
+        # Local variable `dinv` is not defined. (@mdpiper, 8/19/15)
+        dinv = 1.0  # least harm?
+
         acc = (grav + Atrm - fric - Rtrm)          #(positive or negative)
         u2  = u + (self.dt * dinv * acc)           #(before next part)
         #----------------------------------

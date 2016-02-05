@@ -1,0 +1,497 @@
+%YAML 1.2
+---
+_name: Run
+run_duration:
+  description: Simulation run time
+  value:
+    type: int
+    default: 3600
+    range:
+      min: 1
+      max: 3153600000
+    units: s
+dt:
+  description: Model time step
+  value:
+    type: float
+    default: 600.0
+    range:
+      min: 1.0
+      max: 31536000.0
+    units: s
+rti_file:
+  description: RiverTools info file
+  value:
+    type: file
+    default: default.rti
+    files:
+    - default.rti
+pixel_file:
+  description: Monitored pixel/grid file
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+
+---
+_name: Input
+elev_type:
+  description: Land surface elevation
+  group:
+    name: elev_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: m
+elev_scalar:
+  description: Scalar value
+  group:
+    name: elev_group
+  value:
+    type: float
+    default: 0.0
+    range:
+      min: -1E4
+      max: 1E4
+elev_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: elev_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+flow_grid_file:
+  description: Grid file of D8 flow codes
+  value:
+    type: file
+    default: default_flow.rtg
+    files:
+    - default_flow.rtg
+h0_table_type:
+  description: Initial water table height
+  group:
+    name: h0_table_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: m
+h0_table_scalar:
+  description: Scalar value
+  group:
+    name: h0_table_group
+  value:
+    type: float
+    default: 0.0
+    range:
+      min: 0.0
+      max: 1E4
+h0_table_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: h0_table_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+d_freeze_type:
+  description: Freeze depth below surface
+  group:
+    name: d_freeze_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: m
+d_freeze_scalar:
+  description: Scalar value
+  group:
+    name: d_freeze_group
+  value:
+    type: float
+    default: 0.0
+    range:
+      min: 0.0
+      max: 1E4
+d_freeze_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: d_freeze_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+d_thaw_type:
+  description: Thaw depth below surface
+  group:
+    name: d_thaw_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: m
+d_thaw_scalar:
+  description: Scalar value
+  group:
+    name: d_thaw_group
+  value:
+    type: float
+    default: 9999.0
+    range:
+      min: 0.0
+      max: 1E4
+d_thaw_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: d_thaw_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+
+---
+_name: soil layer 0
+th_0_type:
+  description: Soil layer thickness
+  group:
+    name: th_0_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: m
+th_0_scalar:
+  description: Scalar value
+  group:
+    name: th_0_group
+  value:
+    type: float
+    default: 0.1
+    range:
+      min: 0.0
+      max: 1E3
+th_0_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: th_0_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+qs_0_type:
+  description: Saturated soil water content
+  group:
+    name: qs_0_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: '-'
+qs_0_scalar:
+  description: Scalar value
+  group:
+    name: qs_0_group
+  value:
+    type: float
+    default: 0.5
+    range:
+      min: 0.0
+      max: 1.0
+qs_0_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: qs_0_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+Ks_0_type:
+  description: Saturated hydraulic conductivity
+  group:
+    name: Ks_0_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: m s-1
+Ks_0_scalar:
+  description: Scalar value
+  group:
+    name: Ks_0_group
+  value:
+    type: float
+    default: 5E-5
+    range:
+      min: 1E-8
+      max: 1E-0
+Ks_0_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: Ks_0_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+
+---
+_name: soil layer 1
+th_1_type:
+  description: Soil layer thickness
+  group:
+    name: th_1_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: m
+th_1_scalar:
+  description: Scalar value
+  group:
+    name: th_1_group
+  value:
+    type: float
+    default: 0.1
+    range:
+      min: 0.0
+      max: 1E3
+th_1_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: th_1_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+qs_1_type:
+  description: Saturated soil water content
+  group:
+    name: qs_1_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: '-'
+qs_1_scalar:
+  description: Scalar value
+  group:
+    name: qs_1_group
+  value:
+    type: float
+    default: 0.5
+    range:
+      min: 0.0
+      max: 1.0
+qs_1_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: qs_1_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+Ks_1_type:
+  description: Saturated hydraulic conductivity
+  group:
+    name: Ks_1_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: m s-1
+Ks_1_scalar:
+  description: Scalar value
+  group:
+    name: Ks_1_group
+  value:
+    type: float
+    default: 5E-5
+    range:
+      min: 1E-8
+      max: 1E-0
+Ks_1_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: Ks_1_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+
+---
+_name: soil layer 2
+th_2_type:
+  description: Soil layer thickness
+  group:
+    name: th_2_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: m
+th_2_scalar:
+  description: Scalar value
+  group:
+    name: th_2_group
+  value:
+    type: float
+    default: 0.1
+    range:
+      min: 0.0
+      max: 1E3
+th_2_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: th_2_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+qs_2_type:
+  description: Saturated soil water content
+  group:
+    name: qs_2_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: '-'
+qs_2_scalar:
+  description: Scalar value
+  group:
+    name: qs_2_group
+  value:
+    type: float
+    default: 0.5
+    range:
+      min: 0.0
+      max: 1.0
+qs_2_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: qs_2_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+Ks_2_type:
+  description: Saturated hydraulic conductivity
+  group:
+    name: Ks_2_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: m s-1
+Ks_2_scalar:
+  description: Scalar value
+  group:
+    name: Ks_2_group
+  value:
+    type: float
+    default: 5E-5
+    range:
+      min: 1E-8
+      max: 1E-0
+Ks_2_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: Ks_2_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+

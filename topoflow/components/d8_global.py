@@ -68,9 +68,10 @@ class d8_component( d8_base.d8_component ):
                'cmt_var_prefix':     '/D8Global/Input/Var/',
                'gui_xml_file':       '/home/csdms/cca/erode/0.5/src/share/cmt/gui/D8_Global.xml',
                'dialog_title':       'D8: Global-Timestep Method Parameters',
-               'time_step_type':     'adaptive',
+               'time_step_type':     'fixed',
                'time_units':         'years',
                'mesh_type':          'uniform',
+               'grid_type':          'uniform',
                'author_name':        'Scott Peckham'}
         
         try: 

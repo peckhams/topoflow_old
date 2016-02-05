@@ -1,0 +1,19 @@
+author: 'Scott D. Peckham '
+doi: 10.1594/IEDA/100174
+email: scott.peckham@colorado.edu
+license: Apache
+summary: This process component is part of a spatially-distributed hydrologic
+  model called TopoFlow, but it can now be used as a stand-alone model.
+  It uses the 'diffusive wave' method to compute flow velocities for all
+  of the channels in a D8-based river network. This wave method is similar
+  to the kinematic wave method for modeling flow in open channels, but instead
+  of a simple balance between friction and gravity, this method includes
+  the pressure gradient that is induced by a water-depth gradient in the
+  downstream direction. This means that instead of using bed slope in Manning's
+  equation or the law of the wall, the water-surface slope is used. One
+  consequence of this is that water is able to move across flat areas that
+  have a bed slope of zero. Local and convective accelerations in the momentum
+  equations are still neglected, just as is done in the kinematic wave method.
+url: http://csdms.colorado.edu/wiki/Model_help:TopoFlow-Channels-Diffusive_Wave
+version: 3.1.0
+

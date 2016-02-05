@@ -1,0 +1,5 @@
+name: InfilSmithParlange
+language: python
+
+package: topoflow.components.infil_smith_parlange
+class: infil_component

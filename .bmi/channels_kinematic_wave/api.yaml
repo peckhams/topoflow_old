@@ -1,0 +1,5 @@
+name: ChannelsKinWave
+language: python
+
+package: topoflow.components.channels_kinematic_wave
+class: channels_component

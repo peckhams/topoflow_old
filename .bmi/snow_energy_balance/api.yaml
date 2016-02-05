@@ -1,0 +1,5 @@
+name: SnowEnergyBalance
+language: python
+
+package: topoflow.components.snow_energy_balance
+class: snow_component

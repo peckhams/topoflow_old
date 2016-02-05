@@ -485,6 +485,15 @@ class erosion_component( erode_base.erosion_component ):
           
     #   finalize()
     #-------------------------------------------------------------------
+
+
+    def initialize_DEM(self, SILENT=False):
+        """Initialize DEM (via super) and exchange items."""
+        erode_base.erosion_component.initialize_DEM(self, SILENT=False)
+        self.z = self.DEM   # Initialize exchange item 'z'
+        self.z0 = self.DEM  # and 'z0'
+
+
     def initialize_d8_vars(self):
         
         #---------------------------------------------

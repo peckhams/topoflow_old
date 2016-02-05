@@ -627,6 +627,17 @@ class met_component( BMI_base.BMI_component ):
         #-----------------------------------------------
         self.open_input_files()
         self.read_input_files()  # (initializes P)
+
+        # Some output variables aren't defined until update() is called.
+        # Initialize them here, instead. (@mdpiper, 9/8/15)
+        try:
+            self.Ri
+        except AttributeError:
+            self.Ri = np.float64(0.0)
+        try:
+            self.h_snow
+        except AttributeError:
+            self.h_snow = np.float64(0.0)
         
         ## self.check_input_types()  # (not needed so far)
         

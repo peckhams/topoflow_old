@@ -250,8 +250,64 @@ class BMI_component:
 ##
 ##    #   set_attribute()
     #-------------------------------------------------------------------
+
+    def get_component_name(self):
+        """Name of the component.
+
+        Returns
+        -------
+        str
+            The name of the component.
+        """
+        return self.get_attribute('model_name')
+
+    def get_grid_rank(self, grid_id):
+        """Get number of dimensions of the computational grid.
+
+        Parameters
+        ----------
+        grid_id : int
+          A grid identifier.
+
+        Returns
+        -------
+        int
+          Rank of the grid.
+        """
+        return len(self.get_grid_shape(grid_id))
+
+    def get_grid_size(self, grid_id):
+        """Get number of elements in the computational grid.
+
+        Parameters
+        ----------
+        grid_id : int
+          A grid identifier.
+
+        Returns
+        -------
+        int
+          Size of the grid.
+        """
+        return np.prod(self.get_grid_shape(grid_id))
+
+    def get_grid_type(self, grid_id):
+        """Get the grid type as a string.
+
+        Parameters
+        ----------
+        grid_id : int
+          A grid identifier.
+
+        Returns
+        -------
+        str
+          Type of grid as a string.
+        """
+        return self.get_attribute('grid_type')
+
     #-------------------------------------------------------------------
-    def get_grid_shape(self, long_var_name):
+    def get_grid_shape(self, grid_id):
 
         #-------------------------------------------------------
         # Note: This assumes same grid info for all var_names.
@@ -264,14 +320,14 @@ class BMI_component:
             self.read_grid_info()
 
         info  = self.grid_info
-        shape = np.array( [info.nx, info.ny, 0] )
+        shape = np.array([info.ny, info.nx])
         ## shape = np.array( [info.ncols, info.nrows, 0] )
         
         return shape
     
     #   get_grid_shape()
     #-------------------------------------------------------------------
-    def get_grid_spacing(self, long_var_name):
+    def get_grid_spacing(self, grid_id):
 
         #-------------------------------------------------------
         # Note: This assumes same grid info for all var_names.
@@ -285,13 +341,13 @@ class BMI_component:
             self.read_grid_info()
 
         info = self.grid_info
-        spacing = np.array( [info.xres, info.yres, 0] )
+        spacing = np.array([info.yres, info.xres])
         
         return spacing
 
     #   get_grid_spacing()
     #-------------------------------------------------------------------
-    def get_grid_lower_left_corner(self, long_var_name):
+    def get_grid_origin(self, grid_id):
 
         #-------------------------------------------------------
         # Note: This assumes same grid info for all var_names.
@@ -300,7 +356,7 @@ class BMI_component:
             self.read_grid_info()
 
         info = self.grid_info
-        corner = np.array( [info.x_west_edge, info.y_south_edge, 0] )
+        corner = np.array([info.y_south_edge, info.x_west_edge])
         
         return corner
 
@@ -547,8 +603,39 @@ class BMI_component:
         
     #   get_var_name()
     #-------------------------------------------------------------------
-    def get_var_units(self, long_var_name):
 
+    def get_var_grid(self, long_var_name):
+        """Get grid identifier for a variable name.
+
+        Parameters
+        ----------
+        long_var_name : str
+            An input or output variable name as a CSDMS standard name.
+
+        Returns
+        -------
+        int
+            The grid identifier.
+        """
+        return 0
+
+    def get_var_itemsize(self, long_var_name):
+        """The memory use of each array element in bytes.
+
+        Parameters
+        ----------
+        long_var_name : str
+            An input or output variable name as a CSDMS standard name.
+
+        Returns
+        -------
+        int
+            Item size in bytes.
+        """
+        var_name = self.get_var_name(long_var_name)
+        return getattr(self, var_name).itemsize
+
+    def get_var_units(self, long_var_name):
         #-------------------------------------------------
         # Define this map just once in "__init__()"  ??
         #-------------------------------------------------
@@ -616,6 +703,7 @@ class BMI_component:
     
     #   get_var_type() 
     #-------------------------------------------------------------------     
+
     def get_values(self, long_var_name):
 
         #------------------------------------------------------- 
@@ -727,6 +815,77 @@ class BMI_component:
         setattr( self, var_IDs_name, values )  ## (2/19/13)
         
     #   set_values_at_indices()          
+    #-------------------------------------------------------------------
+
+    def get_value(self, var_name):
+        """Get a copy of the values of the given variable.
+
+        This is a getter for the model, used to access the model's
+        current state. It returns a *copy* of a model variable, with
+        the return type, size and rank dependent on the variable.
+
+        Parameters
+        ----------
+        var_name : str
+          An input or output variable name, a CSDMS Standard Name.
+
+        Returns
+        -------
+        array_like
+          The value of a model variable.
+        """
+        return self.get_values(var_name)
+
+    def set_value(self, var_name, src):
+        """Specify a new value for a model variable.
+
+        This is the setter for the model, used to change the model's
+        current state. It accepts, through *src*, a new value for a
+        model variable, with the type, size and rank of *src*
+        dependent on the variable.
+
+        Parameters
+        ----------
+        var_name : str
+          An input or output variable name, a CSDMS Standard Name.
+        src : array_like
+          The new value for the specified variable.
+        """
+        if src.shape == (1,):
+            src = np.array(src[0])
+        self.set_values(var_name, src)
+
+    def get_value_at_indices(self, var_name, indices):
+        """Get values at particular indices.
+
+        Parameters
+        ----------
+        var_name : str
+          An input or output variable name, a CSDMS Standard Name.
+        indices : array_like
+          The indices into the variable array.
+
+        Returns
+        -------
+        array_like
+            Value of the model variable at the given location.
+        """
+        return self.get_values_at_indices(var_name, indices)
+
+    def set_value_at_indices(self, var_name, indices, src):
+        """Specify a new value for a model variable at particular indices.
+
+        Parameters
+        ----------
+        var_name : str
+          An input or output variable name, a CSDMS Standard Name.
+        indices : array_like
+          The indices into the variable array.
+        src : array_like
+          The new value for the specified variable.
+        """
+        self.set_values_at_indices(var_name, indices, src)
+
     #-------------------------------------------------------------------
     # BMI methods to get time-related info
     #-------------------------------------------------------------------
@@ -909,6 +1068,39 @@ class BMI_component:
 ##        
 ##    #   update()
     #-------------------------------------------------------------------
+
+    def update(self):
+        """Advance model state by one time step."""
+        pass
+
+    def update_frac(self, time_frac):
+        """Update model by a fraction of a time step.
+
+        Parameters
+        ----------
+        time_frac : float
+            Fraction of a time step.
+        """
+        time_step = self.get_time_step()
+        self.dt = time_frac * time_step
+        if self.dt > 0.0:
+            self.update()
+        self.dt = time_step
+
+    def update_until(self, then):
+        """Advance model state until the given time.
+
+        Parameters
+        ----------
+        then : float
+            Time to run model until.
+        """
+        n_steps = (then - self.get_current_time()) / self.get_time_step()
+
+        for _ in xrange(int(n_steps)):
+            self.update()
+        self.update_frac(n_steps - int(n_steps))
+
     def finalize(self):
 
         self.status = 'finalizing'  # (OpenMI 2.0 convention)
@@ -1789,7 +1981,7 @@ class BMI_component:
         # the "." to the full CFG_file directory. (9/21/14)
         #------------------------------------------------------------
         if (self.cfg_file != None):
-            cfg_directory = os.path.dirname(self.cfg_file) + os.sep
+            cfg_directory = os.path.dirname(os.path.realpath(self.cfg_file))
             ## print 'cfg_directory =', cfg_directory
             self.cfg_directory = cfg_directory
             if (self.in_directory[0] == '.'):

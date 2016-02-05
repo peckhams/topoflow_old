@@ -136,7 +136,7 @@ def Beven_Exp_K_Infil_Rate_v1(iv, r):
     #water infiltrates.  IN cannot exceed r.
     #Ponding time, Tp, is time until (IN lt r).
     #-------------------------------------------------
-    IN = np.minimum(IN, r))
+    IN = np.minimum(IN, r)
     
     #-----------------------------------
     #Is P_total less than Ks anywhere ?

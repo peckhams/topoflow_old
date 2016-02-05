@@ -1,0 +1,25 @@
+%YAML 1.2
+---
+_name: Run
+run_duration:
+  description: Simulation run time
+  value:
+    type: int
+    default: 1
+    range:
+      min: 0
+      max: 1000000
+    units: d
+site_prefix:
+  description: File prefix for the study site
+  value:
+    type: string
+    default: Treynor
+    units: '-'
+case_prefix:
+  description: File prefix for the model scenario
+  value:
+    type: string
+    default: June_20_67
+    units: '-'
+

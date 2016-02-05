@@ -1,0 +1,5 @@
+name: ChannelsDynamWave
+language: python
+
+package: topoflow.components.channels_dynamic_wave
+class: channels_component

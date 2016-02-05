@@ -1,0 +1,5 @@
+name: Meteorology
+language: python
+
+package: topoflow.components.met_base
+class: met_component

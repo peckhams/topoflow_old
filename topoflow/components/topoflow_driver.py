@@ -960,7 +960,14 @@ class topoflow_driver( BMI_base.BMI_component ):
         #       must use copy() method for them to ever be different.
         #       Q_outlet is a mutable scalar reference from channels.
         #--------------------------------------------------------------        
-        self.Q_last = self.Q_outlet.copy()
+        # Use default value of Q_outlet is equal to zero if running as
+        # standalone component. (@eejafarov, 10/14/15)
+        try:
+            self.Q_outlet
+        except AttributeError:
+            self.Q_outlet = np.float64(0.0)
+        
+	self.Q_last = self.Q_outlet.copy()
         
         if (self.stop_method == 'Q_peak_fraction'):
             #----------------------------------------------------
@@ -1164,7 +1171,46 @@ class topoflow_driver( BMI_base.BMI_component ):
         # New framework method with 0-d numpy
         # arrays for mutable scalars (2/7/13).
         #---------------------------------------
-        Q_peak     = self.Q_peak
+
+        # Make default values of Q equal to zero if running as
+        # standalone component. (@eejafarov, 10/14/15)
+        try:
+            self.Q_peak
+	    self.T_peak
+	    self.u_peak
+            self.Tu_peak
+            self.d_peak
+            self.Td_peak
+            self.P_max
+            self.vol_P
+            self.vol_Q
+            self.vol_SM
+            self.vol_MR
+            self.vol_ET
+            self.vol_IN
+            self.vol_Rg
+            self.vol_GW
+            self.vol_R
+
+        except AttributeError:
+            self.Q_peak = np.float64(0.0)
+            self.T_peak = np.float64(0.0)
+	    self.u_peak = np.float64(0.0)
+            self.Tu_peak = np.float64(0.0)
+            self.d_peak = np.float64(0.0)
+            self.Td_peak = np.float64(0.0)
+	    self.P_max = np.float64(0.0)
+            self.vol_P = np.float64(0.0)
+            self.vol_Q = np.float64(0.0)
+            self.vol_SM = np.float64(0.0)
+            self.vol_MR = np.float64(0.0)
+            self.vol_ET = np.float64(0.0)
+            self.vol_IN = np.float64(0.0)
+            self.vol_Rg = np.float64(0.0)
+            self.vol_GW = np.float64(0.0)
+            self.vol_R = np.float64(0.0)
+
+	Q_peak     = self.Q_peak
         T_peak     = self.T_peak
         u_peak     = self.u_peak
         Tu_peak    = self.Tu_peak
@@ -1422,6 +1468,24 @@ class topoflow_driver( BMI_base.BMI_component ):
         #-------------------------------
         # New framework method, 2/6/13
         #-------------------------------
+
+        # Make default values equal to zero if running as
+        # standalone component. (@eejafarov, 10/14/15)
+        try:
+            self.Q_min
+            self.Q_max
+            self.u_min
+            self.u_max
+            self.d_min
+            self.d_max     
+	except AttributeError:
+            self.Q_min = np.float64(0.0)
+            self.Q_max = np.float64(0.0)
+            self.u_min = np.float64(0.0)
+            self.u_max = np.float64(0.0)
+            self.d_min = np.float64(0.0)
+            self.d_max = np.float64(0.0)     
+
         Q_min = self.Q_min
         Q_max = self.Q_max
         u_min = self.u_min

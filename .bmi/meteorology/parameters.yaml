@@ -1,0 +1,675 @@
+%YAML 1.2
+---
+_name: Run
+run_duration:
+  description: Simulation run time
+  value:
+    type: int
+    default: 3600
+    range:
+      min: 1
+      max: 3153600000
+    units: s
+dt:
+  description: Model time step
+  value:
+    type: float
+    default: 600.0
+    range:
+      min: 1.0
+      max: 31536000.0
+    units: s
+rti_file:
+  description: RiverTools info file
+  value:
+    type: file
+    default: default.rti
+    files:
+    - default.rti
+pixel_file:
+  description: Monitored pixel/grid file (outlets)
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+
+---
+_name: Input
+PRECIP_ONLY:
+  description: Turn off all variable updates except precipitation
+  value:
+    type: choice
+    default: 'No'
+    choices:
+    - 'Yes'
+    - 'No'
+    units: '-'
+rho_H2O_type:
+  description: Density of water
+  group:
+    name: rho_H2O_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: kg m-3
+rho_H2O_scalar:
+  description: Scalar value
+  group:
+    name: rho_H2O_group
+  value:
+    type: float
+    default: 1000.0
+    range:
+      min: 0.0
+      max: 2000.0
+rho_H2O_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: rho_H2O_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+Cp_air_type:
+  description: Heat capacity of air
+  group:
+    name: Cp_air_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: J kg-1 K-1
+Cp_air_scalar:
+  description: Scalar value
+  group:
+    name: Cp_air_group
+  value:
+    type: float
+    default: 1005.7
+    range:
+      min: 0.0
+      max: 2000.0
+Cp_air_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: Cp_air_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+rho_air_type:
+  description: Density of air
+  group:
+    name: rho_air_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: kg m-3
+rho_air_scalar:
+  description: Scalar value
+  group:
+    name: rho_air_group
+  value:
+    type: float
+    default: 1.26139998
+    range:
+      min: 0.0
+      max: 2.0
+rho_air_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: rho_air_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+P_type:
+  description: Precipitation rate
+  group:
+    name: P_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: mm hr-1
+P_scalar:
+  description: Scalar value
+  group:
+    name: P_group
+  value:
+    type: float
+    default: 0.0
+    range:
+      min: 0.0
+      max: 5000.0
+P_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: P_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+T_air_type:
+  description: Temperature of air
+  group:
+    name: T_air_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: degC
+T_air_scalar:
+  description: Scalar value
+  group:
+    name: T_air_group
+  value:
+    type: float
+    default: 20.0
+    range:
+      min: -100.0
+      max: 150.0
+T_air_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: T_air_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+T_surf_type:
+  description: Temperature at surface
+  group:
+    name: T_surf_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: degC
+T_surf_scalar:
+  description: Scalar value
+  group:
+    name: T_surf_group
+  value:
+    type: float
+    default: -5.0
+    range:
+      min: -100.0
+      max: 150.0
+T_surf_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: T_surf_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+RH_type:
+  description: Relative humidity
+  group:
+    name: RH_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: '-'
+RH_scalar:
+  description: Scalar value
+  group:
+    name: RH_group
+  value:
+    type: float
+    default: 0.5
+    range:
+      min: 0.0
+      max: 1.0
+RH_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: RH_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+p0_type:
+  description: Atmospheric pressure
+  group:
+    name: p0_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: mbar
+p0_scalar:
+  description: Scalar value
+  group:
+    name: p0_group
+  value:
+    type: float
+    default: 1000.0
+    range:
+      min: 750.0
+      max: 1500.0
+p0_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: p0_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+z_type:
+  description: Wind reference height
+  group:
+    name: z_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: m
+z_scalar:
+  description: Scalar value
+  group:
+    name: z_group
+  value:
+    type: float
+    default: 10.0
+    range:
+      min: 0.0
+      max: 1000.0
+z_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: z_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+uz_type:
+  description: Wind velocity at reference height
+  group:
+    name: uz_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: m s-1
+uz_scalar:
+  description: Scalar value
+  group:
+    name: uz_group
+  value:
+    type: float
+    default: 3.0
+    range:
+      min: 0.0
+      max: 20.0
+uz_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: uz_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+z0_air_type:
+  description: Surface roughness length scale for wind
+  group:
+    name: z0_air_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: m
+z0_air_scalar:
+  description: Scalar value
+  group:
+    name: z0_air_group
+  value:
+    type: float
+    default: 0.02
+    range:
+      min: 1E-4
+      max: 1E2
+z0_air_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: z0_air_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+albedo_type:
+  description: Surface albedo
+  group:
+    name: albedo_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: '-'
+albedo_scalar:
+  description: Scalar value
+  group:
+    name: albedo_group
+  value:
+    type: float
+    default: 0.8
+    range:
+      min: 0.0
+      max: 1.0
+albedo_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: albedo_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+em_surf_type:
+  description: Surface emissivity
+  group:
+    name: em_surf_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: '-'
+em_surf_scalar:
+  description: Scalar value
+  group:
+    name: em_surf_group
+  value:
+    type: float
+    default: 0.0
+    range:
+      min: 0.98
+      max: 1.0
+em_surf_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: em_surf_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+dust_atten_type:
+  description: Dust attenuation factor
+  group:
+    name: dust_atten_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: '-'
+dust_atten_scalar:
+  description: Scalar value
+  group:
+    name: dust_atten_group
+  value:
+    type: float
+    default: 0.08
+    range:
+      min: 0.0
+      max: 0.3
+dust_atten_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: dust_atten_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+cloud_factor_type:
+  description: Cloudiness factor, <i>c</i>
+  group:
+    name: cloud_factor_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: '-'
+cloud_factor_scalar:
+  description: Scalar value
+  group:
+    name: cloud_factor_group
+  value:
+    type: float
+    default: 0.0
+    range:
+      min: 0.0
+      max: 1.0
+cloud_factor_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: cloud_factor_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+canopy_factor_type:
+  description: Canopy coverage factor, <i>f</i>
+  group:
+    name: canopy_factor_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Scalar
+    choices:
+    - Scalar
+    - Grid
+    - Time_Series
+    - Grid_Sequence
+    units: '-'
+canopy_factor_scalar:
+  description: Scalar value
+  group:
+    name: canopy_factor_group
+  value:
+    type: float
+    default: 0.0
+    range:
+      min: 0.0
+      max: 1.0
+canopy_factor_file:
+  description: Grid, time series, or grid sequence file
+  group:
+    name: canopy_factor_group
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+slope_grid_file:
+  description: Slope grid file (flat binary file, row-major grid, 4-byte values)
+  value:
+    type: file
+    default: default_slope.bin
+    files:
+    - default_slope.bin
+aspect_grid_file:
+  description: Aspect grid file (flat binary file, row-major grid, 4-byte values)
+  value:
+    type: file
+    default: default_aspect.bin
+    files:
+    - default_aspect.bin
+GMT_offset:
+  description: Time zone offset from GMT
+  value:
+    type: choice
+    default: '0'
+    choices:
+    - '-12'
+    - '-11'
+    - '-10'
+    - '-9'
+    - '-8'
+    - '-7'
+    - '-6'
+    - '-5'
+    - '-4'
+    - '-3'
+    - '-2'
+    - '-1'
+    - '0'
+    - '1'
+    - '2'
+    - '3'
+    - '4'
+    - '5'
+    - '6'
+    - '7'
+    - '8'
+    - '9'
+    - '10'
+    - '11'
+    - '12'
+    units: '-'
+start_month:
+  description: Start month
+  value:
+    type: choice
+    default: January
+    choices:
+    - January
+    - February
+    - March
+    - April
+    - May
+    - June
+    - July
+    - August
+    - September
+    - October
+    - November
+    - December
+    units: '-'
+start_day:
+  description: Start day
+  value:
+    type: int
+    default: 1
+    range:
+      min: 0
+      max: 31
+    units: '-'
+start_hour:
+  description: Start hour
+  value:
+    type: float
+    default: 0.0
+    range:
+      min: 0.0
+      max: 23.99
+    units: '-'
+

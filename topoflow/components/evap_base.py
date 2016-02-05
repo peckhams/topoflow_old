@@ -152,6 +152,37 @@ class evap_component( BMI_base.BMI_component):
         self.open_input_files()
         self.read_input_files()
 
+        # Attempt to define default values for running evaporation
+        # components in standalone mode. (@mdpiper, 8/19/15)
+        try:
+            self.h_snow
+        except AttributeError:
+            self.h_snow = np.float64(0.0)
+        try:
+            self.Q_sum
+        except AttributeError:
+            self.Q_sum = np.float64(0.0)
+        try:
+            self.Qe
+        except AttributeError:
+            self.Qe = np.float64(0.0)
+        try:
+            self.Qn_SW
+        except AttributeError:
+            self.Qn_SW = np.float64(0.0)
+        try:
+            self.Qn_LW
+        except AttributeError:
+            self.Qn_LW = np.float64(0.0)
+        try:
+            self.T_air
+        except AttributeError:
+            self.T_air = np.float64(0.0)
+        try:
+            self.T_surf
+        except AttributeError:
+            self.T_surf = np.float64(0.0)
+
         #-----------------------
         # Initialize variables
         #-----------------------

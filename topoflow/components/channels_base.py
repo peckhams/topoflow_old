@@ -509,6 +509,41 @@ class channels_component( BMI_base.BMI_component ):
         print 'CHANNELS calling read_input_files()...'
         self.read_input_files()
 
+        # Attempt to define default values for running channels
+        # components in standalone mode. (@mdpiper, 8/19/15)
+        try:
+            self.P_rain
+        except AttributeError:
+            self.P_rain = np.float64(0.0)
+        try:
+            self.SM
+        except AttributeError:
+            self.SM = np.float64(0.0)
+        try:
+            self.ET
+        except AttributeError:
+            self.ET = np.float64(0.0)
+        try:
+            self.GW
+        except AttributeError:
+            self.GW = np.float64(0.0)
+        try:
+            self.IN
+        except AttributeError:
+            self.IN = np.float64(0.0)
+        try:
+            self.MR
+        except AttributeError:
+            self.MR = np.float64(0.0)
+        try:
+            self.rho_H2O
+        except AttributeError:
+            self.rho_H2O = np.float64(1000.0)  # met_base.py:525
+        try:
+            self.S_free
+        except AttributeError:
+            self.S_free = np.zeros(self.slope.shape)  # DEM shape from rti file
+
         #-----------------------
         # Initialize variables
         #-----------------------

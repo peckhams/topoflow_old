@@ -1,0 +1,199 @@
+%YAML 1.2
+---
+_name: Run
+run_duration:
+  description: Simulation run time
+  value:
+    type: int
+    default: 1
+    range:
+      min: 1
+      max: 1E20
+    units: yr
+CFL_factor:
+  description: Prefactor for CFL stability condition
+  value:
+    type: float
+    default: 0.2
+    range:
+      min: 0.0
+      max: 1.0
+pixel_file:
+  description: Monitored pixel/grid file
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+
+---
+_name: Input
+nx:
+  description: Number of columns in DEM
+  value:
+    type: int
+    default: 50
+    range:
+      min: 1
+      max: 1000000
+ny:
+  description: Number of rows in DEM
+  value:
+    type: int
+    default: 50
+    range:
+      min: 1
+      max: 1000000
+dx:
+  description: DEM resolution, columns
+  value:
+    type: float
+    default: 30.0
+    range:
+      min: 1.0
+      max: 1.0E6
+    units: m
+dy:
+  description: DEM resolution, rows
+  value:
+    type: float
+    default: 30.0
+    range:
+      min: 1.0
+      max: 1.0E6
+    units: m
+m:
+  description: Area exponent, <em>m</em>
+  value:
+    type: float
+    default: 1.5
+    range:
+      min: -10.0
+      max: 10.0
+n:
+  description: Slope exponent, <em>n</em>
+  value:
+    type: float
+    default: 1.0
+    range:
+      min: -10.0
+      max: 10.0
+K:
+  description: Erodibility, <em>K</em>
+  value:
+    type: float
+    default: 0.01
+    range:
+      min: 0.0001
+      max: 1.0E0
+p:
+  description: Q-A exponent, <em>p</em>
+  value:
+    type: float
+    default: 1.0
+    range:
+      min: -10.0
+      max: 10.0
+R:
+  description: Geomorphically effective rain rate, <em>R</em>
+  value:
+    type: float
+    default: 1.0
+    range:
+      min: 0.0
+      max: 1.0E2
+    units: m yr-1
+U:
+  description: Uplift rate, <em>U</em>
+  value:
+    type: float
+    default: 0.0
+    range:
+      min: 0.0
+      max: 1.0E3
+    units: mm yr-1
+BLR:
+  description: Base-level lowering rate, <em>L</em>
+  value:
+    type: float
+    default: 0.1
+    range:
+      min: 0.0
+      max: 1.0E3
+    units: mm yr-1
+make_z0_method:
+  description: Method to make initial DEM
+  group:
+    name: make_z0_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Flat
+    choices:
+    - Flat
+    - Plane
+    - Corner Plane
+z0_plane_dz_dx:
+  description: Slope in x-direction for Plane method
+  group:
+    name: make_z0_group
+  value:
+    type: float
+    default: 0.1
+    range:
+      min: -1.0E2
+      max: 1.0E2
+z0_plane_dz_dy:
+  description: Slope in y-direction for Plane method
+  group:
+    name: make_z0_group
+  value:
+    type: float
+    default: 0.0
+    range:
+      min: -1.0E2
+      max: 1.0E2
+noise_method:
+  description: Noise method
+  group:
+    name: noise_group
+    leader: true
+    members: 2
+  value:
+    type: choice
+    default: Midpoints
+    choices:
+    - Midpoints
+    - Gaussian
+    - No Noise
+noise_scale:
+  description: Scale factor for random noise
+  group:
+    name: noise_group
+  value:
+    type: float
+    default: 1.0
+    range:
+      min: -1.0E2
+      max: 1.0E2
+seed:
+  description: Random number generator seed
+  group:
+    name: noise_group
+  value:
+    type: int
+    default: 32767
+    range:
+      min: 1
+      max: 2147483647
+BC_method:
+  description: Boundary condition method
+  value:
+    type: choice
+    default: Four Sides
+    choices:
+    - Bottom
+    - Right
+    - Four Sides
+

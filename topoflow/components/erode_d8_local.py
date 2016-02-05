@@ -284,7 +284,7 @@ class erosion_component( erode_base.erosion_component ):
         self.d8.FILL_PITS_IN_Z0 = 0                   # (1/23/12)
         self.d8.A_units         = 'm^2'               # (1/23/12) May be needed.        
 
-        self.d8.initialize( cfg_prefix=self.cfg_prefix,
+        self.d8.initialize( cfg_file=self.cfg_file,
                             SILENT=self.SILENT,
                             REPORT=self.REPORT )
 

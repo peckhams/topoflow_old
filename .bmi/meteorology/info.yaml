@@ -1,0 +1,22 @@
+author: 'Scott D. Peckham '
+doi: 10.1594/IEDA/100174
+email: scott.peckham@colorado.edu
+license: Apache
+summary: "This component reads a variety of variables for the atmosphere\
+  \ and for the land surface from input files or as simple scalars. It then\
+  \ computes many additional variables, such as vapor pressure, eair, and\
+  \ net shortwave (solar) radiation, QSW, using built-in shortwave and longwave\
+  \ radiation calculators that are based on celestial mechanics and widely-used\
+  \ empirical relationships. These additional variables are needed by the\
+  \ Snowmelt \u2192 Energy Balance and Evaporation \u2192 Energy Balance\
+  \ components. Direct, diffuse and back-scattered radiation fluxes are\
+  \ all modeled. Properties of the atmosphere (e.g. precipitation rate,\
+  \ P, air temperature, Tair, relative humidity, RH, and dust attenuation,\
+  \ \u03B3), are used as well as surface/topographic properties (e.g. slope\
+  \ angle, aspect angle and surface albedo). The approach used here closely\
+  \ follows the one outlined in Appendix E of Dingman (2002). However, instantaneous\
+  \ vs. day-integrated radiation fluxes are used and the optical air mass\
+  \ is modeled using the widely used method of Kasten and Young (1989)."
+url: http://csdms.colorado.edu/wiki/Model_help:TopoFlow-Meteorology
+version: 3.1.0
+

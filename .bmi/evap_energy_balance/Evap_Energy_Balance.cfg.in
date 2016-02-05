@@ -1,0 +1,31 @@
+#===============================================================================
+# Topoflow Config File for: evap_energy_balance
+#===============================================================================
+# Input
+comp_status         | Enabled             | choice    | Component status [-] {Enabled; Disabled}
+in_directory        | {in_directory}      | string    | Input directory [-]
+out_directory       | {out_directory}     | string    | Output directory [-]
+site_prefix         | {site_prefix}       | string    | File prefix for the study site [-]
+case_prefix         | {case_prefix}       | string    | File prefix for the model scenario [-]
+n_steps             | {n_steps}           | long      | Number of time steps [-]
+dt                  | {dt}                | float     | Evaporation process timestep [sec]
+K_soil_type         | {K_soil_type}       | choice    | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+K_soil              | {K_soil}            | float     | Thermal conductivity of soil [W/m/deg_C]
+soil_x_type         | {soil_x_type}       | choice    | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+soil_x              | {soil_x}            | float     | Reference depth in soil [m]
+T_soil_x_type       | {T_soil_x_type}     | choice    | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+T_soil_x            | {T_soil_x}          | float     | Temperature of soil at depth x [degC]
+#===============================================================================
+# Output
+save_grid_dt        | {save_grid_dt}      | float     | Time interval between saved grids [sec]
+SAVE_ER_GRIDS       | {SAVE_ER_GRIDS}     | choice    | Option to save grids of evap. rate [mm/hr] {Yes; No}
+er_gs_file          | {er_gs_file}        | string    | Filename for grid stack of evap. rate [mm/hr]
+save_pixels_dt      | {save_pixels_dt}    | float     | Time interval between time series values [sec]
+pixel_file          | {pixel_file}        | string    | Filename for monitored pixel file [-]
+SAVE_ER_PIXELS      | {SAVE_ER_PIXELS}    | choice    | Option to save time series of evap. rate [-] {Yes; No}
+er_ts_file          | {er_ts_file}        | string    | Filename for time series of evap. rate [mm/hr]
+#===============================================================================
+# About
+ModelName           | {ModelName}         | String    | Name of the model [-]
+ModelAuthor         | {ModelAuthor}       | String    | Name of the model author [-]
+HTML_HELP_FILE      | {HTML_HELP_FILE}    | String    | Url for html help file [-]

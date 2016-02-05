@@ -1,0 +1,18 @@
+author: 'Scott D. Peckham '
+doi: 10.1594/IEDA/100174
+email: scott.peckham@colorado.edu
+license: Apache
+summary: This process component is part of a spatially-distributed hydrologic
+  model called TopoFlow, but it can now be used as a stand-alone model.
+  The dynamic wave method is the most complete and complex method for modeling
+  flow in open channels. This method retains all of the terms in the full,
+  1D momentum equation, including the gravity, friction and pressure gradient
+  terms (as used by the diffusive wave method) as well as local and convective
+  acceleration (or momentum flux) terms. This full equation is known as
+  the St. Venant equation. In the current version of TopoFlow it is assumed
+  that the flow directions are static and given by a D8 flow grid. In this
+  case, integral vs. differential forms of the conservation equations for
+  mass and momentum can be used.
+url: http://csdms.colorado.edu/wiki/Model_help:TopoFlow-Channels-Dynamic_Wave
+version: 3.1.0
+

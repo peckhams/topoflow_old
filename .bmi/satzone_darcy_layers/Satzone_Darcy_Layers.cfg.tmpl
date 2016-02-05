@@ -1,0 +1,61 @@
+#===============================================================================
+# Topoflow Config File for: Satzone_Darcy_Layers
+#===============================================================================
+# Input
+comp_status         | Enabled             | string    | Component status [-] {Enabled; Disabled}
+in_directory        | .                   | string    | Input directory [-]
+out_directory       | .                   | string    | Output directory [-]
+site_prefix         | {site_prefix}       | string    | File prefix for the study site [-]
+case_prefix         | {case_prefix}       | string    | File prefix for the model scenario [-]
+n_steps             | {n_steps}           | long      | Number of time steps [-]
+n_layers            | {n_layers}          | int       | Number of soil layers [-]
+dt                  | {dt}                | float     | Timestep for subsurface flow [sec]
+elev_type           | {elev_type}         | string            | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+elev                | {elev}              | {typeof_elev}     | Land surface elevation [m]
+h0_table_type       | {h0_table_type}     | string            | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+h0_table            | {h0_table}          | {typeof_h0_table} | Initial water table height [m]
+d_freeze_type       | {d_freeze_type}     | string            | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+d_freeze            | {d_freeze}          | {typeof_d_freeze} | Freeze depth below surface [m]
+d_thaw_type         | {d_thaw_type}       | string            | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+d_thaw              | {d_thaw}            | {typeof_d_thaw}   | Thaw depth below surface [m]
+#===============================================================================
+# Layer 1
+Ks_type[0]           | {Ks_0_type}         | string        | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+Ks[0]                | {Ks_0}              | {typeof_Ks_0} | Sat. hydraulic conductivity [m/s]
+qs_type[0]           | {qs_0_type}         | string        | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+qs[0]                | {qs_0}              | {typeof_qs_0} | Sat. soil water content [-]
+th_type[0]           | {th_0_type}         | string        | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+th[0]                | {th_0}              | {typeof_th_0} | Soil layer thickness [m]
+#===============================================================================
+# Layer 2
+Ks_type[1]           | {Ks_1_type}         | string        | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+Ks[1]                | {Ks_1}              | {typeof_Ks_1} | Sat. hydraulic conductivity [m/s]
+qs_type[1]           | {qs_1_type}         | string        | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+qs[1]                | {qs_1}              | {typeof_qs_1} | Sat. soil water content [-]
+th_type[1]           | {th_1_type}         | string        | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+th[1]                | {th_1}              | {typeof_th_1} | Soil layer thickness [m]
+#===============================================================================
+# Layer 3
+Ks_type[2]           | {Ks_2_type}         | string        | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+Ks[2]                | {Ks_2}              | {typeof_Ks_2} | Sat. hydraulic conductivity [m/s]
+qs_type[2]           | {qs_2_type}         | string        | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+qs[2]                | {qs_2}              | {typeof_qs_2} | Sat. soil water content [-]
+th_type[2]           | {th_2_type}         | string        | Allowed input types [-] {Scalar; Grid; Time_Series; Grid_Sequence}
+th[2]                | {th_2}              | {typeof_th_2} | Soil layer thickness [m]
+#===============================================================================
+# Output
+save_grid_dt        | {save_grid_dt}      | float     | Time interval between saved grids [sec]
+SAVE_HT_GRIDS       | No     | string    | Option to save grids of water table height [-] {Yes; No}
+ht_gs_file          | {ht_gs_file}        | string    | Filename for grid stack of water table height [m]
+SAVE_DF_GRIDS       | No     | string    | Option to save grids of freeze depth [-] {Yes; No}
+df_gs_file          | {df_gs_file}        | string    | Filename for grid stack of freeze depth [m]
+SAVE_DT_GRIDS       | No     | string    | Option to save grids of thaw depth [-] {Yes; No}
+dt_gs_file          | {dt_gs_file}        | string    | Filename for grid stack of thaw depth [m]
+save_pixels_dt      | {save_pixels_dt}    | float     | Time interval between time series values [sec]
+pixel_file          | {pixel_file}        | string    | Filename for monitored pixel file [-]
+SAVE_HT_PIXELS      | No    | string    | Option to save time series of water table height [-] {Yes; No}
+ht_ts_file          | {ht_ts_file}        | string    | Filename for time series of water table height [m]
+SAVE_DF_PIXELS      | No    | string    | Option to save time series of freeze depth [-] {Yes; No}
+df_ts_file          | {df_ts_file}        | string    | Filename for time series of freeze depth [m]
+SAVE_DT_PIXELS      | No    | string    | Option to save time series of thaw depth [-] {Yes; No}
+dt_ts_file          | {dt_ts_file}        | string    | Filename for time series of thaw depth [m]

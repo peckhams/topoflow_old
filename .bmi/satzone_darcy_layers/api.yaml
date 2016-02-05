@@ -1,0 +1,5 @@
+name: SatZoneDarcyLayers
+language: python
+
+package: topoflow.components.satzone_darcy_layers
+class: satzone_component

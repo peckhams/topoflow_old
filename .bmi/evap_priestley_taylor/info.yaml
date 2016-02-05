@@ -1,0 +1,9 @@
+author: Scott D. Peckham
+doi: 10.1594/IEDA/100174
+email: scott.peckham@colorado.edu
+license: Apache
+summary: This module is the evaporation process component (Priestley-Taylor
+  method) for a D8-based, spatial hydrologic model.
+url: http://csdms.colorado.edu/wiki/Model_help:TopoFlow-Evaporation-Priestley_Taylor
+version: 3.1.0
+

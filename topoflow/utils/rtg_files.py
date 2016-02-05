@@ -464,7 +464,7 @@ def read_grid( RTG_file, rti, RTG_type='FLOAT',
 #   read_grid()
 #--------------------------------------------------------------------
 def write_grid( grid, RTG_file, rti, RTG_type='FLOAT',
-                REPORT=False, SILENT=True ):
+                var_name=None, REPORT=False, SILENT=True ):
 
     if not(SILENT):    
         print 'Writing grid values...'

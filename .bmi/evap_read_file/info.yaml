@@ -1,0 +1,11 @@
+author: Scott D. Peckham
+doi: 10.1594/IEDA/100174
+email: scott.peckham@colorado.edu
+license: Apache
+summary: This process component is part of a spatially-distributed hydrologic
+  model called TopoFlow, but it can now be used as a stand-alone model.
+  Its function is to provide a way for reading in parameters for the evaporation
+  process.
+url: http://csdms.colorado.edu/wiki/Model_help:TopoFlow-Evaporation-Read_File
+version: 3.1.0
+

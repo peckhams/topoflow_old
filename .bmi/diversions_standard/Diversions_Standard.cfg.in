@@ -1,0 +1,20 @@
+#===============================================================================
+# Topoflow Config File for: diversions_standard
+#===============================================================================
+# Input
+comp_status         | Enabled             | choice    | Component status [-] {Enabled; Disabled}
+in_directory        | {in_directory}      | string    | Input directory [-]
+out_directory       | {out_directory}     | string    | Output directory [-]
+site_prefix         | {site_prefix}       | string    | File prefix for the study site [-]
+case_prefix         | {case_prefix}       | string    | File prefix for the model scenario [-]
+use_sources         | {use_sources}       | choice    | Option to use sources [-] {Yes; No}
+source_file         | {source_file}       | string    | Source information file [-]
+use_sinks           | {use_sinks}         | choice    | Option to use sinks [-] {Yes; No}
+sink_file           | {sink_file}         | string    | Sink information file [-]
+use_canals          | {use_canals}        | choice    | Option to use canals [-] {Yes; No}
+canal_file          | {canal_file}        | string    | Canal information file [-]
+#===============================================================================
+# About
+ModelName           | {ModelName}         | String    | Name of the model [-]
+ModelAuthor         | {ModelAuthor}       | String    | Name of the model author [-]
+HTML_HELP_FILE      | {HTML_HELP_FILE}    | String    | Url for html help file [-]

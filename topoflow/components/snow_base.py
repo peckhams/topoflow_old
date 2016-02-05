@@ -161,6 +161,38 @@ class snow_component( BMI_base.BMI_component ):
         self.open_input_files()
         self.read_input_files()
 
+        # Supply default values when running as a standalone component.
+        # The T_air, T_surf, and Q_sum choices should be reviewed. 
+        # (@mdpiper, 8/18/15)
+        try:
+            self.P_snow
+        except AttributeError:
+            self.P_snow = np.float64(0.0)  # from met_base.py, no precip
+        try:
+            self.rho_H2O
+        except AttributeError:
+            self.rho_H2O = np.float64(1000.0)  # met_base.py:525
+        try:
+            self.T_air
+        except AttributeError:
+            self.T_air = np.float64(0.0)  # iffy: T_air <= 0 needed for P_snow
+        try:
+            self.rho_air
+        except AttributeError:
+            self.rho_air = np.float64(1.2614)  # met_base.py:526
+        try:
+            self.Cp_air
+        except AttributeError:
+            self.Cp_air = np.float64(1005.7)  # met_base.py:527
+        try:
+            self.T_surf
+        except AttributeError:
+            self.T_surf = np.float64(0.0)
+        try:
+            self.Q_sum
+        except AttributeError:
+            self.Q_sum = np.float64(0.0)  # iffy: from init in met_base.py
+
         #---------------------------
         # Initialize computed vars
         #---------------------------

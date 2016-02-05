@@ -1,0 +1,5 @@
+name: SnowDegreeDay
+language: python
+
+package: topoflow.components.snow_degree_day
+class: snow_component

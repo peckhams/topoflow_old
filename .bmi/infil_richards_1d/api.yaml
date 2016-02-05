@@ -1,0 +1,5 @@
+name: InfilRichards1D
+language: python
+
+package: topoflow.components.infil_richards_1D
+class: infil_component

@@ -1,0 +1,86 @@
+%YAML 1.2
+---
+_name: Run
+run_duration:
+  description: Simulation run time
+  value:
+    type: int
+    default: 1
+    range:
+      min: 1
+      max: 3153600000
+    units: s
+dt:
+  description: Model time step
+  value:
+    type: float
+    default: 1.0
+    range:
+      min: 1.0
+      max: 31536000.0
+    units: s
+rti_file:
+  description: RiverTools info file
+  value:
+    type: file
+    default: default.rti
+    files:
+    - default.rti
+pixel_file:
+  description: Monitored pixel/grid file
+  value:
+    type: file
+    default: 'off'
+    files:
+    - 'off'
+
+---
+_name: Input
+DEM_file:
+  description: RiverTools grid file containing DEM
+  value:
+    type: file
+    default: default_DEM.rtg
+    files:
+    - default_DEM.rtg
+A_units:
+  description: Base unit for grid area
+  value:
+    type: choice
+    default: meters
+    choices:
+    - meters
+    - kilometers
+LINK_FLATS:
+  description: Link flats?
+  value:
+    type: choice
+    default: 'Yes'
+    choices:
+    - 'Yes'
+    - 'No'
+FILL_PITS_IN_Z0:
+  description: Fill pits in original DEM?
+  value:
+    type: choice
+    default: 'No'
+    choices:
+    - 'Yes'
+    - 'No'
+LR_PERIODIC:
+  description: Use periodic left-right boundary conditions?
+  value:
+    type: choice
+    default: 'No'
+    choices:
+    - 'Yes'
+    - 'No'
+TB_PERIODIC:
+  description: Use periodic top-bottom boundary conditions?
+  value:
+    type: choice
+    default: 'No'
+    choices:
+    - 'Yes'
+    - 'No'
+

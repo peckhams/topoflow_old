@@ -1,0 +1,5 @@
+name: D8Global
+language: python
+
+package: topoflow.components.d8_global
+class: d8_component
