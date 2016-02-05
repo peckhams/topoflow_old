@@ -187,7 +187,7 @@ class snow_component( BMI_base.BMI_component ):
         try:
             self.T_surf
         except AttributeError:
-            self.T_surf = self.T0  # see snow_energy_balance.py:358
+            self.T_surf = np.float64(0.0)
         try:
             self.Q_sum
         except AttributeError:
