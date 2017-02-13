@@ -1,0 +1,101 @@
+
+TopoFlow 3.5 Release Notes
+February 12, 2017
+
+===============================
+  Enhancements & New Features
+===============================
+* Improved installation instructions (in docs folder).
+
+* Added "__main__.py" in the "topoflow" package folder which allows
+  TopoFlow model runs to be launched at a terminal prompt with a
+  much shorter command.  See the new installation instructions.
+
+* New "path info configuration files":  [cfg_prefix]_path_info.cfg
+These contain in_directory, out_directory, site_prefix and case_prefix,
+which have been removed from each of the component CFG files.
+This new CFG file is read by the "read_path_info()" method in BMI_base.py.
+
+This greatly simplifies the preparation of CFG files for new model runs,
+but now all components must use the same in_directory and out_directory.
+(These 2 directories can still be different, allowing the same input files
+to be shared by multiple users without making copies, while output files
+are saved in a user-owned directory with write permission.)
+
+* Addition of initialize_var() and update_var() methods to utils/BMI_base.py.
+The initialize_var() method calls either the initialize_grid() or
+initialize_scalar() method.
+initialize_var() is only called in channels_base.py, so far.
+update_var() is now called in:
+   channels_base.py
+   met_base.py
+   model_input.py  (This improves performance for every case where a
+     time-varying input variable is read from a file into memory.)
+----------
+EXPLAIN THE ADVANTAGE AND GOAL.
+  (Check how float64 scalars are handled, and whether they are
+   preserved as a reference, etc.  (0d numpy arrays, etc., use
+   of [:] or ".fill", etc.)
+
+* Now there is a CFG file for the D8_Global class, which has the form:
+  [cfg_prefix]_d8_global.cfg
+  At one point, it had the form [site_prefix]_d8_global.cfg, which made
+  it the only CFG file that didn't start with [cfg_prefix].
+
+* Improved the output printed to the console at the end of a TopoFlow
+  model run by the component "topoflow_driver.py".
+
+* Removed use of tf_d8_base.py -- now d8_base.py is used by both TopoFlow
+  and the included Erode model.
+
+* Updated EMELI to remove references to obsolete "port" concept.
+
+* Added a mediator for automatic unit conversion to framework/emeli.py
+  that uses UDUNITS2 and the cfunits Python package.
+
+* Added a new infiltration process component (infil_beven.py).
+
+* Added new BMI version 2 functions.
+
+* BMI_base.py:  In get_grid_shape(),   ordering is now [nz, ny, nx].
+* BMI_base.py:  In get_grid_spacing(), ordering is now [dz, dy, dx].
+* BMI_base.py:  In get_grid_origin(),  ordering is now [z0, y0, x0].
+
+* New initialize_basin_vars() in BMI_base.py that uses outlets.py.
+
+* Removed "feature" where the midpoint of a DEM was used for the basin
+  outlet in the absence of an outlet_file: [case_prefix]_outlets.txt.
+  This resulted in strange behavior and very small discharge values.
+
+* Removed numerous, obsolete code blocks that had been commented out.
+
+====================================
+  Remaining Issues & Possible Bugs
+====================================
+
+* Many components & utilities do not have "triple quote" help strings.
+
+* Most of the component unit tests are broken or missing.
+
+* Calls to the obsolete "set_port_data()" method are commented out in 
+  evap_base.py, but are still not handled correctly.
+
+* channels_base.py and topoflow_driver.py components used to call diversions.update(),
+  but these calls are now commented out.  (Diversion functionality may be broken.)
+
+* NetCDF writing utilities (LIST THEM) do not yet write CSN names to output files.
+
+* There is still a call to obsolete "set_grid_double" in satzone_base.py.
+ 
+* There are still numerous calls to "idl_func" methods that should be updated.
+
+* Calls to self.cp.get_values_in_grid_double() and self.cp.set_values_in_grid_double()
+  are commented out in diversions_fraction_method.py component, but check that the
+  code still works.
+
+* Check that all issues in 00_PROBLEMS.txt have been included here.
+
+* Add more detail to the README.md file in the package.
+
+
+
