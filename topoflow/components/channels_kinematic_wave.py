@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2001-2014, Scott D. Peckham
+#  Copyright (c) 2001-2016, Scott D. Peckham
 #
 #  Sep 2014.  New standard names and BMI updates and testing.
 #  Nov 2013.  Converted TopoFlow to a Python package.
@@ -18,6 +18,7 @@
 #
 #  class channels_component
 #
+#      get_component_name()
 #      get_attribute()           # (10/26/11)
 #      get_input_var_names()     # (defined in channels_base.py)
 #      get_output_var_names()    # (defined in channels_base.py)
@@ -52,7 +53,13 @@ class channels_component(channels_base.channels_component):
         'gui_xml_file':       '/home/csdms/cca/topoflow/3.1/src/share/cmt/gui/Channels_Kinematic_Wave.xml',
         'dialog_title':       'Channels: Kinematic Wave Parameters',
         'time_units':         'seconds' }
-    
+
+    #-------------------------------------------------------------------
+    def get_component_name(self):
+  
+        return 'TopoFlow_Channels_Kinematic_Wave'
+
+    #   get_component_name()  
     #-------------------------------------------------------------------
     def get_attribute(self, att_name):
 
@@ -105,6 +112,13 @@ class channels_component(channels_base.channels_component):
         if (self.LAW_OF_WALL):    
             self.u = self.law_of_the_wall()
 
+        #------------------------------------------
+        # Use a constant velocity (test: 5/18/15)
+        # See initialize().
+        #------------------------------------------
+        # if not(self.MANNING) and not(self.LAW_OF_WALL):    
+        #    self.u[:] = 
+            
         # print '(umin, umax) =', self.u.min(), self.u.max()
         
     #   update_velocity()                       

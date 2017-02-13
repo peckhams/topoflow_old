@@ -33,6 +33,7 @@ from topoflow.utils      import rtg_files
 #
 #   class d8_global    (inherits from d8_base.py)
 #
+#       get_component_name()
 #       get_attribute()             # (10/27/11)
 #       update_flow_grid()
 #          start_new_d8_codes()
@@ -57,24 +58,34 @@ class d8_component( d8_base.d8_component ):
     # Note: Do not define an __init__() method here.  It will
     #       override things needed from CSDMS_base.__init__()
     #-------------------------------------------------------------------
+    _att_map = {
+        'model_name':         'D8_Global',
+        'version':            '3.5',
+        'author_name':        'Scott D. Peckham',
+        'grid_type':          'uniform',
+        'time_step_type':     'fixed',
+        'step_method':        'explicit',
+        #------------------------------------------------------
+        'comp_name':          'D8Global',
+        'model_family':       'TopoFlow',
+        'cfg_template_file':  'd8_global.cfg.in',
+        'cfg_extension':      '_d8_global.cfg',
+        'cmt_var_prefix':     '/D8Global/Input/Var/',
+        'gui_xml_file':       '/home/csdms/cca/topoflow/3.1/src/share/cmt/gui/Channels_Kinematic_Wave.xml',
+        'dialog_title':       'D8 Global Parameters',
+        'time_units':         'seconds' }
+
+    #-------------------------------------------------------------------
+    def get_component_name(self):
+  
+        return 'TopoFlow_D8_Global'
+
+    #   get_component_name()  
+    #-------------------------------------------------------------------
     def get_attribute(self, att_name):
 
-        map = {'comp_name':          'D8Global',
-               'version':            '0.5',
-               'model_name':         'D8_Global',
-               'model_family':       'Erode',
-               'cfg_template_file':  'D8_Global.cfg.in',
-               'cfg_extension':      '_d8_global.cfg',     # (was just "_d8.cfg")
-               'cmt_var_prefix':     '/D8Global/Input/Var/',
-               'gui_xml_file':       '/home/csdms/cca/erode/0.5/src/share/cmt/gui/D8_Global.xml',
-               'dialog_title':       'D8: Global-Timestep Method Parameters',
-               'time_step_type':     'adaptive',
-               'time_units':         'years',
-               'mesh_type':          'uniform',
-               'author_name':        'Scott Peckham'}
-        
-        try: 
-            return map[ att_name.lower() ]
+        try:
+            return self._att_map[ att_name.lower() ]
         except:
             print '###################################################'
             print ' ERROR: Could not find attribute: ' + att_name
@@ -169,7 +180,7 @@ class d8_component( d8_base.d8_component ):
                            SILENT=True, REPORT=False):
         
         #--------------------------------------------------------------
-        # Notes: If (z != None), then update D8 codes only for the
+        # Notes: If (z is not None), then update D8 codes only for the
         #        pixels with those IDs. (3/2/10)
         #        Should IDs and z be set directly into d8's state
         #        instead of being passed as args?
@@ -814,14 +825,14 @@ class d8_component( d8_base.d8_component ):
         #-------------------------------------
         # Some flow directions may not occur
         #-------------------------------------
-        self.p1_OK = (self.p1 != None)
-        self.p2_OK = (self.p2 != None)
-        self.p3_OK = (self.p3 != None)
-        self.p4_OK = (self.p4 != None)
-        self.p5_OK = (self.p5 != None)
-        self.p6_OK = (self.p6 != None)
-        self.p7_OK = (self.p7 != None)
-        self.p8_OK = (self.p8 != None)
+        self.p1_OK = (self.p1 is not None)
+        self.p2_OK = (self.p2 is not None)
+        self.p3_OK = (self.p3 is not None)
+        self.p4_OK = (self.p4 is not None)
+        self.p5_OK = (self.p5 is not None)
+        self.p6_OK = (self.p6 is not None)
+        self.p7_OK = (self.p7 is not None)
+        self.p8_OK = (self.p8 is not None)
 
     #   update_flow_to_IDs()
     #-------------------------------------------------------------------

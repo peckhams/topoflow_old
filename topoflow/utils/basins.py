@@ -3,6 +3,7 @@
 #
 # Sept 2014.  Moved some functions into outlets.py to avoid cyclic
 #             dependencies between BMI_base.py and basins.py.
+# Nov. 2016.  This file may be obsolete now, replaced by outlets.py.  ########
 #
 # January, August 2009
 # May 2010 (changes to unit_test(), initialize(), etc.)
@@ -113,7 +114,7 @@ class basins_component( BMI_base.BMI_component ):
         # Then read IDs of all cells in the first
         # (or main) basin, i.e. above first outlet.
         #---------------------------------------------
-        outlets.read_outlet_data( self )   # (uses nx and ny)
+        outlets.read_outlet_file( self )   # (uses nx and ny)
         
         # outlets.read_main_basin_IDs( self )
 

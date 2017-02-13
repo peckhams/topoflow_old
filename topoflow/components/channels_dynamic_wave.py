@@ -18,6 +18,7 @@
 #
 #  class channels_component
 #
+#      get_component_name()
 #      get_attribute()           # (10/26/11)
 #      get_input_var_names()     # (defined in channels_base.py)
 #      get_output_var_names()    # (defined in channels_base.py)
@@ -52,7 +53,13 @@ class channels_component(channels_base.channels_component):
         'gui_xml_file':       '/home/csdms/cca/topoflow/3.1/src/share/cmt/gui/Channels_Dynamic_Wave.xml',
         'dialog_title':       'Channels: Dynamic Wave Parameters',
         'time_units':         'seconds' }
-    
+
+    #-------------------------------------------------------------------
+    def get_component_name(self):
+  
+        return 'TopoFlow_Channels_Dynamic_Wave'
+
+    #   get_component_name()      
     #-------------------------------------------------------------------
     def get_attribute(self, att_name):
 

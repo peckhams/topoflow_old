@@ -65,21 +65,29 @@ def read_outlet_file( self ):
     else:
         outlet_file = (self.case_prefix + '_outlets.txt')
     self.outlet_file = (self.in_directory + outlet_file)
-    ### print '### self.outlet_file =', self.outlet_file
+    ## print '### self.outlet_file =', self.outlet_file
 
 	#--------------------------------------
 	# Does outlet_file exist ? (10/25/11)
 	#--------------------------------------
     if not(os.path.exists( self.outlet_file )):
-        hash_line = ''.rjust(60, "#")
+        hash_line = ''.rjust(70, "#")
         print hash_line 
         print ' ERROR: Could not find monitored pixel file:'
         print ' ' + self.outlet_file
-        print ' Creating default version of file. '
+        #----------------------------------------------
         print hash_line 
         print ' '
-        write_outlet_file( self ) 
-		# return
+        raise IOError('Could not find outlet_file.')
+        # return
+        ## sys.exit()   ### This closes Python session -- too extreme.
+        #------------------------------------------------------
+		# This led to more problems than it fixed. (11/11/16)
+        #------------------------------------------------------
+        # print ' Creating default version of file. '
+        # print hash_line 
+        # print ' '
+        # write_outlet_file( self ) 
 
 ##        file_unit = open(self.outlet_file, 'r')
 ##        cfg.skip_header(file_unit, n_lines=6)

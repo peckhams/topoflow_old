@@ -1,6 +1,7 @@
 #
-#  Copyright (c) 2001-2014, Scott D. Peckham
+#  Copyright (c) 2001-2016, Scott D. Peckham
 #
+#  Nov 2016.
 #  Sep 2014. 
 #  Nov 2013.  Converted TopoFlow to Python package.
 #  Jan 2013.  Revised handling of input/output names.
@@ -18,6 +19,7 @@
 #
 #  class satzone_component
 #
+#      get_component_name()
 #      get_attribute()          # (10/26/11)
 #      get_input_var_names()    # (5/16/12, Bolton)
 #      get_output_var_names()   # (5/16/12, Bolton)
@@ -34,7 +36,7 @@
 #
 #-----------------------------------------------------------------------
 
-import numpy
+import numpy as np
 import os
 
 from topoflow.components import satzone_base
@@ -108,7 +110,7 @@ class satzone_component( satzone_base.satzone_component ):
     #       qs_top = qs[0], or y_top = y[0,:,:], then they will
     #       also change whenever the main ndarray changes.
     #       To see this, try:
-    #           >>> a = numpy.ones((3,3))
+    #           >>> a = np.ones((3,3))
     #           >>> b = a[0,:]
     #           >>> print a
     #           >>> print b
@@ -198,9 +200,15 @@ class satzone_component( satzone_base.satzone_component ):
     #------------------------------------------------    
     # Return NumPy string arrays vs. Python lists ?
     #------------------------------------------------
-    ## _input_var_names  = numpy.array( _input_var_names )
-    ## _output_var_names = numpy.array( _output_var_names )
-    
+    ## _input_var_names  = np.array( _input_var_names )
+    ## _output_var_names = np.array( _output_var_names )
+
+    #-------------------------------------------------------------------
+    def get_component_name(self):
+  
+        return 'TopoFlow_Satzone_Darcy_Layers'
+
+    #   get_component_name()     
     #-------------------------------------------------------------------
     def get_attribute(self, att_name):
 
@@ -292,7 +300,7 @@ class satzone_component( satzone_base.satzone_component ):
 ##    dims = idl_func.size(h, dimensions=True)
 ##    ncols = dims[0]
 ##    nrows = dims[1]
-##    Q = numpy.zeros([nrows, ncols], dtype='Float32')
+##    Q = np.zeros([nrows, ncols], dtype='Float32')
 ##    
 ##    #------------------------------------
 ##    #Add Q for each layer, via Darcy law

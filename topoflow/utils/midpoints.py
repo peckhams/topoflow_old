@@ -252,7 +252,7 @@ def make_fractal_surface(n_levels, H=1.5, RTG_file=None,
     #-------------------------------------------
     # Option to save to RTG file with RTI file
     #-------------------------------------------
-    if (RTG_file != None):
+    if (RTG_file is not None):
         ###############################
         # CHECK FOR OVERWRITE HERE !
         ###############################

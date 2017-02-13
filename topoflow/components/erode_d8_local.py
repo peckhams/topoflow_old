@@ -139,6 +139,7 @@
 #
 #  class erosion_component   # (inherits from erode_base.py)
 #
+#      get_component_name()
 #      get_attribute()              ## (10/27/11)
 #      initialize_d8_vars()
 #      get_interior_pit_IDs()       ## (uses not_edge_grid)
@@ -230,7 +231,13 @@ from topoflow.utils      import rtg_files
 #-----------------------------------------------------------------------
 class erosion_component( erode_base.erosion_component ):
 
-    #-------------------------------------------
+    #-------------------------------------------------------------------
+    def get_component_name(self):
+  
+        return 'TopoFlow_Erode_D8_Local'
+
+    #   get_component_name() 
+    #-------------------------------------------------------------------
     # Update this to match erode_d8_global.py.
     #-------------------------------------------------------------------
     def get_attribute(self, att_name):
@@ -2233,16 +2240,6 @@ class erosion_component( erode_base.erosion_component ):
         print ' '
         self.print_final_report(comp_name='Erode-D8-Local 0.9 (3/4/12)',
                                 mode='driver')  ## NEED THIS !!
-                                ## model_info='Erode 3.1 (11/15/11)',
-                                ## comp_name='Erosion component')
-        
-        #---------------------------
-        # Release all of the ports
-        #----------------------------------------
-        # Make this call in "finalize()" method
-        # of the component's CCA IMPL file.
-        #----------------------------------------
-        # self.release_cca_ports( port_names, d_services )
 
         self.status = 'finalized'  # (OpenMI)
 
@@ -3598,7 +3595,7 @@ class erosion_component( erode_base.erosion_component ):
         # and this happens when initialize_d8_vars()
         # calls it.
         #--------------------------------------------------        
-##        if (IDs != None):
+##        if (IDs is not None):
 ##            d8_before = self.d8.d8_grid.flat[ IDs ]
 ##            A_before  = self.d8.A.flat[ IDs ]
 
@@ -3709,7 +3706,7 @@ class erosion_component( erode_base.erosion_component ):
                         SILENT=SILENT, REPORT=REPORT )
         
  
-##        if (IDs != None):
+##        if (IDs is not None):
 ##            d8_after = self.d8.d8_grid.flat[ IDs ]
 ##            A_after  = self.d8.A.flat[ IDs ]
 ##            if (d8_before[0] != d8_after[0]):

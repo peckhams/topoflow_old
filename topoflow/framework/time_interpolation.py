@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------     
-# Copyright (c) 2013, Scott D. Peckham
+# Copyright (c) 2013-2016, Scott D. Peckham
 #
 # Apr 2013. New time interpolator class from/for framework3.py.
 #
@@ -84,7 +84,7 @@ class time_interp_data():
         except:
             self.v1 = self.v2.copy()
         #-----------------------------------           
-##        if (np.rank( self.v1 ) > 0):
+##        if (np.ndim( self.v1 ) > 0):
 ##            self.v1[:] = self.v2.copy()
 ##        else:
 ##            self.v1 = self.v2.copy()
@@ -100,7 +100,7 @@ class time_interp_data():
         except:
             self.v2 = v2.copy()     ## NEED THIS!
         #-----------------------------------  
-##        if (np.rank( self.v2 ) > 0):
+##        if (np.ndim( self.v2 ) > 0):
 ##            self.v2[:] = v2
 ##        else:
 ##            self.v2 = v2
@@ -156,31 +156,30 @@ class time_interpolator():
     secs_per_month = secs_per_year / 12    #########
     
     #---------------------------------------------------------- 
-    def __init__( self, comp_set, port_names, vars_provided,
+    def __init__( self, comp_set, comp_names, vars_provided,
                   method='Linear' ):
 
         #-------------------------------------------------------
         # Note: These are currently passed in from framework.
         #
-        #       comp_set = a dictionary that takes a port_name
+        #       comp_set = a dictionary that takes a comp_name
         #                  key and returns a reference to a
         #                  BMI model instance.
         #
-        #       port_names = a list of all port_names that
+        #       comp_names = a list of all comp_names that
         #                    provide vars to other components
-        #                    (essentially "component type")
         #                    (and all of the keys in comp_set)
         #
         #       vars_provided = a dictionary that takes a
-        #                       port_name key and returns a
+        #                       comp_name key and returns a
         #                       list of all the long_var_names
-        #                       that the port actually provides
+        #                       that the comp actually provides
         #                       to another component in the set
         #
         #       method = 'None' or 'Linear' (so far)
         #-------------------------------------------------------
         self.comp_set             = comp_set
-        self.provider_port_list   = port_names
+        self.provider_comp_list   = comp_names
         self.vars_provided        = vars_provided
         self.interpolation_method = method
         print 'Time interpolation method =', method
@@ -200,7 +199,7 @@ class time_interpolator():
         #       perform time interpolation for that variable when
         #       it is requested from other components.
         #
-        #       Note that self.vars_provided[ provider_port_name ]
+        #       Note that self.vars_provided[ provider_comp_name ]
         #       contains a list of vars that are actually provided
         #       by that provider port to some other component in
         #       the current set of components (i.e. "comp_set").
@@ -209,7 +208,7 @@ class time_interpolator():
         #       vars that vary in time and those that don't, then
         #       we could avoid some extra work.  But this works.
         #-------------------------------------------------------------
-        # Note: provider_port_list always includes the Driver.
+        # Note: provider_comp_list always includes the Driver.
         #-------------------------------------------------------------        
         method = self.interpolation_method
         
@@ -223,10 +222,10 @@ class time_interpolator():
             # For new method, we must call bmi.update()
             # for every provider here. (4/13/13)
             #--------------------------------------------
-            for port_name in self.provider_port_list:
-                bmi = self.comp_set[ port_name ]                
+            for comp_name in self.provider_comp_list:
+                bmi = self.comp_set[ comp_name ]                
                 bmi.update( -1.0 )
-##                print 'Updated port: ' + port_name
+##                print 'Updated component: ' + comp_name
 ##            print ' '
             return
         
@@ -236,8 +235,8 @@ class time_interpolator():
         if (method == 'Linear'):
             self.time_interp_vars = dict()
             
-            for port_name in self.provider_port_list:
-                bmi = self.comp_set[ port_name ]
+            for comp_name in self.provider_comp_list:
+                bmi = self.comp_set[ comp_name ]
                 #---------------------------------------
                 # Get t1 and convert units, if needed.
                 #---------------------------------------
@@ -248,7 +247,7 @@ class time_interpolator():
                 #---------------------------------------------------
                 # Get vars at start of interpolation time interval
                 #---------------------------------------------------                
-                for long_var_name in self.vars_provided[ port_name ]:
+                for long_var_name in self.vars_provided[ comp_name ]:
                     v1 = bmi.get_values( long_var_name )
                     data = time_interp_data( v1=v1, t1=t1, \
                                 long_var_name=long_var_name )
@@ -271,13 +270,13 @@ class time_interpolator():
                 #--------------
                 # For testing
                 #--------------
-##                print 'Updated port: ' + port_name
+##                print 'Updated component: ' + comp_name
 ##                print '   (t1, t2) =', t1, t2
                 
                 #-------------------------------------------------
                 # Get vars at end of interpolation time interval
                 #-------------------------------------------------                
-                for long_var_name in self.vars_provided[ port_name ]:       
+                for long_var_name in self.vars_provided[ comp_name ]:       
                     v2 = bmi.get_values( long_var_name )
                     #-------------------------------------
                     # Save (v2,t2) and update the time
@@ -308,7 +307,7 @@ class time_interpolator():
         
     #   initialize()
     #-------------------------------------------------------------------        
-    def update( self, port_name, time ):
+    def update( self, comp_name, time ):
 
         #------------------------------------------------------------
         # Note: This function provides automatic time-interpolation
@@ -323,7 +322,7 @@ class time_interpolator():
         #       than the framework time.
         #
         #       We must make sure that this method works when called
-        #       for the component (port_name) that has the smallest
+        #       for the component (comp_name) that has the smallest
         #       time step.  In that case, we don't need to do any
         #       time interpolation and should take the "None" branch
         #       below.  #### CHECK THAT THIS HAPPENS. ####
@@ -334,10 +333,10 @@ class time_interpolator():
         #------------------------------------------------------------ 
         DEBUG = False
         ## DEBUG = True
-        bmi = self.comp_set[ port_name ]
+        bmi = self.comp_set[ comp_name ]
 
         #-----------------------------------------------------
-        # Get current time of component with this port_name.
+        # Get current time of component with this comp_name.
         # Convert units to framework time units, if needed.
         #-----------------------------------------------------
         comp_time_units = bmi.get_time_units()
@@ -347,7 +346,7 @@ class time_interpolator():
         #--------------
         # For testing
         #--------------
-##        print 'port_name =', port_name
+##        print 'comp_name =', comp_name
 ##        print 'comp_time before =', comp_time0
 ##        print 'comp_time after  =', comp_time
 ##        print ' '
@@ -356,7 +355,7 @@ class time_interpolator():
             print '============================================='
             print 'In update_time_interpolation():'
             print '  time (fmwk) =', time
-            print '  port_name   =', port_name
+            print '  comp_name   =', comp_name
             print '  comp_time   =', comp_time
 
         #--------------------------------------------
@@ -367,7 +366,7 @@ class time_interpolator():
         ### if (time < comp_time):   # (This works, too.)
         if (time <= comp_time):
             if (DEBUG):
-                print '  NO update for: ' + port_name + ' interp. vars'
+                print '  NO update for: ' + comp_name + ' interp. vars'
             return
 
         #------------------------------------------------
@@ -377,7 +376,7 @@ class time_interpolator():
         # update the time interpolation vars.
         #------------------------------------------------
         if (DEBUG):
-            print '  Framework updated: ' + port_name + ' interp. vars'
+            print '  Framework updated: ' + comp_name + ' interp. vars'
 
         #------------------------------------------------
         # Note: We need to check the component status
@@ -404,7 +403,7 @@ class time_interpolator():
             # in order to get comp_time > time.
             #-------------------------------------------------
             bmi.update( -1.0 )
-            ## self.update( port_name )  # (Checks for failure.)
+            ## self.update( comp_name )  # (Checks for failure.)
             return
         
         #-------------------------------      
@@ -416,7 +415,7 @@ class time_interpolator():
             # Call this component's update() just once.
             #--------------------------------------------
             bmi.update( -1.0 )
-            ## self.update( port_name )  # (has error messages)
+            ## self.update( comp_name )  # (has error messages)
 
             #---------------------------------------
             # Get t2 and convert units, if needed.
@@ -428,7 +427,7 @@ class time_interpolator():
             #---------------------------------------------------
             # Get values at end of interpolation time interval
             #--------------------------------------------------- 
-            for long_var_name in self.vars_provided[ port_name ]:
+            for long_var_name in self.vars_provided[ comp_name ]:
                 #------------------------------------------------
                 # Note: bmi.get_values() works for any rank.
                 #------------------------------------------------
@@ -452,7 +451,7 @@ class time_interpolator():
                 #--------------
                 # For testing
                 #--------------
-##                print 'Updated port: ' + port_name
+##                print 'Updated component: ' + comp_name
 ##                print '   (t1, t2) =', i_vars.t1, i_vars.t2
                
             return
@@ -465,7 +464,7 @@ class time_interpolator():
 
     #   update()
     #-------------------------------------------------------------------        
-    def update2( self, port_name ):
+    def update2( self, comp_name ):
 
         #------------------------------------------------------------
         # Note: This function provides automatic time-interpolation
@@ -480,7 +479,7 @@ class time_interpolator():
         #       than the framework time.
         #
         #       We must make sure that this method works when called
-        #       for the component (port_name) that has the smallest
+        #       for the component (comp_name) that has the smallest
         #       time step.  In that case, we don't need to do any
         #       time interpolation and should take the "None" branch
         #       below.  #### CHECK THAT THIS HAPPENS. ####
@@ -511,7 +510,7 @@ class time_interpolator():
         # the initialize() method caused all other
         # components to reach "updated" status.
         #------------------------------------------------
-        bmi = self.comp_set[ port_name ]  # (or pass in bmi)
+        bmi = self.comp_set[ comp_name ]  # (or pass in bmi)
         comp_status = bmi.get_status()
         # if (comp_status == 'disabled'):  # (not used/ready yet)
         if (comp_status == 'initialized'):  # (this works)
@@ -532,7 +531,7 @@ class time_interpolator():
             #---------------------------------------------------
             # Get values at end of interpolation time interval
             #--------------------------------------------------- 
-            for long_var_name in self.vars_provided[ port_name ]:
+            for long_var_name in self.vars_provided[ comp_name ]:
                 #------------------------------------------------
                 # Note: bmi.get_values() works for any rank.
                 #------------------------------------------------
@@ -556,7 +555,7 @@ class time_interpolator():
                 #--------------
                 # For testing
                 #--------------
-##                print 'Updated port: ' + port_name
+##                print 'Updated component: ' + comp_name
 ##                print '   (t1, t2) =', i_vars.t1, i_vars.t2
                
             return
@@ -571,22 +570,22 @@ class time_interpolator():
     #-------------------------------------------------------------------        
     def update_all( self, time ):
 
-        for port_name in self.provider_port_list:
-            self.update( port_name, time )
+        for comp_name in self.provider_comp_list:
+            self.update( comp_name, time )
 
     #   update_all()
     #-------------------------------------------------------------------        
-    def get_values( self, long_var_name, port_name, time ):
+    def get_values( self, long_var_name, comp_name, time ):
 
         #-------------------------------------------------------
         # Note: This method returns a NumPy "ndarray" object
         #       that Babel is able to pass to other components
         #       as a SIDL generic array.
         #-------------------------------------------------------
-        # Note: The update() method is called for port_name
+        # Note: The update() method is called for comp_name
         #       before this is called.
         #-------------------------------------------------------
-        bmi = self.comp_set[ port_name ]  # (pass in bmi ?)
+        bmi = self.comp_set[ comp_name ]  # (pass in bmi ?)
 
         #-------------------------------------------------------
         # Has this component been disabled?  If so, it doesn't
@@ -626,7 +625,7 @@ class time_interpolator():
                 print '#########################################'
                 print ' ERROR: time > bmi_time in get_values().'
                 print '        time, bmi_time =', time, bmi_time
-                print '        port_name =', port_name
+                print '        comp_name =', comp_name
                 print '#########################################'
                 print ' '
                 
@@ -648,7 +647,7 @@ class time_interpolator():
                 print '#######################################'
                 print ' ERROR: time > t2 in get_values().'
                 print '        time, t2 =', time, i_vars.t2
-                print '        port_name =', port_name
+                print '        comp_name =', comp_name
                 print '#######################################'
                 print ' '
 

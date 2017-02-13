@@ -118,16 +118,16 @@ def open_new_gs_file(self, file_name, info=None,
     #---------------------------
     # Was grid info provided ?
     #---------------------------
-    if (info != None):
+    if (info is not None):
         info.file_name = file_name
         info.data_type = rti_files.get_rti_data_type( dtype )
-        if (nx != None): info.ncols = nx
-        if (ny != None): info.nrows = ny
-        if (dx != None): info.xres  = dx
-        if (dy != None): info.yres  = dy
+        if (nx is not None): info.ncols = nx
+        if (ny is not None): info.nrows = ny
+        if (dx is not None): info.xres  = dx
+        if (dy is not None): info.yres  = dy
     else:
-        if (nx != None) and (ny != None) and \
-           (dx != None) and (dy != None):
+        if (nx is not None) and (ny is not None) and \
+           (dx is not None) and (dy is not None):
             info = rti_files.make_info( file_name, nx, ny, dx, dy )
         else:
             print 'ERROR during open_new_gs_file().'
@@ -233,10 +233,8 @@ def add_grid(self, var, var_name, time=None, SILENT=True):
     #--------------------------------------------------------
 ##    ncgs_unit_str = "self." + var_name + "_ncgs_unit"
 ##    exec( ncgs_unit_str + ".add_grid( var, var_name, time )")
-
-    #--------------------------------
-    # Add the grid to a netCDF file
-    #--------------------------------
+    
+    ## if (USE_NC):
     try:
         ncgs_unit_str = "self." + var_name + "_ncgs_unit"
         exec( ncgs_unit_str + ".add_grid( var, var_name, time )")
@@ -244,9 +242,7 @@ def add_grid(self, var, var_name, time=None, SILENT=True):
         if not(SILENT):
             print 'ERROR: Unable to add grid to netCDF file.'
 
-    #------------------------------
-    # Add the grid to an RTS file
-    #------------------------------
+    ## if (USE_RTS):
     try:
         rts_unit_str = "self." + var_name + "_rts_unit"
         exec( rts_unit_str + ".add_grid( var )" )
@@ -569,16 +565,16 @@ def open_new_cs_file(self, file_name, info=None,
     #---------------------------
     # Was grid info provided ?
     #---------------------------
-    if (info != None):
+    if (info is not None):
         info.file_name = file_name
         info.data_type = rti_files.get_rti_data_type( dtype )
-        if (nx != None): info.ncols = nx
-        if (ny != None): info.nrows = ny
-        if (dx != None): info.xres  = dx
-        if (dy != None): info.yres  = dy
+        if (nx is not None): info.ncols = nx
+        if (ny is not None): info.nrows = ny
+        if (dx is not None): info.xres  = dx
+        if (dy is not None): info.yres  = dy
     else:
-        if (nx != None) and (ny != None) and \
-           (dx != None) and (dy != None):
+        if (nx is not None) and (ny is not None) and \
+           (dx is not None) and (dy is not None):
             info = rti_files.make_info( file_name, nx, ny, dx, dy )
         else:
             print 'ERROR during open_new_cs_file().'

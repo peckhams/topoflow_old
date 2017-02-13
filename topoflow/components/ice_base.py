@@ -14,6 +14,7 @@
 #
 #  class ice_component    (inherits from CSDMS_base)
 #
+#      get_component_name()
 #      get_attribute()            # (10/26/11)
 #      get_input_var_names()      # (5/15/12)
 #      get_output_var_names()     # (5/15/12)
@@ -151,7 +152,13 @@ class ice_component( BMI_base.BMI_component ):
     #------------------------------------------------
     ## _input_var_names  = np.array( _input_var_names )
     ## _output_var_names = np.array( _output_var_names )
-        
+ 
+    #-------------------------------------------------------------------
+    def get_component_name(self):
+  
+        return 'TopoFlow_Ice_GC2D_Valley_Glacier'
+
+    #   get_component_name()        
     #-------------------------------------------------------------------
     def get_attribute(self, att_name):
 
@@ -423,7 +430,7 @@ class ice_component( BMI_base.BMI_component ):
         
         if (self.comp_status == 'Disabled'):
             if not(SILENT):
-                print 'Ice component: Disabled.'
+                print 'Ice component: Disabled in CFG file.'
             self.MR       = self.initialize_scalar(0, dtype='float64')
             self.vol_MR   = self.initialize_scalar(0, dtype='float64')
             self.meltrate = self.MR
@@ -545,14 +552,6 @@ class ice_component( BMI_base.BMI_component ):
 
         if (self.DEBUG):
             print 'Ice: dt_min =', self.dt_min, '### Smallest dt ###'
-        
-        #---------------------------
-        # Release all of the ports
-        #----------------------------------------
-        # Make this call in "finalize()" method
-        # of the component's CCA Imple file
-        #----------------------------------------
-        # self.release_cca_ports( port_names, d_services )
         
     #   finalize()
     #-------------------------------------------------------------------

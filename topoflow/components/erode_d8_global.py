@@ -15,6 +15,7 @@
 #
 #  class erosion_component    # (inherits from erode_base.py)
 #
+#      get_component_name()
 #      get_attribute()            ## (10/27/11)
 #      get_input_var_names()
 #      get_output_var_names()
@@ -200,7 +201,13 @@ class erosion_component( erode_base.erosion_component ):
     #------------------------------------------------
     ## _input_var_names  = np.array( _input_var_names )
     ## _output_var_names = np.array( _output_var_names )
-    
+
+    #-------------------------------------------------------------------
+    def get_component_name(self):
+  
+        return 'TopoFlow_Erode_D8_Global'
+
+    #   get_component_name()     
     #-------------------------------------------------------------------
     def get_attribute(self, att_name):
 
@@ -470,17 +477,7 @@ class erosion_component( erode_base.erosion_component ):
         print ' '
         self.print_final_report(comp_name='Erode-D8-Global 3.1 (2/7/13)',
                                 mode='driver')  ## NEED THIS !!
-                                ## model_info='Erode 3.1 (11/15/11)',
-                                ## comp_name='Erosion component')
         
-        #---------------------------
-        # Release all of the ports
-        #----------------------------------------
-        # Make this call in "finalize()" method
-        # of the component's CCA IMPL file.
-        #----------------------------------------
-        # self.release_cca_ports( port_names, d_services )
-
         self.status = 'finalized'  # (OpenMI)
           
     #   finalize()
@@ -501,7 +498,7 @@ class erosion_component( erode_base.erosion_component ):
         #----------------------------------------------------
         # Copy all of this from the "host" component, just
         # in case the D8 component doesn't have a CFG file.
-        # If it does, they will get overwritten.
+        # If it does, these variables will get overwritten.
         # Something similar is done in GW_base.py.
         #----------------------------------------------------
         # (1/23/12) Note that d8_base.py now has a new
@@ -513,7 +510,12 @@ class erosion_component( erode_base.erosion_component ):
         #    self.in_directory  = '~/CMT_Output/'  AND
         #    self.out_directory = '~/CMT_Output/'
         # which may be worse defaults than these.
-        #----------------------------------------------------
+		#-------------------------------------------------------------
+        # (2/11/2017) The initialize() method in d8_base.py now
+        # uses case_prefix (vs. site_prefix) for its CFG file:
+        # <site_prefix>_d8_global.cfg.  This is to prevent confusion
+		# since this was the only CFG file that used site_prefix.
+		#-------------------------------------------------------------  
         self.d8.site_prefix   = self.site_prefix
         self.d8.case_prefix   = self.case_prefix
         self.d8.in_directory  = self.in_directory

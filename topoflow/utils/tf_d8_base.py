@@ -68,11 +68,8 @@ def unit_test():
 
     cfg_prefix     = 'Case5'
     d8.site_prefix = 'Treynor'
-
-    #-----------------------------------------------    
-    # This method will build its own cfg filename.
-    #-----------------------------------------------
-    d8.initialize( mode="driver" )
+    
+    d8.initialize( cfg_prefix=cfg_prefix, mode="driver" )
 
     print ' '
     print 'size(flow_grid) =', size(d8.flow_grid)
@@ -127,6 +124,7 @@ class d8_component(BMI_base.BMI_component):
 
     #   get_status()
     #-----------------------------------------------------------------
+    ## def initialize(self, cfg_prefix='Case1', mode="nondriver",
     def initialize(self, cfg_file=None, mode="nondriver",
                    SILENT=True, REPORT=False):
 
@@ -518,14 +516,14 @@ class d8_component(BMI_base.BMI_component):
         #-------------------------------------
         # Some flow directions may not occur
         #-------------------------------------
-        self.p1_OK = (self.p1 != None)
-        self.p2_OK = (self.p2 != None)
-        self.p3_OK = (self.p3 != None)
-        self.p4_OK = (self.p4 != None)
-        self.p5_OK = (self.p5 != None)
-        self.p6_OK = (self.p6 != None)
-        self.p7_OK = (self.p7 != None)
-        self.p8_OK = (self.p8 != None)
+        self.p1_OK = (self.p1 is not None)
+        self.p2_OK = (self.p2 is not None)
+        self.p3_OK = (self.p3 is not None)
+        self.p4_OK = (self.p4 is not None)
+        self.p5_OK = (self.p5 is not None)
+        self.p6_OK = (self.p6 is not None)
+        self.p7_OK = (self.p7 is not None)
+        self.p8_OK = (self.p8 is not None)
 
     #   get_flow_to_IDs()
     #-------------------------------------------------------------------

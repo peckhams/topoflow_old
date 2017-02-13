@@ -146,7 +146,7 @@ class snow_component( BMI_base.BMI_component ):
             #########################################
                ####### and (ep.method != 2):  ??????
             if not(SILENT):
-                print 'Snow component: Disabled.'
+                print 'Snow component: Disabled in CFG file.'
             self.h_snow = self.initialize_scalar(0, dtype='float64')
             self.h_swe  = self.initialize_scalar(0, dtype='float64')
             self.SM     = self.initialize_scalar(0, dtype='float64')
@@ -242,15 +242,7 @@ class snow_component( BMI_base.BMI_component ):
         self.status = 'finalized'  # (OpenMI)
 
         self.print_final_report(comp_name='Snow component')
-
-        #---------------------------
-        # Release all of the ports
-        #----------------------------------------
-        # Make this call in "finalize()" method
-        # of the component's CCA Imple file
-        #----------------------------------------
-        # self.release_cca_ports( port_names, d_services )
-        
+       
     #   finalize()
     #-------------------------------------------------------------------
     def set_computed_input_vars(self):
@@ -486,12 +478,12 @@ class snow_component( BMI_base.BMI_component ):
 #         print 'type(self.h_swe) =', type(self.h_swe)
 #         print 'type(h_snow) =', type(h_snow)
 #         print 'type(self.SM) =', type(self.SM)
-#         print 'rank(self.SM) =', np.rank(self.SM)
+#         print 'rank(self.SM) =', np.ndim(self.SM)
         
         #----------------------------------             
         # Save updated snow depth in self
         #----------------------------------
-        if (np.rank( self.h_snow ) == 0):
+        if (np.ndim( self.h_snow ) == 0):
             h_snow = np.float64( h_snow )  ### (from 0D array to scalar)
             self.h_snow.fill( h_snow )     ### (mutable scalar)
         else:

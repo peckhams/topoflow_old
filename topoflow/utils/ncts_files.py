@@ -314,7 +314,7 @@ class ncts_file():
         self.format     = 'ncts'
         self.file_name  = file_name
         self.time_index = 0
-        if (long_names[0] == None):
+        if (long_names[0] is None):
             long_names = var_names
         #-------------------------------------------
         # We may not need to save these in self.
@@ -454,7 +454,7 @@ class ncts_file():
         #-------------------------------------
         if (time_index == -1):
             time_index = self.time_index
-        if (time == None):
+        if (time is None):
             time = np.float64( time_index )
             
         #---------------------------------------
@@ -515,7 +515,7 @@ class ncts_file():
         #---------------------------------
         # Is variable a grid or scalar ?
         #---------------------------------
-        if (np.rank(var) > 0):
+        if (np.ndim(var) > 0):
             return np.float32( var[ IDs ] )
         else:
             #-----------------------------------------------------

@@ -379,7 +379,7 @@ class nccs_file():
         #-------------------------------------
         if time_index == -1:
             time_index = self.time_index
-        if time == None:
+        if time is None:
             time = np.float64(time_index)
             
         #---------------------------------------
@@ -392,7 +392,7 @@ class nccs_file():
         # Write a grid to existing netCDF file
         #---------------------------------------
         var = self.nccs_unit.variables[var_name]
-        if np.rank(grid) == 0:
+        if np.ndim(grid) == 0:
             #-----------------------------------------------
             # "grid" is actually a scalar (dynamic typing)
             # so convert it to a grid before saving

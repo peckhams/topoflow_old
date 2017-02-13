@@ -1,25 +1,35 @@
+"""
+# This class defines a hydrologic infiltration component that numerically
+solves the 1D version of the Richards Equation.  That is, while each grid
+cell can have its own profile, the horizontal/lateral components of the
+Darcy velocity field are assumed to be negligible.
 
-## Copyright (c) 2001-2013, Scott D. Peckham
+This class inherits from the infiltration "base class" in "infil_base.py".
+
+Note:  The numerical scheme used by this component cannot handle sharp
+changes (e.g. discontinuities) in hydraulic conductivity.
+
+See: Smith, R.E. (2002) Infiltration Theory for Hydrologic Applications,
+Water Resources Monograph 15, AGU.
+"""
+## Copyright (c) 2001-2016, Scott D. Peckham
 ##
 ## January 2013   (Revised handling of input/output names).
 ## October 2012   (CSDMS Standard Names and BMI)
 ## January 2009  (converted from IDL)
 ## May, August 2009
 ## May 2010  (changes to unit_test() and read_cfg_file()
-## June 2010 (Bug fix: Added qH_val and eta_val in
+## June 2010 (Bug fix: Added qH_list and eta_list in
 ##            set_computed_input_vars(). Unit test. )
 ## November 2010 (New approach to BCs and update_theta().)
 
-#---------------------------------------------------------------------
-#  NOTES:  This file defines a Richards 1D infiltration component
-#          and related functions.  It inherits from the infiltration
-#          "base class" in "infil_base.py".
 #---------------------------------------------------------------------
 #
 #  unit_test()
 #
 #  class infil_component         # (inherits from infil_base.py)
 #
+#      get_component_name()
 #      get_attribute()           # (10/26/11)
 #      get_input_var_names()     # (10/25/12)
 #      get_output_var_names()    # (10/25/12)
@@ -29,7 +39,7 @@
 #      initialize_layer_vars()
 #      set_computed_input_vars()
 #      check_input_types()
-#      initialize_richards_vars()
+#      initialize_computed_vars()
 #      ----------------------------
 #      initialize_theta_r()
 #      initialize_theta_i()
@@ -53,7 +63,7 @@
 #      read_input_files()
 #      close_input_files()
 #      ------------------------------
-#      build_layered_var()   ########
+#      build_layered_var()    # (Moved into infil_base.py)
 
 #  Functions:
 #      Theta_TBC()          (still used)
@@ -268,6 +278,12 @@ class infil_component(infil_base.infil_component):
     ## _output_var_names = np.array( _output_var_names )
 
     #-------------------------------------------------------------------
+    def get_component_name(self):
+  
+        return 'TopoFlow_Infiltration_Richards_1D'
+
+    #   get_component_name() 
+    #-------------------------------------------------------------------
     def get_attribute(self, att_name):
 
         try:
@@ -361,24 +377,25 @@ class infil_component(infil_base.infil_component):
         # is a numpy scalar (type 'np.float64').  However, we
         # can later change any list entry to a scalar or grid
         # (type 'np.ndarray'), according to its "Ks_type".
+        # Actual variable arrays built with build_layered_var.
         #---------------------------------------------------------
-        # (5/19/10) Seems we need Ks_val vs Ks here, since
-        # we use these to build one big, 3D Ks array.
-        #---------------------------------------------------------        
-        self.Ks_val  = list( np.zeros(n_layers, dtype='float64') )
-        self.Ki_val  = list( np.zeros(n_layers, dtype='float64') )
-        self.qs_val  = list( np.zeros(n_layers, dtype='float64') )
-        self.qi_val  = list( np.zeros(n_layers, dtype='float64') )
-        self.qr_val  = list( np.zeros(n_layers, dtype='float64') )
-        self.pB_val  = list( np.zeros(n_layers, dtype='float64') )
-        self.pA_val  = list( np.zeros(n_layers, dtype='float64') )
-        self.lam_val = list( np.zeros(n_layers, dtype='float64') )
-        self.c_val   = list( np.zeros(n_layers, dtype='float64') )
+        # (5/19/10) We need Ks_list vs Ks here, since we use
+        # these to build one big, 3D Ks array.
+        #---------------------------------------------------------     
+        self.Ks_list  = list( np.zeros(n_layers, dtype='float64') )
+        self.Ki_list  = list( np.zeros(n_layers, dtype='float64') )
+        self.qs_list  = list( np.zeros(n_layers, dtype='float64') )
+        self.qi_list  = list( np.zeros(n_layers, dtype='float64') )
+        self.qr_list  = list( np.zeros(n_layers, dtype='float64') )
+        self.pB_list  = list( np.zeros(n_layers, dtype='float64') )
+        self.pA_list  = list( np.zeros(n_layers, dtype='float64') )
+        self.lam_list = list( np.zeros(n_layers, dtype='float64') )
+        self.c_list   = list( np.zeros(n_layers, dtype='float64') )
         #------------------------------------------------
         # Note:  These two are computed from the others
         #------------------------------------------------
-        self.eta_val = list( np.zeros(n_layers, dtype='float64') )
-        self.qH_val  = list( np.zeros(n_layers, dtype='float64') )
+        self.eta_list = list( np.zeros(n_layers, dtype='float64') )
+        self.qH_list  = list( np.zeros(n_layers, dtype='float64') )
        
     #   initialize_layer_vars()
     #-------------------------------------------------------------------
@@ -395,7 +412,7 @@ class infil_component(infil_base.infil_component):
         # Depending on lambda, eta values will scalars or grids.
         #------------------------------------------------------------
         for j in xrange(self.n_layers):
-            self.eta_val[j] = np.float64(2) + (np.float64(3) * self.lam_val[j])
+            self.eta_list[j] = np.float64(2) + (np.float64(3) * self.lam_list[j])
                              
         #--------------------------------------------------------------
         # Compute a qH value for each soil layer from other values
@@ -403,10 +420,10 @@ class infil_component(infil_base.infil_component):
         # or grids, depending on the args to Theta_TBC().
         #-------------------------------------------------------------
         for j in xrange(self.n_layers):
-            self.qH_val[j] = Theta_TBC( self.psi_hygro, \
-                                        self.qs_val[j], self.qr_val[j], \
-                                        self.pB_val[j], self.pA_val[j], \
-                                        self.c_val[j],  self.lam_val[j] )
+            self.qH_list[j] = Theta_TBC( self.psi_hygro, \
+                                         self.qs_list[j], self.qr_list[j], \
+                                         self.pB_list[j], self.pA_list[j], \
+                                         self.c_list[j],  self.lam_list[j] )
 
         #---------------------------------------------------------
         # Make sure that all "save_dts" are larger or equal to
@@ -433,15 +450,15 @@ class infil_component(infil_base.infil_component):
                          self.is_scalar('SM'),
                          self.is_scalar('ET'),  #########
                          #----------------------------------
-                         self.is_scalar('Ks_val[0]'),
-                         self.is_scalar('Ki_val[0]'),
-                         self.is_scalar('qs_val[0]'),
-                         self.is_scalar('qi_val[0]'),
-                         self.is_scalar('qr_val[0]'),
-                         self.is_scalar('pB_val[0]'),
-                         self.is_scalar('pA_val[0]'),
-                         self.is_scalar('c_val[0]'),
-                         self.is_scalar('lam_val[0]')])
+                         self.is_scalar('Ks_list[0]'),
+                         self.is_scalar('Ki_list[0]'),
+                         self.is_scalar('qs_list[0]'),
+                         self.is_scalar('qi_list[0]'),
+                         self.is_scalar('qr_list[0]'),
+                         self.is_scalar('pB_list[0]'),
+                         self.is_scalar('pA_list[0]'),
+                         self.is_scalar('c_list[0]'),
+                         self.is_scalar('lam_list[0]')])
 
         self.ALL_SCALARS = np.all(are_scalars)
         
@@ -455,44 +472,46 @@ class infil_component(infil_base.infil_component):
         
     #   check_input_types()
     #-------------------------------------------------------------------
-    def initialize_richards_vars(self):
+    def initialize_computed_vars(self):
 
-        ########################################################
-        #  NB! The "P" synonym for "rate" doesn't work here.
-        #      Maybe defined in the wrong place ??
-        ########################################################
         dtype = 'float64'
-        
+
+        self.vol_IN = self.initialize_scalar( 0, dtype='float64')
+        self.vol_Rg = self.initialize_scalar( 0, dtype='float64')
+
         #---------------------------------------
         # Get surface influx to initialize "v"
         #---------------------------------------
         self.update_surface_influx()
         
-        #----------------------
-        # Compute "total nz"
-        #---------------------
-        self.nz = np.sum( self.nz_val )
+        #-----------------------------------------------------
+        # Compute dz as 1D array from scalars in self.dz_val      
+        #-----------------------------------------------------
+        # Compute the z-vector, for plotting profiles
+        #----------------------------------------------
+        ### self.nz = np.sum( self.nz_val )
+        self.build_layer_z_vector()
 
         #------------------------------------------------
         # Now build a 1D or 3D array for each input var
         #--------------------------------------------------------
         # (3/12/08) Same code should work if (self.n_layers eq 1)
         #--------------------------------------------------------
-        self.Ks  = self.build_layered_var(self.Ks_val)
-        self.Ki  = self.build_layered_var(self.Ki_val)
-        self.qs  = self.build_layered_var(self.qs_val)
-        self.qi  = self.build_layered_var(self.qi_val)
-        self.qr  = self.build_layered_var(self.qr_val)
-        self.pB  = self.build_layered_var(self.pB_val)
-        self.pA  = self.build_layered_var(self.pA_val)
-        self.lam = self.build_layered_var(self.lam_val)
-        self.c   = self.build_layered_var(self.c_val)
+        self.Ks  = self.build_layered_var( self.Ks_list )
+        self.Ki  = self.build_layered_var( self.Ki_list )
+        self.qs  = self.build_layered_var( self.qs_list )
+        self.qi  = self.build_layered_var (self.qi_list )
+        self.qr  = self.build_layered_var( self.qr_list )
+        self.pB  = self.build_layered_var( self.pB_list )
+        self.pA  = self.build_layered_var( self.pA_list )
+        self.lam = self.build_layered_var( self.lam_list )
+        self.c   = self.build_layered_var( self.c_list )
         #--------------------------------------------------
-        # Note:  eta_val and qH_val are computed from
+        # Note:  eta_list and qH_list are computed from
         #        the others in set_computed_input_vars().      
         #--------------------------------------------------
-        self.eta = self.build_layered_var(self.eta_val)
-        self.qH  = self.build_layered_var(self.qH_val)
+        self.eta = self.build_layered_var( self.eta_list )
+        self.qH  = self.build_layered_var( self.qH_list )
 
         #--------------
         # For testing
@@ -512,51 +531,12 @@ class infil_component(infil_base.infil_component):
             print 'shape(eta)  =', np.shape(self.eta)
             print 'shape(qH)   =', np.shape(self.qH)
             print ' '
-            
-        #-----------------------------------------------------
-        # Compute dz as 1D array from scalars in self.dz_val
-        #-----------------------------------------------------
-        # NB! Values in self.dz_val are scalars vs. pointers
-        # so we can't use the build_layered_var routine.
-        #-----------------------------------------------------
-        dz_min = self.dz_val.min()
-        dz_max = self.dz_val.max()
-        if (dz_min == dz_max):
-            #----------------------
-            # dz is just a scalar
-            #----------------------
-            self.dz = self.dz_val[0]
-        else:
-            #-------------------
-            # dz is a 1D array
-            #-------------------
-            self.dz = np.zeros(self.nz, dtype=dtype)
-
-            #--------------------------------------------------
-            # Create array of indices.  See build_layered_var
-            #--------------------------------------------------
-            i = np.concatenate(([np.int32(0)], np.int32(np.cumsum(self.nz_val))) )
-            for j in xrange(self.n_layers):
-                self.dz[ i[j]: i[j+1]-1 ] = self.dz_val[j]
-
-        #----------------------------------------------
-        # Compute the z-vector, for plotting profiles
-        #----------------------------------------------
-        dz = np.repeat(self.dz_val[0], self.nz_val[0])  # (1D ndarray)
-        for j in xrange(1, self.n_layers):
-            layer_dz = self.dz_val[j]
-            layer_nz = self.nz_val[j]
-            dz_j = np.repeat(layer_dz, layer_nz)  # (1D ndarray)
-            dz = np.concatenate( (dz, dz_j) )
-        ############################################
-        # NB! As written (and in IDL version), the
-        #     z-vector does not start with 0.
-        ############################################
-        self.z = np.cumsum(dz)
-
+ 
         #-------------------------------------------------------
         # Note: qi and Ki are created with build_layered_var()
-        #-------------------------------------------------------        
+        #-------------------------------------------------------
+        # Note: Don't need to initialize Rg here.
+        #-------------------------------------------------------          
         if (self.ALL_SCALARS):
             #----------------------------------
             # Infiltration varies with z only
@@ -569,6 +549,7 @@ class infil_component(infil_base.infil_component):
             self.IN = np.float64(0)   # (infil. rate at surface)
             self.I  = np.float64(0)   # (total infil. depth)
             self.Zw = np.float64(0)   # (wetting front depth)
+            # self.Rg = np.float64(0)   # (infil. rate at water table)
             #---------------------------------------------------------
             # Initialize I to 1e-6 to avoid divide by zero at start?
             #---------------------------------------------------------
@@ -597,6 +578,7 @@ class infil_component(infil_base.infil_component):
             self.IN = np.zeros([self.ny, self.nx], dtype=dtype)
             self.I  = np.zeros([self.ny, self.nx], dtype=dtype)
             self.Zw = np.zeros([self.ny, self.nx], dtype=dtype)
+            # self.Rg = np.zeros([self.ny, self.nx], dtype=dtype)
 
             #--------------------------------------
             # Initialize q to qi (qi is 1D or 3D)
@@ -665,7 +647,7 @@ class infil_component(infil_base.infil_component):
 ##            self.initialize_theta_i()
 ##            self.initialize_K_i()
             
-    #   initialize_richards_vars()
+    #   initialize_computed_vars()
     #-------------------------------------------------------------------
     def initialize_theta_r(self):
 
@@ -717,15 +699,15 @@ class infil_component(infil_base.infil_component):
         print '====================================================='
         for k in xrange(self.n_layers):
 
-##            print 'Ks[k]  =', self.Ks_val[k]
-##            print 'Ki[k]  =', self.Ki_val[k]    
-##            print 'qs[k]  =', self.qs_val[k]
-##            print 'qi[k]  =', self.qi_val[k]
-##            print 'qr[k]  =', self.qr_val[k]
-##            print 'pB[k]  =', self.pB_val[k]
-##            print 'pA[k]  =', self.pA_val[k]
-##            print 'lam[k] =', self.lam_val[k]
-##            print 'c[k]   =', self.c_val[k]
+##            print 'Ks[k]  =', self.Ks_list[k]
+##            print 'Ki[k]  =', self.Ki_list[k]    
+##            print 'qs[k]  =', self.qs_list[k]
+##            print 'qi[k]  =', self.qi_list[k]
+##            print 'qr[k]  =', self.qr_list[k]
+##            print 'pB[k]  =', self.pB_list[k]
+##            print 'pA[k]  =', self.pA_list[k]
+##            print 'lam[k] =', self.lam_list[k]
+##            print 'c[k]   =', self.c_list[k]
 ##            print ' '
 ##            print 'psi_hygro =', self.psi_hygro, ' [m]'
 ##            print 'psi_field =', self.psi_field, ' [m]'
@@ -740,9 +722,9 @@ class infil_component(infil_base.infil_component):
             # requires theta_res as an argument.
             #-------------------------------------------------
 ##            psi_res   = self.psi_hygro
-##            theta_sat = self.qs_val[k]
-##            psi_B     = self.pB_val[k]
-##            lam       = self.lam_val[k]
+##            theta_sat = self.qs_list[k]
+##            psi_B     = self.pB_list[k]
+##            lam       = self.lam_list[k]
 ##            #--------------------------------------
 ##            # Note:  Both psi's < 0, so ratio > 0
 ##            #--------------------------------------
@@ -751,33 +733,33 @@ class infil_component(infil_base.infil_component):
             #--------------------------------------------
             # If we trust theta_r, then do this instead
             #--------------------------------------------
-            theta_res = self.qr_val[k]
+            theta_res = self.qr_list[k]
 
             theta_hygro = Theta_TBC( self.psi_hygro,
-                                     self.qs_val[k],
-                                     self.qr_val[k],
-                                     self.pB_val[k],
-                                     self.pA_val[k],
-                                     self.c_val[k],
-                                     self.lam_val[k] )
+                                     self.qs_list[k],
+                                     self.qr_list[k],
+                                     self.pB_list[k],
+                                     self.pA_list[k],
+                                     self.c_list[k],
+                                     self.lam_list[k] )
             
             theta_init = Theta_TBC( self.psi_field,
-                                    self.qs_val[k],
+                                    self.qs_list[k],
                                     theta_res,         #######
-                                    self.pB_val[k],
-                                    self.pA_val[k],
-                                    self.c_val[k],
-                                    self.lam_val[k] )
+                                    self.pB_list[k],
+                                    self.pA_list[k],
+                                    self.c_list[k],
+                                    self.lam_list[k] )
 
             K_init = K_of_Theta_TBC( theta_init,       #######
-                                     self.Ks_val[k],
-                                     self.qs_val[k],
+                                     self.Ks_list[k],
+                                     self.qs_list[k],
                                      theta_res,        #######
-                                     self.lam_val[k] )
+                                     self.lam_list[k] )
 
-            theta_r = self.qr_val[k]
-            theta_i = self.qi_val[k]
-            K_i     = self.Ki_val[k]
+            theta_r = self.qr_list[k]
+            theta_i = self.qi_list[k]
+            K_i     = self.Ki_list[k]
             print 'Suggested initial values for layer', k+1, ':'
             ## print '   theta_r =', theta_res,  'vs.', theta_r
             print '   For theta_r =', theta_r
@@ -1911,31 +1893,31 @@ class infil_component(infil_base.infil_component):
 
         for j in xrange(self.n_layers):        
             Ks_val = model_input.read_next(self.Ks_unit[j], self.Ks_type[j], rti)
-            if (Ks_val != None): self.Ks_val[j] = Ks_val
+            if (Ks_val is not None): self.Ks_list[j] = Ks_val
 
             Ki_val = model_input.read_next(self.Ki_unit[j], self.Ki_type[j], rti)
-            if (Ki_val != None): self.Ki_val[j]  = Ki_val
+            if (Ki_val is not None): self.Ki_list[j]  = Ki_val
 
             qs_val = model_input.read_next(self.qs_unit[j], self.qs_type[j], rti)
-            if (qs_val != None): self.qs_val[j]  = qs_val
+            if (qs_val is not None): self.qs_list[j]  = qs_val
 
             qi_val = model_input.read_next(self.qi_unit[j], self.qi_type[j], rti)
-            if (qi_val != None): self.qi_val[j]  = qi_val
+            if (qi_val is not None): self.qi_list[j]  = qi_val
             
             qr_val = model_input.read_next(self.qr_unit[j], self.qr_type[j], rti)
-            if (qr_val != None): self.qr_val[j]  = qr_val
+            if (qr_val is not None): self.qr_list[j]  = qr_val
 
             pB_val = model_input.read_next(self.pB_unit[j], self.pB_type[j], rti)
-            if (pB_val != None): self.pB_val[j]  = pB_val
+            if (pB_val is not None): self.pB_list[j]  = pB_val
 
             pA_val = model_input.read_next(self.pA_unit[j], self.pA_type[j], rti)
-            if (pA_val != None): self.pA_val[j]  = pA_val
+            if (pA_val is not None): self.pA_list[j]  = pA_val
 
             lam_val = model_input.read_next(self.lam_unit[j], self.lam_type[j], rti)
-            if (lam_val != None): self.lam_val[j]  = lam_val
+            if (lam_val is not None): self.lam_list[j]  = lam_val
 
             c_val = model_input.read_next(self.c_unit[j], self.c_type[j], rti)
-            if (c_val != None): self.c_val[j]  = c_val
+            if (c_val is not None): self.c_list[j]  = c_val
 
             #---------------------------------------------------------
             # If we read a lambda value from a file, then we need to
@@ -1943,15 +1925,15 @@ class infil_component(infil_base.infil_component):
             #---------------------------------------------------------
             #### if not(self.lam_unit[j].closed):  ############
             if (self.lam_type[j] == 1) or (self.lam_type[j] == 3):
-                self.eta_val[j] = np.float64(2) + (np.float64(3) * self.lam_val[j])
+                self.eta_list[j] = np.float64(2) + (np.float64(3) * self.lam_list[j])
                                  
             #-----------------------------------------
             # Update qH, given by Theta_TBC function
             #-----------------------------------------
-            self.qH_val[j] = Theta_TBC( self.psi_hygro, \
-                                        self.qs_val[j], self.qr_val[j], \
-                                        self.pB_val[j], self.pA_val[j], \
-                                        self.c_val[j],  self.lam_val[j] )
+            self.qH_list[j] = Theta_TBC( self.psi_hygro, \
+                                         self.qs_list[j], self.qr_list[j], \
+                                         self.pB_list[j], self.pA_list[j], \
+                                         self.c_list[j],  self.lam_list[j] )
 
     #   read_input_files()       
     #-------------------------------------------------------------------  
@@ -1982,71 +1964,6 @@ class infil_component(infil_base.infil_component):
 ##            if (self.c_file[j]   != ''): self.c_unit[j].close()
             
     #   close_input_files()
-    #------------------------------------------------------------------- 
-    def build_layered_var(self, v_by_layer):
-
-        #-----------------------------------------------------------
-        # Notes:  This routine examines user-selected parameters
-        #         for each soil layer.  If all layers have a
-        #         scalar value, then a 1D array (a z-profile) is
-        #         constructed for this variable.  Due to IDL's
-        #         dynamic data typing, it will get used correctly
-        #         by the "Update_Richards" routines.  If any layer
-        #         has a 2D value, then a 3D array is constructed
-        #         for this variable.
-
-        #         Note that self.nz was previously set to the sum:
-        #            long(total(self.nz_val))
-        #-----------------------------------------------------------
-
-        #-----------------------------
-        # Create an array of indices
-        #-----------------------------
-        #i[0] = 0
-        #i[1] = self.nz_val[0]
-        #i[2] = self.nz_val[0] + self.nz_val[1]
-        #etc.
-        #----------------------------------------------
-        i = np.concatenate(([np.int32(0)], np.int32(np.cumsum(self.nz_val))) )
-        
-        #----------------------------------------
-        # Do all layers have a scalar parameter
-        # value for this particular variable ??
-        #----------------------------------------
-        nmax = np.int16(1)
-        for j in xrange(self.n_layers):
-            nj = v_by_layer[j].size
-            nmax = np.maximum( nmax, nj )
-        ALL_SCALARS = (nmax == 1)
-        
-        #-------------------------------------------
-        # Build a "data cube" from layer variables
-        #-------------------------------------------
-        if (ALL_SCALARS):
-            #----------------------------------------------
-            # All layers have a scalar value for this var
-            #----------------------------------------------
-            var = np.zeros([self.nz], dtype='float64')
-            for j in xrange(self.n_layers):
-                var[i[j]: i[j + 1]] = v_by_layer[j]
-        else:    
-            #--------------------------------------------------------
-            # Note that all nz "levels" in a given layer can be
-            # initialized to a grid, but not yet to different grids
-            #--------------------------------------------------------
-            var = np.zeros([self.nz, self.ny, self.nx], dtype='float64')
-            for j in xrange(self.n_layers):
-                for k in xrange(i[j], i[j + 1]):
-                    var[k,:,:] = v_by_layer[j]
-                
-                #----------------------------------------------------
-                # Next line doesn't work if v_by_layer[j] is a grid
-                #----------------------------------------------------
-                #  var[*, *, i[j]:i[j+1]-1 ] = v_by_layer[j]
-
-        return var
-
-    #   build_layered_var
     #-------------------------------------------------------------------
 
 #-----------------------------------------------------------------------

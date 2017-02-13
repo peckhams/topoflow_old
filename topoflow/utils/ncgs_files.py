@@ -193,7 +193,7 @@ class ncgs_file():
         # Was "info" argument provided ?
         #---------------------------------
         NEW_INFO = True
-        if (info == None):
+        if (info is None):
             try:
                 info    = self.info
                 self.nx = info.ncols  ###
@@ -307,7 +307,7 @@ class ncgs_file():
         #---------------------------------------
         self.check_and_store_info( file_name, info, var_name,
                                    dtype, MAKE_RTI, MAKE_BOV )
-        if (long_name == None): long_name = var_name
+        if (long_name is None): long_name = var_name
         self.long_name  = long_name
         self.units_name = units_name
         self.dtype      = dtype
@@ -432,7 +432,7 @@ class ncgs_file():
         #-------------------------------------
         if (time_index == -1):
             time_index = self.time_index
-        if (time == None):
+        if (time is None):
             time = np.float64( time_index )
             
         #---------------------------------------
@@ -445,7 +445,7 @@ class ncgs_file():
         # Write a grid to existing netCDF file
         #---------------------------------------
         var = self.ncgs_unit.variables[ grid_name ]
-        if (np.rank(grid) == 0):
+        if (np.ndim(grid) == 0):
             #-----------------------------------------------
             # "grid" is actually a scalar (dynamic typing)
             # so convert it to a grid before saving

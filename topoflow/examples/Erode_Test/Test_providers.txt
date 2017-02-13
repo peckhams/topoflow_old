@@ -17,7 +17,7 @@
 #----------------------------
 # portname       component
 #----------------------------
-LEM             erode_d8_global
+LEM              erode_d8_global
 
   
 

@@ -6,7 +6,7 @@ import os
 import os.path
 import sys
 
-import numpy
+import numpy as np
 
 import bov_files
 import file_utils
@@ -55,7 +55,7 @@ def unit_test(nx=4, ny=5, n_grids=6, VERBOSE=False,
         print 'ERROR during open_new_file().'
         return
     
-    grid = numpy.arange(nx * ny, dtype='Float32')
+    grid = np.arange(nx * ny, dtype='Float32')
     grid = grid.reshape( (ny, nx) )
     
     #----------------------------------
@@ -102,7 +102,7 @@ def unit_test(nx=4, ny=5, n_grids=6, VERBOSE=False,
     # Re-open the file and change one grid
     #---------------------------------------
     print 'Updating RTS file:', file_name
-    grid = numpy.ones( (ny, nx), dtype='Float32' )
+    grid = np.ones( (ny, nx), dtype='Float32' )
     OK = rts.open_file( file_name, UPDATE=True )
     if not(OK): return
     rts.add_grid( grid, time_index=0 )
@@ -235,7 +235,7 @@ class rts_file():
 ##        #---------------------------------
 ##        # Was "info" argument provided ?
 ##        #---------------------------------
-##        if (info != None):
+##        if (info is not None):
 ##            #------------------------------
 ##            # Save info to a new RTI file
 ##            #------------------------------
@@ -353,8 +353,8 @@ class rts_file():
         #---------------------------------------            
         # Convert "grid" from scalar to grid ?
         #---------------------------------------
-        if (numpy.rank(out_grid) == 0):
-            out_grid += numpy.zeros([self.ny, self.nx], dtype=dtype)
+        if (np.ndim(out_grid) == 0):
+            out_grid += np.zeros([self.ny, self.nx], dtype=dtype)
 
         #--------------------------------------------
         # Write grid as binary to existing RTS file
@@ -369,12 +369,12 @@ class rts_file():
 ##        #--------------------------------------------
 ##        # Write grid as binary to existing RTS file
 ##        #--------------------------------------------
-##        if (numpy.rank(grid) == 0):
+##        if (np.ndim(grid) == 0):
 ##            #-----------------------------------------------
 ##            # "grid" is actually a scalar (dynamic typing)
 ##            # so convert it to a grid before saving
 ##            #-----------------------------------------------
-##            grid2 = grid + numpy.zeros([self.ny, self.nx], dtype='Float32')
+##            grid2 = grid + np.zeros([self.ny, self.nx], dtype='Float32')
 ##            if (self.info.SWAP_ENDIAN):
 ##                grid2.byteswap().tofile( self.rts_unit )
 ##            else:
@@ -403,7 +403,7 @@ class rts_file():
         offset   = (time_index * self.grid_size)
         self.rts_unit.seek( offset )
 
-        grid = numpy.fromfile( self.rts_unit, count=n_values,
+        grid = np.fromfile( self.rts_unit, count=n_values,
                                dtype=dtype )
         grid = grid.reshape( self.ny, self.nx )
 

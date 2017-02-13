@@ -23,7 +23,7 @@
 #
 #-------------------------------------------------------------------
 
-import numpy
+import numpy as np
 
 import file_utils
 
@@ -36,11 +36,11 @@ def unit_test(file_name='MC_TEXT_FILE_TEST.txt'):
     #---------------------------------------
     # Create a grid of values and some IDs
     #---------------------------------------
-    var   = numpy.arange(25, dtype='Float32').reshape(5,5)
-    rows  = numpy.array([1,2,4])
-    cols  = numpy.array([1,2,4])
+    var   = np.arange(25, dtype='Float32').reshape(5,5)
+    rows  = np.array([1,2,4])
+    cols  = np.array([1,2,4])
     IDs   = (rows, cols)
-    n_IDs = numpy.size(rows)
+    n_IDs = np.size(rows)
     var_names = ['Q[1,1]', 'Q[2,2]', 'Q[4,4]']
     n_times = 7
     
@@ -55,7 +55,7 @@ def unit_test(file_name='MC_TEXT_FILE_TEST.txt'):
         return
    
     for k in xrange(n_times):
-        time = numpy.float32(k)
+        time = np.float32(k)
         ts_unit.add_values_at_IDs( time, var, IDs )
         var += 1.0
         
@@ -149,7 +149,7 @@ class ts_file():
         tstr = ('%15.7f' % time)
         self.ts_unit.write( tstr.rjust(col_width)  )
 
-        n_values = numpy.size(values)
+        n_values = np.size(values)
         for k in xrange(n_values):
             vstr = ('%15.7f' % values[k])
             self.ts_unit.write( vstr.rjust(col_width) ) 
@@ -176,17 +176,17 @@ class ts_file():
         #---------------------------------
         # Is variable a grid or scalar ?
         #---------------------------------
-        if (numpy.rank(var) > 0):
-            values = numpy.float32( var[ IDs ] )
+        if (np.ndim(var) > 0):
+            values = np.float32( var[ IDs ] )
         else:
             #-----------------------------------------------------
             # (3/16/07) Bug fix.  This gets used in case of q0,
             # which is a scalar when INFIL_ALL_SCALARS is true.
             # Without this, don't get a value for every ID.
             #-----------------------------------------------------
-            n_IDs  = numpy.size(IDs[0])
-            vector = numpy.zeros( n_IDs, dtype='Float32')
-            values = (vector + numpy.float32(var)) 
+            n_IDs  = np.size(IDs[0])
+            vector = np.zeros( n_IDs, dtype='Float32')
+            values = (vector + np.float32(var)) 
 
 ##        print 'VALUES ='
 ##        print values

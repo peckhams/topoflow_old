@@ -1931,31 +1931,31 @@ class infil_component(infil_base.infil_component):
 
         for j in xrange(self.n_layers):        
             Ks_val = model_input.read_next(self.Ks_unit[j], self.Ks_type[j], rti)
-            if (Ks_val != None): self.Ks_val[j] = Ks_val
+            if (Ks_val is not None): self.Ks_val[j] = Ks_val
 
             Ki_val = model_input.read_next(self.Ki_unit[j], self.Ki_type[j], rti)
-            if (Ki_val != None): self.Ki_val[j]  = Ki_val
+            if (Ki_val is not None): self.Ki_val[j]  = Ki_val
 
             qs_val = model_input.read_next(self.qs_unit[j], self.qs_type[j], rti)
-            if (qs_val != None): self.qs_val[j]  = qs_val
+            if (qs_val is not None): self.qs_val[j]  = qs_val
 
             qi_val = model_input.read_next(self.qi_unit[j], self.qi_type[j], rti)
-            if (qi_val != None): self.qi_val[j]  = qi_val
+            if (qi_val is not None): self.qi_val[j]  = qi_val
             
             qr_val = model_input.read_next(self.qr_unit[j], self.qr_type[j], rti)
-            if (qr_val != None): self.qr_val[j]  = qr_val
+            if (qr_val is not None): self.qr_val[j]  = qr_val
 
             pB_val = model_input.read_next(self.pB_unit[j], self.pB_type[j], rti)
-            if (pB_val != None): self.pB_val[j]  = pB_val
+            if (pB_val is not None): self.pB_val[j]  = pB_val
 
             pA_val = model_input.read_next(self.pA_unit[j], self.pA_type[j], rti)
-            if (pA_val != None): self.pA_val[j]  = pA_val
+            if (pA_val is not None): self.pA_val[j]  = pA_val
 
             lam_val = model_input.read_next(self.lam_unit[j], self.lam_type[j], rti)
-            if (lam_val != None): self.lam_val[j]  = lam_val
+            if (lam_val is not None): self.lam_val[j]  = lam_val
 
             c_val = model_input.read_next(self.c_unit[j], self.c_type[j], rti)
-            if (c_val != None): self.c_val[j]  = c_val
+            if (c_val is not None): self.c_val[j]  = c_val
 
             #---------------------------------------------------------
             # If we read a lambda value from a file, then we need to

@@ -354,7 +354,9 @@ class d8_component(BMI_base.BMI_component):
         #-----------------------------
         # Initialize dw, ds, A, etc.
         #-----------------------------
-        self.initialize_computed_vars() 
+        self.initialize_computed_vars()
+        ## self.initialize_required_components(mode)   ##### NOT READY YET ###
+        
         self.status = 'initialized'
         
 ##        finish_init = time.time()

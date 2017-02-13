@@ -243,7 +243,7 @@ class erosion_component( BMI_base.BMI_component ):
         #----------------------------------
         if (self.comp_status == 'Disabled'):
             if not(SILENT):
-                print 'Erosion component: Disabled.'
+                print 'Erosion component: Disabled in CFG file.'
             self.SAVE_Z_GRIDS  = False    # (It is True by default.)
             self.SAVE_Z_PIXELS = False    # (It is True by default.)
             self.DONE = True
@@ -432,16 +432,7 @@ class erosion_component( BMI_base.BMI_component ):
         print 'dz_max_vec.max() =', self.dz_max_vec.max()
         print ' '
         self.print_final_report( comp_name='Erode 3.1 (11/15/11)' )
-                                ## comp_name='Erosion component')
-                                ## model_info='Erode 3.1 (11/15/11)',
 
-        #---------------------------
-        # Release all of the ports
-        #----------------------------------------
-        # Make this call in "finalize()" method
-        # of the component's CCA Imple file
-        #----------------------------------------
-        # self.release_cca_ports( port_names, d_services )
 
         self.status = 'finalized'  # (OpenMI)
         
@@ -2060,7 +2051,7 @@ class erosion_component( BMI_base.BMI_component ):
             self.z0_unit.close()   #########
         
 ##        slopes = model_input.read_next(self.slope_unit, self.slope_type, rti)
-##        if (slopes != None): self.slopes = slopes
+##        if (slopes is not None): self.slopes = slopes
 
     #   read_input_files()     
     #-------------------------------------------------------------------  

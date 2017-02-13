@@ -2,7 +2,12 @@
 #  We should use "initialize_scalar()" for all scalar assignments.
 #  See the Notes for that method.  Search for "np.float64(0".
 #      
-#  Copyright (c) 2009-2014, Scott D. Peckham
+#  Copyright (c) 2009-2016, Scott D. Peckham
+#
+#  Nov 2016. Added new BMI version 2 functions.
+#            In get_grid_shape(),   ordering is now [nz, ny, nx].
+#            In get_grid_spacing(), ordering is now [dz, dy, dx].
+#            In get_grid_origin(),  ordering is now [z0, y0, x0].
 #
 #  Sep 2014. New initialize_basin_vars(), using outlets.py.
 #            Removed obsolete functions.
@@ -44,16 +49,23 @@
 #      -------------------------------
 #      BMI methods to get model info
 #      -------------------------------
-#      get_status()
-#      get_attribute()
-#      set_attribute()  (Experimental: not yet BMI)
-
+#      get_component_name(out string name )    ### BMI version 2
+#      -----------------
+#      get_status()        ### Not part of BMI
+#      get_attribute()     ### Deprecated in BMI version 2
+#      set_attribute()     ### Not part of BMI; experimental.
+#
 #      ------------------------------
 #      BMI methods to get grid info
 #      ------------------------------
-#      get_grid_shape()
-#      get_grid_spacing()
-#      get_grid_lower_left_corner()
+#      get_grid_shape( in int grid, in array,Int,1> shape )
+#      get_grid_spacing (in int grid, in array<double,1> spacing )
+#      get_grid_origin( in int grid, in array<double,1> origin )
+#      -------------
+#      get_grid_type( in int grid, out string type )   ### BMI version 2
+#      get_grid_rank( in int grid, out int rank )      ### BMI version 2
+#      get_grid_size( in int grid, out int size )      ### BMI version 2
+#      -------------
 #      get_grid_attribute()               ## NEW ADDITION TO BMI ??
 #      read_grid_info()                   ## (Not part of BMI)
 #
@@ -63,10 +75,13 @@
 #      get_input_var_names()
 #      get_output_var_names()
 #      -------------------------
-#      get_var_name()                     # (override)
+#      get_var_name()                     # (override;  Not part of BMI)
 #      get_var_units()                    # (override)
-#      get_var_rank()
+#      get_var_rank()                     ### deprecated in BMI 2; see get_grid_rank()
+#      get_var_grid()                     ### BMI version 2
 #      get_var_type()
+#      get_var_nbytes()                   ### BMI version 2
+#      get_var_itemsize()                 ### BMI version 2
 #      get_var_state()  or "mode()"       ############### "static" or "dynamic"  ###########
 #      -------------------------
 #      get_values()                       # (9/22/14)
@@ -79,10 +94,10 @@
 #      ------------------------------
 #      get_time_step()
 #      get_time_units()
-#      get_time()                        ## NEW ADDITION TO BMI ??
 #      get_start_time()
 #      get_current_time()
 #      get_end_time()
+#      get_time()                         ### Not part of BMI; experimental.
 #
 #      --------------------------------------
 #      BMI methods for fine-grained control
@@ -109,16 +124,18 @@
 #      print_final_report()          # (6/30/10)
 #      print_traceback()             # (10/10/10)
 #      -------------------------
+#      read_path_info()              # (2/12/17)
 #      read_config_file()            # (5/17/10, 5/9/11)
 #      initialize_config_vars()      # (5/6/10)
 #      set_computed_input_vars       # (5/6/10) over-ridden by each comp.
 #      initialize_basin_vars()       # (9/19/14) New version that uses outlets.py.
-#      initialize_basin_vars0()
 #      -------------------------
 #      prepend_directory()           # (may not work yet)
 #      check_directories()
 #      -------------------------
 #      initialize_scalar()           # (2/5/13, for ref passing)
+#      initialize_grid()
+#      update_var()                  # (11/15/16)
 #      is_scalar()
 #      is_vector()
 #      is_grid()
@@ -256,17 +273,21 @@ class BMI_component:
         #-------------------------------------------------------
         # Note: This assumes same grid info for all var_names.
         #-------------------------------------------------------
-        # Note: We may want to reverse the order of the
-        #       returned values in this method and the next 2.
-        #       Ordering hasn't been established for BMI yet?
+        # Note: Ordering must be [nz, ny, nx].
         #-------------------------------------------------------
         if not(hasattr( self, 'grid_info' )):
             self.read_grid_info()
 
         info  = self.grid_info
-        shape = np.array( [info.nx, info.ny, 0] )
-        ## shape = np.array( [info.ncols, info.nrows, 0] )
-        
+        shape = np.array( [0, info.ny, info.nx] )
+        ## shape = np.array( [info.nx, info.ny, 0] )
+ 
+        #---------------------------------------------------------  
+        # Note:  This should also work, and does not assume that
+        #        all var_names share the same grid.
+        #---------------------------------------------------------
+        ## exec( "shape = np.array(np.shape(self." + var_name + "))" )
+     
         return shape
     
     #   get_grid_shape()
@@ -275,7 +296,9 @@ class BMI_component:
 
         #-------------------------------------------------------
         # Note: This assumes same grid info for all var_names.
-        #--------------------------------------------------------
+        #-------------------------------------------------------
+        # Note: Ordering must be [dz, dy, dx].
+        #-------------------------------------------------------
         # Note: xres and yres could have angular units like
         #       arcseconds, if (info.pixel_geom == 0).  In
         #       that case, xres (or dx) will vary with latitude
@@ -285,26 +308,30 @@ class BMI_component:
             self.read_grid_info()
 
         info = self.grid_info
-        spacing = np.array( [info.xres, info.yres, 0] )
+        spacing = np.array( [0, info.yres, info.xres] )
+        ## spacing = np.array( [info.xres, info.yres, 0] )
         
         return spacing
 
     #   get_grid_spacing()
     #-------------------------------------------------------------------
-    def get_grid_lower_left_corner(self, long_var_name):
+    def get_grid_origin(self, long_var_name):
 
         #-------------------------------------------------------
         # Note: This assumes same grid info for all var_names.
+        #-------------------------------------------------------
+        # Note: Ordering must be [z0, y0, x0].
         #-------------------------------------------------------        
         if not(hasattr( self, 'grid_info' )):
             self.read_grid_info()
 
         info = self.grid_info
-        corner = np.array( [info.x_west_edge, info.y_south_edge, 0] )
+        corner = np.array( [0, info.y_south_edge, info.x_west_edge] )
+        ## corner = np.array( [info.x_west_edge, info.y_south_edge, 0] )
         
         return corner
 
-    #   get_grid_lower_left_corner()
+    #   get_grid_origin()
     #-------------------------------------------------------------------
     def get_grid_attribute(self, long_var_name, att_name):
 
@@ -578,7 +605,7 @@ class BMI_component:
 
         var_name = self.get_var_name( long_var_name )  # (2/20/12)
         
-        exec("rank = np.rank(self." + var_name + ")")
+        exec("rank = np.ndim(self." + var_name + ")")
 
         ### print '######## rank(' + var_name + ') =', rank
         
@@ -614,7 +641,31 @@ class BMI_component:
 ##            dtype = 'unknown'   ###############
 ##        return dtype
     
-    #   get_var_type() 
+    #   get_var_type()
+    #-------------------------------------------------------------------
+    def get_var_itemsize(self, long_var_name):
+
+        var_name = self.get_var_name( long_var_name )  # (2/20/12)
+
+        try:
+            exec( "itemsize = self." + var_name + ".itemsize" )
+        except:
+            itemsize = -1
+        return itemsize
+
+    #   get_var_itemsize()
+    #-------------------------------------------------------------------
+    def get_var_nbytes(self, long_var_name):
+
+        var_name = self.get_var_name( long_var_name )
+
+        try:
+            exec( "nbytes = self." + var_name + ".nbytes" )
+        except:
+            nbytes = -1
+        return nbytes
+
+    #   get_var_nbytes()
     #-------------------------------------------------------------------     
     def get_values(self, long_var_name):
 
@@ -751,51 +802,7 @@ class BMI_component:
         ## return self.time_units  
     
     #   get_time_units()
-    #-------------------------------------------------------------------
-    def get_time(self, when='current'):
 
-        #----------------------------------------------------------
-        # Note:  The "when" argument can be: current, start, end.
-        #----------------------------------------------------------
-        # Notes: Most TF and Erode components do not specify
-        #        a particular start time.  An exception is the
-        #        TF Meteorology component, which we could check
-        #        for here and process differently.
-        #----------------------------------------------------------
-        if (when == 'current'):
-            return self.time
-        elif (when == 'start'):
-            return np.float64( 0 )
-        else:
-            pass  # (continue below)
-
-        #--------------------------------------------------
-        # Does model have a "stop_time" attribute ?
-        # Even if it does, it may not be honored exactly.
-        #--------------------------------------------------
-        if (hasattr( self, 'stop_time' )):
-            return np.float64( self.stop_time )
-
-        #---------------------------------
-        # Can we compute the stop_time ?
-        #---------------------------------
-        dt_type    = self.get_attribute( 'time_step_type' )
-        COMPUTABLE = (dt_type == 'fixed') and (hasattr(self, 'n_steps'))
-        
-        if (hasattr( self, 'stop_code' )):
-            if (self.stop_code != 0):
-                COMPUTABLE = False  # (overrides COMPUTABLE above)
-
-        if (COMPUTABLE):
-            return np.float64( self.n_steps * self.dt )
-        else:  
-            print '##############################################'
-            print ' ERROR: Unable to compute model stop_time.'
-            print '##############################################'
-            print ' '
-            return np.float64( -1 )
-        
-    #   get_time()
     #-------------------------------------------------------------------
     def get_start_time(self):
 
@@ -844,6 +851,51 @@ class BMI_component:
             return np.float64( -1 )           
             
     #   get_end_time()
+    #-------------------------------------------------------------------
+#     def get_time(self, when='current'):
+# 
+#         #----------------------------------------------------------
+#         # Note:  The "when" argument can be: current, start, end.
+#         #----------------------------------------------------------
+#         # Notes: Most TF and Erode components do not specify
+#         #        a particular start time.  An exception is the
+#         #        TF Meteorology component, which we could check
+#         #        for here and process differently.
+#         #----------------------------------------------------------
+#         if (when == 'current'):
+#             return self.time
+#         elif (when == 'start'):
+#             return np.float64( 0 )
+#         else:
+#             pass  # (continue below)
+# 
+#         #--------------------------------------------------
+#         # Does model have a "stop_time" attribute ?
+#         # Even if it does, it may not be honored exactly.
+#         #--------------------------------------------------
+#         if (hasattr( self, 'stop_time' )):
+#             return np.float64( self.stop_time )
+# 
+#         #---------------------------------
+#         # Can we compute the stop_time ?
+#         #---------------------------------
+#         dt_type    = self.get_attribute( 'time_step_type' )
+#         COMPUTABLE = (dt_type == 'fixed') and (hasattr(self, 'n_steps'))
+#         
+#         if (hasattr( self, 'stop_code' )):
+#             if (self.stop_code != 0):
+#                 COMPUTABLE = False  # (overrides COMPUTABLE above)
+# 
+#         if (COMPUTABLE):
+#             return np.float64( self.n_steps * self.dt )
+#         else:  
+#             print '##############################################'
+#             print ' ERROR: Unable to compute model stop_time.'
+#             print '##############################################'
+#             print ' '
+#             return np.float64( -1 )
+#         
+#     #   get_time()
     #-------------------------------------------------------------------
     # BMI methods for fine-grained control of model
     #-------------------------------------------------------------------
@@ -931,7 +983,7 @@ class BMI_component:
         # All components, including this one (the driver)
         # will look in the CWD for their CFG file.
         #--------------------------------------------------
-        if (cfg_directory != None):
+        if (cfg_directory is not None):
             os.chdir( cfg_directory )
         self.cfg_prefix = cfg_prefix
 
@@ -1355,6 +1407,78 @@ class BMI_component:
         
     #   print_traceback()
     #-------------------------------------------------------------------
+    def read_path_info(self):
+
+        #------------------------------------------------------------
+        # Note:  Every CFG file has: in_directory, out_directory,
+        #        site_prefix and case_prefix at the top.  These
+        #        are typically the same for all CFG files, so to
+        #        prevent editing this block in every file, this
+        #        method attempts to read those 4 variables from
+        #        a single file called: [case_prefix]_file_info.cfg.
+        #        Since read_config_info() uses these 4 variables,
+        #        this method must be called before that from the
+        #        initialize_config_vars() method.
+        #------------------------------------------------------------
+        # Note:  EMELI passes cfg_file to bmi.initialize(), but
+        #        does not pass cfg_prefix.  How to build filename?
+        #------------------------------------------------------------
+        if not(self.SILENT):
+            print 'Reading path info config file.'
+
+#         print ('In read_file_info, cfg_directory = ' + self.cfg_directory)
+#         print ('In read_file_info, cfg_file   = ' + self.cfg_file)
+#         print ('In read_file_info, cfg_prefix = ' + self.cfg_prefix)
+
+        #---------------------------------------
+        # Construct name of path info CFG file
+        #---------------------------------------
+        cfg_extension = self.get_attribute( 'cfg_extension' )
+        cfg_prefix    = self.cfg_file.replace( cfg_extension, '' )
+        cfg_file      = (cfg_prefix + '_path_info.cfg')
+
+        #------------------------
+        # Does CFG file exist ?
+        #------------------------
+        if (self.DEBUG):
+            print 'cfg_file =', cfg_file
+        if not(os.path.exists(cfg_file)):
+            print 'WARNING: file info CFG file not found:'
+            print '         ' + cfg_file
+            return
+
+        #---------------------------------------
+        # Open file_info CFG file to read data
+        #---------------------------------------
+        cfg_unit = open( cfg_file, 'r' )
+
+        #--------------------------------------------------
+        # Recall that a "blank line", with just a (hidden)
+        # newline character will not be null and will
+        # have len(line) = 1.
+        #--------------------------------------------------
+        while (True):
+            line  = cfg_unit.readline()
+            if (line == ''):
+                break                  # (reached end of file)
+            
+            COMMENT = (line[0] == '#')
+            #--------------------------------------------
+            # Using "|" as a delimiter means we can use
+            # " ", "," or "=" in the filenames.
+            #--------------------------------------------
+            # Added ".strip()" on 10/25/11.
+            #--------------------------------------------
+            words   = line.split('|')  # (split on pipe)
+            if (len(words) == 4) and not(COMMENT):
+                var_name = words[0].strip()
+                value    = words[1].strip()
+                var_type = words[2].strip()  # (e.g. 'double', 'int', 'string', etc.)
+
+                exec( "self." + var_name + " = value" )
+
+    #   read_path_info()
+    #-------------------------------------------------------------------
     def read_config_file(self):
 
         #----------------------------------------------------------
@@ -1420,11 +1544,11 @@ class BMI_component:
             #--------------------------------------------
             # Added ".strip()" on 10/25/11.
             #--------------------------------------------
-            words   = line.split('|')  # (split on equals)
+            words   = line.split('|')  # (split on pipe)
             if (len(words) == 4) and not(COMMENT):
                 var_name = words[0].strip()
                 value    = words[1].strip()
-                var_type = words[2].strip()
+                var_type = words[2].strip()  # (e.g. 'double', 'int', 'string', etc.)
                 ## help_str = words[3]
                 READ_SCALAR   = False
                 READ_FILENAME = False
@@ -1432,8 +1556,17 @@ class BMI_component:
                 # For debugging
                 # print 'var_name, value, var_type =', var_name, value, var_type
 
+                #------------------------------------------------
+                # For layered variables (e.g. soil layers) call
+                # initialize_layered_vars().  (11/15/16)
+                #------------------------------------------------
+                if (var_name == 'n_layers'):
+                    self.n_layers = np.int32( value )  # (will be repeated below)
+                    self.initialize_layer_vars()
+
                 #----------------------------------------------
                 # Does var_name end with an array subscript ?
+                # This is the case for soil layer variables.
                 #----------------------------------------------
                 p1 = var_name.rfind('[')
                 p2 = var_name.rfind(']')
@@ -1445,49 +1578,69 @@ class BMI_component:
                     var_base = var_name
                     var_name_file_str = var_name + '_file'
 
-                #--------------------------------------------
-                # Update var_type based on droplist setting
-                #--------------------------------------------
+                #----------------------------------------------------------
+                # If previous variable ended with "_type", then assume
+                # its purpose was to set the data type for this variable.
+                #----------------------------------------------------------
                 if (last_var_name.startswith(var_base + '_type')):
                     exec( "type_choice = self." + last_var_name )
                     if (type_choice.lower() == 'scalar'):
-                        #--------------------------------------------------
-                        # It seems that things will work as long as the
-                        # "type" and "value" fields in the GUI CFG file
-                        # are consistent.  Don't change var_type here.
-                        #
-                        # Otherwise get this message:
-                        # "Mismatch with value found in typemap
-                        #  (requested type String, actual type Double)."
-                        #--------------------------------------------------
+                        #--------------------
+                        # For Scalar option
+                        #--------------------
                         exec( "self." + var_name_file_str + " = ''")
                         READ_SCALAR = True
-                        ## var_type = 'float64'
-                    else:
-                        exec( "self." + var_name + " = 0.0")
+                    elif (type_choice.lower() == 'time_series'):
+                        #------------------------------------------
+                        # For Time Series option (read from file)
+                        #------------------------------------------
+                        # dtype will default to 'float64'
+                        ## exec( 'self.' + var_name + '= self.initialize_scalar(0)' )
+
+                        exec( "self." + var_name + " = 0.0")  # (just a placeholder)
                         READ_FILENAME = True
-                        ## var_type = 'string'
+                    else:
+                        #--------------------------------------------------------
+                        # For Grid & Grid Sequence options (read from file)
+                        # Can't call initialize_grid(), don't know nx & ny yet.
+                        #--------------------------------------------------------
+                        ### exec( 'self.' + var_name + '= self.initialize_grid(0)' )
+
+                        exec( "self." + var_name + " = 0.0")  # (just a placeholder)
+                        READ_FILENAME = True
 
                 #-----------------------------------           
                 # Read a value of type "var_type"
                 #-----------------------------------
                 # Convert scalars to numpy scalars
                 #-----------------------------------
-                if (var_type in ['float64', 'float']):
-                    value = np.float64( value )
+                if (var_type in ['double', 'float']):
+                    #-----------------------------------------
+                    # Save value of a double or float scalar
+                    #-----------------------------------------
+                    value = np.float64( value )   # (convert string to float64)
+                    exec( 'self.' + var_name + '= self.initialize_scalar( value )' )
+                    ### exec( "self." + var_name + " = value" )
 
                     #------------------------
                     # For testing (5/18/12)
                     #------------------------
-##                    print 'var_name =', var_name
-##                    print 'var_type =', var_type
-##                    print 'value    =', value
-##                    print '---------------------------------'
-                    
-                    exec( "self." + var_name + " = value" )
+#                     print 'var_name =', var_name
+#                     print 'var_type =', var_type
+#                     print 'value    =', value
+#                     exec( 'dtype = self.' + var_name + '.dtype' )
+#                     print 'dtype    =', dtype
+#                     print '---------------------------------'
+
                 elif (var_type in ['long', 'int']):
-                    value = np.int32( value )
-                    exec( "self." + var_name + " = value" )
+                    #----------------------------------------
+                    # Save value of a short or long integer
+                    #----------------------------------------
+                    value = np.int32( value )  # (convert string to int32)
+                    dtype = 'int32'
+                    exec( 'self.' + var_name + '= self.initialize_scalar( value, dtype=dtype )' )
+                    ### exec( "self." + var_name + " = value" )
+
                 elif (var_type == 'string'):
                     #-----------------------------------------
                     # Get the value string for this var_name
@@ -1528,7 +1681,11 @@ class BMI_component:
                         if (READ_FILENAME):
                             exec( "self." + var_name_file_str + " = value_str" )
                         elif (READ_SCALAR):
-                            exec( "self." + var_name + " = np.float64(value_str)")
+                            ##############################################################
+                            # NOTE!  var_type = 'string', so not sure why this is here.
+                            ##############################################################
+                            ## exec( "self." + var_name + " = np.float64(value_str)")
+                            exec( "self." + var_name + " = value_str" ) ## (11/15/16)
                         else:
                             exec( "self." + var_name + " = value_str" )
                 else:
@@ -1543,6 +1700,12 @@ class BMI_component:
     def initialize_config_vars(self):
    
         # print '## At start of initialize_config_vars(): cfg_prefix =', self.cfg_prefix
+
+        #-------------------------------------------------------------
+        # Note: EMELI calls bmi.initialize() with full cfg_file, so
+        #       at this point case_prefix is not known. So this part
+        #       appears to be obsolete. (2/12/17)
+        #-------------------------------------------------------------
         if (self.cfg_prefix == None):
                 self.cfg_prefix = self.case_prefix  # (10/25/11)
              
@@ -1552,6 +1715,7 @@ class BMI_component:
         # CFG filename was built and saved in
         # the initialize() method before now.
         #---------------------------------------
+        self.read_path_info()   ###### (2/12/17)
         # print '#### CALLING read_config_file()...'
         self.read_config_file()
         # print '#### AFTER read_config_file():'
@@ -1573,7 +1737,7 @@ class BMI_component:
         #---------------------------------------------
         # if (self.mode == "driver"):
         #    if (hasattr(self, 'in_directory')):
-        #        if (self.in_directory != None):
+        #        if (self.in_directory is not None):
         #            os.chdir( self.in_directory )
 
         #--------------------------------------------------
@@ -1583,7 +1747,7 @@ class BMI_component:
         #--------------------------------------------------
         # if (self.mode == "driver"):
         #     if (hasattr(self, 'out_directory')):
-        #         if (self.out_directory != None):
+        #         if (self.out_directory is not None):
         #             os.chdir( self.out_directory )
 
         #-------------------------------------------------------
@@ -1678,65 +1842,6 @@ class BMI_component:
 
     #   initialize_basin_vars()    
     #-------------------------------------------------------------------
-    def initialize_basin_vars0( self ):
-
-        #------------------------------------------------------------
-        # Notes: Most of the TopoFlow and Erode components have the
-        #        ability to save values at monitored pixels.  This
-        #        method supports this by embedding an instance of
-        #        "basins_component" within each component.
-        #------------------------------------------------------------
-        # Notes: The routine BMI_base.read_grid_info() looks first
-        #        in "in_directory" and then in "out_directory" for
-        #        the RTI file, which supports TopoFlow and Erode.
-        #------------------------------------------------------------
-        ## from topoflow.utils import basins
-        ## import basins
-        
-        self.bp = basins.basins_component()
-
-##        print 'self.cfg_prefix  =', self.cfg_prefix
-##        print 'self.site_prefix =', self.site_prefix    ##########
-##        print 'self.case_prefix =', self.case_prefix
-
-        #-----------------------------------------------------
-        # Copy all of this from the "host" component, since
-        # "basin components" don't have CFG files.\
-        #-----------------------------------------------------
-        # Added "out_directory" and "case_prefix" for Erode
-        # on (11/5/13) to fix a bug.
-        #-----------------------------------------------------
-        self.bp.site_prefix   = self.site_prefix
-        self.bp.case_prefix   = self.case_prefix
-        self.bp.in_directory  = self.in_directory
-        self.bp.out_directory = self.out_directory
-
-        ## This isn't actually used by basins.initialize.
-        cfg_file = (self.in_directory + self.site_prefix + '.rti')
-        
-        self.bp.initialize( cfg_file=cfg_file,
-                            SILENT=not(self.DEBUG) )
-
-        #-------------------------------
-        # Store the outlet IDs in self
-        #-------------------------------
-        outlet_IDs = self.bp.outlet_IDs
-        outlet_ID  = outlet_IDs[0]
-        self.outlet_IDs = (outlet_IDs / self.nx, outlet_IDs % self.nx)
-        self.outlet_ID  = (outlet_ID  / self.nx, outlet_ID  % self.nx)
-        
-##        self.outlet_IDs = outlet_IDs   # (long-int calendar indices)
-##        self.outlet_ID  = outlet_ID
-
-        #--------------------------------------------------
-        # Before 5/14/10, get outlet_IDs from the
-        # basins port of a Basins component.  Also,
-        # every initialize() called "store_outlet_IDs()".
-        #--------------------------------------------------
-        # outlet_IDs = self.bp.get_vector_long('outlet_IDs')
-        
-    #   initialize_basin_vars0()
-    #-------------------------------------------------------------------
     #-------------------------------------------------------------------
     def prepend_directory(self, file_list, INPUT=True):
 
@@ -1788,7 +1893,7 @@ class BMI_component:
         # package paths.  So to address these issues, we expand
         # the "." to the full CFG_file directory. (9/21/14)
         #------------------------------------------------------------
-        if (self.cfg_file != None):
+        if (self.cfg_file is not None):
             cfg_directory = os.path.dirname(self.cfg_file) + os.sep
             ## print 'cfg_directory =', cfg_directory
             self.cfg_directory = cfg_directory
@@ -1894,6 +1999,62 @@ class BMI_component:
         
     #   initialize_scalar()
     #-------------------------------------------------------------------
+    def initialize_grid(self, value=0.0, dtype='float64'):
+
+        #----------------------------------------------------
+        # Written on 11/13/16 to match initialize_scalar().
+        #----------------------------------------------------
+        grid = np.zeros([self.ny, self.nx], dtype=dtype)
+        if (value != 0.0):
+            grid += value
+
+        return grid
+
+    #   initialize_grid()
+    #-------------------------------------------------------------------
+    def initialize_var(self, var_type, value=0.0, dtype='float64'):
+
+        #--------------------------------------------------------
+        # Note:  if (var_type.lower() == 'scalar'), then do not
+        #        call this function;  var already initialized
+        #        by read_config_file().
+        #--------------------------------------------------------
+        if (var_type.lower() == 'time_series'):
+            var = self.initialize_scalar( value=value, dtype=dtype)
+        else:
+            var = self.initialize_grid( value=value, dtype=dtype)
+
+        return var
+
+    #   initialize_var()
+    #-------------------------------------------------------------------
+    def update_var(self, var_name, value):
+
+        #---------------------------------------------------------------
+        # Note:  Vars must be initialized first, e.g. using either
+        #        initialize_scalar() or initialize_grid() in BMI_base.
+        #---------------------------------------------------------------
+        if (value is None):
+            return
+
+        if (self.is_scalar( var_name )):
+            #----------------------------------------------------
+            # Update the value of a scalar without breaking the
+            # reference so other components will see it change.
+            #----------------------------------------------------
+            # See Notes for initialize_scalar() above.
+            # This is needed for type "Time Series".
+            #----------------------------------------------------
+            exec( 'self.' + var_name + '.fill( value )')
+        else:
+            #----------------------------------------------
+            # Update the value of a grid (2D, 3D) without
+            # breaking the reference (or making a copy).
+            #----------------------------------------------
+            exec( 'self.' + var_name + '[:] = value')
+
+    #   update_var()
+    #-------------------------------------------------------------------
     # These are for convenience;  not part of BMI.
     #-------------------------------------------------------------------
     def is_scalar(self, var_name):
@@ -1901,7 +2062,7 @@ class BMI_component:
         #------------------------------------------------
         # NB!  Case in var_name must be an exact match.
         #-------------------------------------------------      
-        exec("n = np.rank(self." + var_name + ")")       
+        exec("n = np.ndim(self." + var_name + ")")       
         return (n == 0)
     
     #   is_scalar()
@@ -1911,7 +2072,7 @@ class BMI_component:
         #------------------------------------------------
         # NB!  Case in var_name must be an exact match.
         #------------------------------------------------     
-        exec("n = np.rank(self." + var_name + ")")       
+        exec("n = np.ndim(self." + var_name + ")")       
         return (n == 1)
     
     #   is_vector()
@@ -1941,7 +2102,7 @@ class BMI_component:
 ##            print 'ERROR: type(' + var_name + ') =' + type_str
 ##            return False
         #-------------------------------------------------------        
-        exec("n = np.rank(self." + var_name + ")")
+        exec("n = np.ndim(self." + var_name + ")")
         return (n == 2)
 
     #   is_grid()

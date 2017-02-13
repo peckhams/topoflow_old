@@ -49,6 +49,7 @@ import rti_files
 #
 #   class DEM_smoother
 #
+#       get_component_name()
 #       get_attribute()
 #       set_constants()
 #       initialize()
@@ -209,6 +210,12 @@ def curve_fit_test():
 #-------------------------------------------------------------------------
 class DEM_smoother( BMI_base.BMI_component ):
 
+    #-------------------------------------------------------------------
+    def get_component_name(self):
+  
+        return 'TopoFlow_DEM_Smoother'
+
+    #   get_component_name()  
     #-----------------------------------------------------------------
     # Note: Do not define an __init__() method here.  It will
     #       override things needed from CSDMS_base.__init__()
@@ -298,7 +305,7 @@ class DEM_smoother( BMI_base.BMI_component ):
         #----------------------------------
         if (self.comp_status == 'Disabled'):
             if not(SILENT):
-                print self.comp_name + ': Disabled.'
+                print self.comp_name + ': Disabled in CFG file.'
             self.DONE = True
             self.status = 'initialized'  # (OpenMI 2.0 convention) 
             return
@@ -387,14 +394,6 @@ class DEM_smoother( BMI_base.BMI_component ):
         print ' '
         
         self.print_final_report(comp_name=self.comp_name)
-
-        #---------------------------
-        # Release all of the ports
-        #----------------------------------------
-        # Make this call in "finalize()" method
-        # of the component's CCA Imple file
-        #----------------------------------------
-        # self.release_cca_ports( d_services )
         
     #   finalize()
     #-------------------------------------------------------------------

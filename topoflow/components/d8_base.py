@@ -1,5 +1,5 @@
 
-## Copyright (c) 2001-2013, Scott D. Peckham
+## Copyright (c) 2001-2016, Scott D. Peckham
 ## January 2009  (converted from IDL)
 ## May, July, August, October 2009
 ## March 2010 (modified to support local timestepping)
@@ -20,8 +20,6 @@
 ##        saves the results among its state variables.
 #############################################################
 
-# from numpy import *   ############ ELIMINATE THIS.
-
 import numpy as np
 
 import os        # (for os.chdir(), in unit_test())
@@ -33,7 +31,6 @@ from topoflow.utils import fill_pits
 from topoflow.utils import model_output
 from topoflow.utils import pixels
 from topoflow.utils import rtg_files
-# from topoflow.utils import tf_utils  # (not used now)
 
 #-------------------------------------------
 # For use outside of the TopoFlow package.
@@ -270,13 +267,21 @@ class d8_component( BMI_base.BMI_component ):
         self.mode       = mode
 
         if (cfg_file == None):
+            #-----------------------------------------------------------------
+            # Changed from using site_prefix to case_prefix on 2/11/2017
+            # since this is the only CFG file that uses site_prefix.
+            # See matching change in initialize_d8_vars in channels_base.py.
+            #-----------------------------------------------------------------
 			cfg_extension = self.get_attribute( 'cfg_extension' )
-			filename      = self.site_prefix + cfg_extension
+			filename      = self.case_prefix + cfg_extension
+			#filename      = self.site_prefix + cfg_extension
 			cfg_file      = self.in_directory + filename
 			## self.cfg_file   = os.path.join( os.getcwd(), filename )
 			## self.cfg_prefix = self.site_prefix
         self.cfg_file = cfg_file
         
+        ## print 'In d8_base.initialize(), cfg_file =', cfg_file  #########
+
         #-----------------------------------------------
         # Load component parameters from a config file
         #-----------------------------------------------
@@ -453,6 +458,7 @@ class d8_component( BMI_base.BMI_component ):
         # NB! start_new_d8_codes() has a DEM argument
         # that is used by erode_d8_global.py, etc.
         #----------------------------------------------
+        self.DEM_file = (self.in_directory + self.DEM_file)  ######## (11/11/16, QUICK FIX)
         if not( os.path.exists(self.DEM_file) ):
             print 'ERROR: Could not find DEM file:'
             print self.DEM_file

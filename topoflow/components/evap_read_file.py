@@ -18,6 +18,7 @@
 #
 #  class evap_component
 #
+#      get_component_name()
 #      get_attribute()           # (10/26/11)
 #      get_input_var_names()     # (10/23/12)
 #      get_output_var_names()    # (10/23/12)
@@ -93,7 +94,13 @@ class evap_component( evap_base.evap_component ):
     #------------------------------------------------
     ## _input_var_names  = np.array( _input_var_names )
     ## _output_var_names = np.array( _output_var_names )
-    
+
+    #-------------------------------------------------------------------
+    def get_component_name(self):
+  
+        return 'TopoFlow_Evaporation_Read_File'
+
+    #   get_component_name()     
     #-------------------------------------------------------------------
     def get_attribute(self, att_name):
 
@@ -187,7 +194,7 @@ class evap_component( evap_base.evap_component ):
         #        If so, uncomment 2 lines below.
         #----------------------------------------------------------
         return 
-##        if (self.ET != None):
+##        if (self.ET is not None):
 ##            self.ET = np.maximum(self.ET, np.float64(0))
 
         ##########################################
@@ -249,7 +256,7 @@ class evap_component( evap_base.evap_component ):
         #-------------------------------------------------------
         ET = model_input.read_next(self.ET_unit, self.ET_type, rti,
                                    factor=self.mmph_to_mps)
-        if (ET != None):
+        if (ET is not None):
             self.ET = ET
             print 'min(ET) =', ET.min() * self.mps_to_mmph, ' [mmph]'
             print 'min(ET) =', ET.max() * self.mps_to_mmph, ' [mmph]'

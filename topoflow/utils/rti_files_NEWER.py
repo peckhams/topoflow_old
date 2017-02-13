@@ -408,7 +408,7 @@ def make_info(grid_file=None,
     if (ncols == None) or (nrows == None) or \
        (xres == None)  or (yres == None):
         RTI_file = try_to_find_rti_file( grid_file )
-        if (RTI_file != None):
+        if (RTI_file is not None):
             print 'Copying info from RTI_file: '
             print '    ' + RTI_File
             info = read_info( grid_file )
@@ -428,7 +428,7 @@ def make_info(grid_file=None,
     #-------------------------------------------------
     # Was data type specified with "dtype" keyword ?
     #-------------------------------------------------
-    if (dtype != None):
+    if (dtype is not None):
         data_type = get_rti_data_type( dtype )
         
     #---------------------------------------------------------

@@ -139,7 +139,7 @@ class evap_component( BMI_base.BMI_component):
         #------------------------------------------------------
         if (self.comp_status == 'Disabled'):
             if not(SILENT):
-                print 'Evaporation component: Disabled.'
+                print 'Evaporation component: Disabled in CFG file.'
             self.ET     = self.initialize_scalar(0, dtype='float64')
             self.vol_ET = self.initialize_scalar(0, dtype='float64')
             self.DONE   = True

@@ -1,5 +1,13 @@
+"""
+# This class defines a hydrologic infiltration component that implements
+the well-known Green-Ampt model.
 
-## Copyright (c) 2009-2013, Scott D. Peckham
+This class inherits from the infiltration "base class" in "infil_base.py".
+
+See: Smith, R.E. (2002) Infiltration Theory for Hydrologic Applications,
+Water Resources Monograph 15, AGU.
+"""
+## Copyright (c) 2009-2016, Scott D. Peckham
 ##
 ## January 2013   (Revised handling of input/output names).
 ## October 2012   (CSDMS Standard Names and BMI)
@@ -8,13 +16,10 @@
 ## May 2010 (changes to unit_test(), read_cfg_file(), etc.)
 
 #-----------------------------------------------------------------------
-#  NOTES:  This file defines a Green-Ampt infiltration component
-#          and related functions.  It inherits from the infiltration
-#          "base class" in "infil_base.py".
-#-----------------------------------------------------------------------
 #
 #  class infil_component         # (inherits from infil_base.py)
 #
+#      get_component_name()
 #      get_attribute()           # (10/26/11)
 #      get_input_var_names()     # (5/15/12)
 #      get_output_var_names()    # (5/15/12)
@@ -41,7 +46,8 @@
 #-----------------------------------------------------------------------
 
 import numpy as np
-import os
+
+# import os
 
 from topoflow.components import infil_base
 
@@ -171,7 +177,13 @@ class infil_component( infil_base.infil_component ):
     #------------------------------------------------
     ## _input_var_names  = np.array( _input_var_names )
     ## _output_var_names = np.array( _output_var_names )
-    
+
+    #-------------------------------------------------------------------
+    def get_component_name(self):
+  
+        return 'TopoFlow_Infiltration_Green-Ampt'
+
+    #   get_component_name()     
     #-------------------------------------------------------------------
     def get_attribute(self, att_name):
 
@@ -225,15 +237,16 @@ class infil_component( infil_base.infil_component ):
     #-------------------------------------------------------------------
     def initialize_layer_vars(self):
 
-        #-------------------------------------------------------
-        # Notes: We need to call initialize_layer_vars()
-        #        before initialize_config_vars(), which may
-        #        call read_cfg_file().  However, this means
-        #        we haven't read "n_layers" yet, so just
-        #        hardwire it here for now. (5/11/10)
-        #-------------------------------------------------------
-        n_layers = 1
-        # n_layers = self.n_layers
+        #----------------------------------------------------------
+        # Notes: initialize_config_vars() calls read_cfg_file().
+        #        If read_cfg_file() finds a variable "n_layers",
+        #        then it calls initialize_layer_vars() so that
+        #        subsequent layer variables - as indicated by a
+        #        subscript in the CFG file - can be read directly
+        #        into a list or array.
+        #----------------------------------------------------------
+        ## n_layers = 1  (before 11/15/16)
+        n_layers = self.n_layers
         
         #-------------------------------------------------
         # Get arrays to store soil params for each layer
@@ -247,26 +260,36 @@ class infil_component( infil_base.infil_component ):
         self.qs_type  = np.zeros(n_layers, dtype='|S100')
         self.qi_type  = np.zeros(n_layers, dtype='|S100')
         self.G_type   = np.zeros(n_layers, dtype='|S100')
-        # self.gam_type = np.zeros(n_layers, dtype='|S100')
         #--------------------------------------------------------        
         self.Ks_file  = np.zeros(n_layers, dtype='|S100')
         self.Ki_file  = np.zeros(n_layers, dtype='|S100')
         self.qs_file  = np.zeros(n_layers, dtype='|S100')
         self.qi_file  = np.zeros(n_layers, dtype='|S100')
         self.G_file   = np.zeros(n_layers, dtype='|S100')
-        # self.gam_file = np.zeros(n_layers, dtype='|S100')
         #---------------------------------------------------------
         # Note: self.Ks is a Python list.  Initially, each entry
         # is a numpy scalar (type 'np.float64').  However, we
         # can later change any list entry to a scalar or grid
         # (type 'np.ndarray'), according to its "Ks_type".
         #---------------------------------------------------------
+        # While CFG file for Richards 1D uses "Ks_val[0]", the
+        # CFG file for Green-Ampt, etc. just uses "Ks[0]".
+        # Too late to change it to be consistent.
+        #---------------------------------------------------------   
+        # NOTE!  In "initialize_computed_vars()", these lists
+        # will be used to build ndarrays *with the same names*.
+        #---------------------------------------------------------       
         self.Ks  = list( np.zeros(n_layers, dtype='Float64') )
         self.Ki  = list( np.zeros(n_layers, dtype='Float64') )
         self.qs  = list( np.zeros(n_layers, dtype='Float64') )
         self.qi  = list( np.zeros(n_layers, dtype='Float64') )
         self.G   = list( np.zeros(n_layers, dtype='Float64') )
-        # self.gam = list( np.zeros(n_layers, dtype='Float64') )
+        #-------------------------------------------------------------
+#         self.Ks_list  = list( np.zeros(n_layers, dtype='Float64') )
+#         self.Ki_list  = list( np.zeros(n_layers, dtype='Float64') )
+#         self.qs_list  = list( np.zeros(n_layers, dtype='Float64') )
+#         self.qi_list  = list( np.zeros(n_layers, dtype='Float64') )
+#         self.G_list   = list( np.zeros(n_layers, dtype='Float64') )
         
     #   initialize_layer_vars()
     #-------------------------------------------------------------------
@@ -295,25 +318,75 @@ class infil_component( infil_base.infil_component ):
     #-------------------------------------------------------------------
     def check_input_types(self):
 
-        #------------------------------------------------------
-        # Notes: Usually this will be overridden by a given
-        #        method of computing ET.  But this one should
-        #        work for Green-Ampt and Smith-Parlange.
-        #------------------------------------------------------
         are_scalars = np.array([
                          self.is_scalar('P_rain'),
                          self.is_scalar('SM'),
                          self.is_scalar('h_table'),
                          #----------------------------
-                         self.is_scalar('Ks'),
-                         self.is_scalar('Ki'),
-                         self.is_scalar('qs'),
-                         self.is_scalar('qi'),
-                         self.is_scalar('G')  ])
+                         self.is_scalar('Ks[0]'),
+                         self.is_scalar('Ki[0]'),
+                         self.is_scalar('qs[0]'),
+                         self.is_scalar('qi[0]'),
+                         self.is_scalar('G[0]')  ])
 
         self.ALL_SCALARS = np.all(are_scalars)
         
     #   check_input_types()
+    #-------------------------------------------------------------------
+    def initialize_computed_vars(self):
+  
+        #-----------------------------------------------------------
+        # Note: h  = water table elevation [m]
+        #       z  = land surface elevation [m]
+        #
+        #       Currently, h and z are always grids,
+        #       so IN will be a grid.
+        #       z, h and IN must be compatible.
+        #-----------------------------------------------------------
+        self.vol_IN = self.initialize_scalar( 0, dtype='float64')
+        self.vol_Rg = self.initialize_scalar( 0, dtype='float64')
+        
+        if (self.ALL_SCALARS):
+            #-----------------------------------------------------
+            # Note: "I" is initialized to 1e-6 to avoid a divide
+            #       by zero when first computing fc, which does
+            #       have a singularity at the origin.
+            #-----------------------------------------------------
+            self.IN     = self.initialize_scalar( 0,    dtype='float64')
+            self.Rg     = self.initialize_scalar( 0,    dtype='float64') 
+            self.I      = self.initialize_scalar( 1e-6, dtype='float64')
+            self.tp     = self.initialize_scalar( -1,   dtype='float64')
+            self.fp     = self.initialize_scalar( 0,    dtype='float64')
+            # self.r_last = self.initialize_scalar( 0,  dtype='float64') # (P+SM at prev step)
+        else:
+            self.IN     = self.initialize_grid( 0,    dtype='float64')
+            self.Rg     = self.initialize_grid( 0,    dtype='float64')
+            self.I      = self.initialize_grid( 1e-6, dtype='float64')
+            self.tp     = self.initialize_grid( -1,   dtype='float64')
+            self.fp     = self.initialize_grid( 0,    dtype='float64')
+            # self.r_last = self.initialize_grid( 0,   dtype='float64')
+
+        #-----------------------------------------------------
+        # Compute dz as 1D array from scalars in self.dz_val      
+        #-----------------------------------------------------
+        # Compute the z-vector, for plotting profiles
+        #----------------------------------------------
+        self.build_layer_z_vector()
+
+        #------------------------------------------------
+        # Now build a 1D or 3D array for each input var
+        #----------------------------------------------------------
+        # (3/12/08) Same code should work if (self.n_layers eq 1)
+        #----------------------------------------------------------
+        # Convert from lists to arrays; same name. (11/15/16)
+        #----------------------------------------------------------
+        self.Ks  = self.build_layered_var( self.Ks )
+        self.Ki  = self.build_layered_var( self.Ki )
+        self.qs  = self.build_layered_var( self.qs )
+        self.qi  = self.build_layered_var (self.qi )
+        self.G   = self.build_layered_var( self.G)
+     
+    #   initialize_computed_vars()
     #-------------------------------------------------------------------
     def update_infil_rate(self):
 
@@ -369,22 +442,22 @@ class infil_component( infil_base.infil_component ):
         #-------------------------------------------------------
         # NB! Green-Ampt and Smith-Parlange currently only
         #     support ONE layer (n_layers == 1).
-        #------------------------------------------------------- 
+        #-------------------------------------------------------
         for k in xrange(self.n_layers):
             Ks = model_input.read_next(self.Ks_unit[k], self.Ks_type[k], rti)
-            if (Ks != None): self.Ks[k] = Ks
+            if (Ks is not None): self.Ks[k] = Ks
 
             Ki = model_input.read_next(self.Ki_unit[k], self.Ki_type[k], rti)
-            if (Ki != None): self.Ki[k] = Ki
+            if (Ki is not None): self.Ki[k] = Ki
 
             qs = model_input.read_next(self.qs_unit[k], self.qs_type[k], rti)
-            if (qs != None): self.qs[k] = qs
+            if (qs is not None): self.qs[k] = qs
 
             qi = model_input.read_next(self.qi_unit[k], self.qi_type[k], rti)
-            if (qi != None): self.qi[k] = qi
+            if (qi is not None): self.qi[k] = qi
             
             G  = model_input.read_next(self.G_unit[k], self.G_type[k], rti)
-            if (G != None): self.G[k] = G
+            if (G is not None): self.G[k] = G
           
     #   read_input_files()       
     #-------------------------------------------------------------------  
@@ -487,8 +560,8 @@ def Green_Ampt_Infil_Rate_v1(self):
     #---------------------------------------------
     # Initially, IN = r, and all of the incoming
     # water infiltrates.  IN cannot exceed r.
-    # Ponding time, Tp, is t--ime until (IN lt r).
-    #-------------------------------------------
+    # Ponding time, Tp, is time until (IN lt r).
+    #---------------------------------------------
     self.fc = fc  ### (Added on 9/11/14.)
     self.IN = np.minimum(fc, self.P_total)
     

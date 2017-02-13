@@ -3,7 +3,7 @@
 
 ## See "(5/13/10)" for a temporary fix.
 #------------------------------------------------------------------------
-#  Copyright (c) 2001-2014, Scott D. Peckham
+#  Copyright (c) 2001-2016, Scott D. Peckham
 #
 #  Sep 2014.  Wrote new update_diversions().
 #             New standard names and BMI updates and testing.
@@ -128,9 +128,6 @@ import numpy as np
 import os, os.path
 
 from topoflow.utils import BMI_base
-
-# from topoflow.utils import d8_base
-
 from topoflow.utils import file_utils  ###
 from topoflow.utils import model_input
 from topoflow.utils import model_output
@@ -138,8 +135,13 @@ from topoflow.utils import ncgs_files  ###
 from topoflow.utils import ncts_files  ###
 from topoflow.utils import rtg_files   ###
 from topoflow.utils import text_ts_files   ###
-from topoflow.utils import tf_d8_base as d8_base
 from topoflow.utils import tf_utils
+
+#-------------------------------------------------------
+# NOTE:  Do not import "d8_base" itself, it won't work
+#-------------------------------------------------------
+from topoflow.components import d8_global as d8_base    # (11/11/16)
+## from topoflow.utils import tf_d8_base as d8_base
 
 #-----------------------------------------------------------------------
 class channels_component( BMI_base.BMI_component ):
@@ -339,7 +341,7 @@ class channels_component( BMI_base.BMI_component ):
         'basin_outlet_water_x-section__time_max_of_mean_depth':            'm',
         'basin_outlet_water_x-section__time_max_of_volume_flow_rate':      'm3 s-1',
         'basin_outlet_water_x-section__time_max_of_volume_flux':           'm s-1',
-        'basin_outlet_water_x-section__volume_flow_rate':                  'm3',
+        'basin_outlet_water_x-section__volume_flow_rate':                  'm3 s-1',
         'basin_outlet_water_x-section__volume_flux':                       'm s-1',
         #---------------------------------------------------------------------------
         'canals_entrance_water__volume_flow_rate':                 'm3 s-1', 
@@ -453,7 +455,8 @@ class channels_component( BMI_base.BMI_component ):
         self.one_third  = np.float64(1.0) / 3.0        
         self.two_thirds = np.float64(2.0) / 3.0
         self.deg_to_rad = np.pi / 180.0
-        
+        self.rad_to_deg = 180.0 / np.pi
+    
     #   set_constants()
     #-------------------------------------------------------------------
     def initialize(self, cfg_file=None, mode="nondriver", SILENT=False): 
@@ -470,10 +473,15 @@ class channels_component( BMI_base.BMI_component ):
         # Load component parameters from a config file
         #-----------------------------------------------
         self.set_constants()           # (12/7/09)
+        #------------------------------------------------------------
         # print 'CHANNELS calling initialize_config_vars()...'
-        self.initialize_config_vars()   
+        self.initialize_config_vars()  
+        #------------------------------------------------------------
+        # Must call read_grid_info() after initialize_config_vars()
+        #------------------------------------------------------------
         # print 'CHANNELS calling read_grid_info()...'
         self.read_grid_info()
+        #------------------------------------------------------------
         #print 'CHANNELS calling initialize_basin_vars()...'
         self.initialize_basin_vars()  # (5/14/10)
         #-----------------------------------------
@@ -487,7 +495,7 @@ class channels_component( BMI_base.BMI_component ):
         #----------------------------------
         if (self.comp_status == 'Disabled'):
             if not(SILENT):
-                print 'Channels component: Disabled.'
+                print 'Channels component: Disabled in CFG file.'
             self.SAVE_Q_GRIDS  = False   # (It is True by default.)
             self.SAVE_Q_PIXELS = False   # (It is True by default.)
             self.DONE = True
@@ -497,7 +505,41 @@ class channels_component( BMI_base.BMI_component ):
 ##        print '################################################'
 ##        print 'min(d0), max(d0) =', self.d0.min(), self.d0.max()
 ##        print '################################################'
-        
+
+        ##################################################################
+        # Move this block into new: "initialize_input_file_vars()"  ???
+        #---------------------------------------------------
+        # Initialize vars to be read from files (11/16/16)
+        #---------------------------------------------------
+        # Need this in order to use "update_var()".
+        #----------------------------------------------------------
+        # NOTE: read_config_file() sets these to '0.0' if they
+        #       are not type "Scalar", so self has the attribute.
+        #----------------------------------------------------------
+        if (self.slope_type.lower() != 'scalar'):
+            self.slope = self.initialize_var(self.slope_type, dtype='float64')
+        if (self.width_type.lower() != 'scalar'):
+            self.width = self.initialize_var(self.width_type, dtype='float64')
+        if (self.angle_type.lower() != 'scalar'):
+            self.angle = self.initialize_var(self.angle_type, dtype='float64')
+        if (self.sinu_type.lower() != 'scalar'):
+            self.sinu  = self.initialize_var(self.sinu_type,  dtype='float64')
+        if (self.d0_type.lower() != 'scalar'):
+            self.d0    = self.initialize_var(self.d0_type,    dtype='float64')  
+        #----------------------------------------------------------- 
+        if (self.MANNING):
+            if (self.nval_type.lower() != 'scalar'):   
+                self.nval  = self.initialize_var(self.nval_type, dtype='float64')
+        if (self.LAW_OF_WALL):
+            if (self.z0val_type.lower() != 'scalar'):      
+                self.z0val = self.initialize_var(self.z0val_type, dtype='float64')
+
+        #------------------------------------------------------
+        # Must now do this before read_input_files (11/11/16) 
+        #------------------------------------------------------
+        print 'CHANNELS calling initialize_d8_vars()...'
+        self.initialize_d8_vars()  # (depend on D8 flow grid)
+    
         #---------------------------------------------
         # Open input files needed to initialize vars 
         #---------------------------------------------
@@ -512,8 +554,8 @@ class channels_component( BMI_base.BMI_component ):
         #-----------------------
         # Initialize variables
         #-----------------------
-        print 'CHANNELS calling initialize_d8_vars()...'
-        self.initialize_d8_vars()  # (depend on D8 flow grid)
+        ## print 'CHANNELS calling initialize_d8_vars()...'
+        ## self.initialize_d8_vars()  # (depend on D8 flow grid)
         print 'CHANNELS calling initialize_computed_vars()...'
         self.initialize_computed_vars()
 
@@ -534,7 +576,6 @@ class channels_component( BMI_base.BMI_component ):
         
     #   initialize()
     #-------------------------------------------------------------------
-    ## def update(self, dt=-1.0, time_seconds=None):
     def update(self, dt=-1.0):
 
         #---------------------------------------------
@@ -672,22 +713,13 @@ class channels_component( BMI_base.BMI_component ):
         # to any component (e.g. topoflow_driver) that may
         # need them.
         #---------------------------------------------------
-        REPORT = True
-        self.update_mins_and_maxes( REPORT=REPORT )  ## (2/6/13)
+        self.update_mins_and_maxes( REPORT=False )  ## (2/6/13)
         self.print_final_report(comp_name='Channels component')
         
         self.status = 'finalizing'  # (OpenMI)
         self.close_input_files()    # TopoFlow input "data streams"
         self.close_output_files()
         self.status = 'finalized'   # (OpenMI)
-
-        #---------------------------
-        # Release all of the ports
-        #----------------------------------------
-        # Make this call in "finalize()" method
-        # of the component's CCA Imple file
-        #----------------------------------------
-        # self.release_cca_ports( d_services )
         
     #   finalize()
     #-------------------------------------------------------------------
@@ -702,37 +734,13 @@ class channels_component( BMI_base.BMI_component ):
         self.KINEMATIC_WAVE = ("kinematic" in cfg_extension)
         self.DIFFUSIVE_WAVE = ("diffusive" in cfg_extension)
         self.DYNAMIC_WAVE   = ("dynamic"   in cfg_extension)
-
-        ##########################################################
-        # (5/17/12) If MANNING, we need to set z0vals to -1 so
-        # they are always defined for use with new framework.
-        ##########################################################
-        if (self.MANNING):
-            if (self.nval != None):
-                self.nval = np.float64( self.nval )  #### 10/9/10, NEED
-                self.nval_min = self.nval.min()
-                self.nval_max = self.nval.max()
-            #-----------------------------------
-            self.z0val     = np.float64(-1)
-            self.z0val_min = np.float64(-1)
-            self.z0val_max = np.float64(-1)
-            
-        if (self.LAW_OF_WALL):
-            if (self.z0val != None):
-                self.z0val = np.float64( self.z0val )  #### (10/9/10)
-                self.z0val_min = self.z0val.min()
-                self.z0val_max = self.z0val.max()
-            #-----------------------------------
-            self.nval      = np.float64(-1)
-            self.nval_min  = np.float64(-1)
-            self.nval_max  = np.float64(-1)
-            
+                 
         #-------------------------------------------
         # These currently can't be set to anything
         # else in the GUI, but need to be defined.
         #-------------------------------------------
         self.code_type  = 'Grid'
-        self.slope_type = 'Grid'
+        self.slope_type = 'Grid'  # (shouldn't need this)
 
         #---------------------------------------------------------
         # Make sure that all "save_dts" are larger or equal to
@@ -742,12 +750,6 @@ class channels_component( BMI_base.BMI_component ):
         #---------------------------------------------------------
         self.save_grid_dt   = np.maximum(self.save_grid_dt,   self.dt)
         self.save_pixels_dt = np.maximum(self.save_pixels_dt, self.dt)
-        
-        #---------------------------------------------------
-        # This is now done in CSDMS_base.read_config_gui()
-        # for any var_name that starts with "SAVE_".
-        #---------------------------------------------------
-        # self.SAVE_Q_GRID = (self.SAVE_Q_GRID == 'Yes')
         
     #   set_computed_input_vars()
     #-------------------------------------------------------------------
@@ -759,40 +761,105 @@ class channels_component( BMI_base.BMI_component ):
         # the "channel_base" component.
         #---------------------------------------------
         self.d8 = d8_base.d8_component()
-        ###############################################
-        # (5/13/10)  Do next line here for now, until
-        # the d8 cfg_file includes static prefix.
-        # Same is done in GW_base.py.
-        ###############################################
-        # tf_d8_base.read_grid_info() also needs
-        # in_directory to be set. (10/27/11)
-        ###############################################
         
         #--------------------------------------------------         
         # D8 component builds its cfg filename from these  
-        #--------------------------------------------------      
+		#-------------------------------------------------------------
+        # (2/11/2017) The initialize() method in d8_base.py now
+        # uses case_prefix (vs. site_prefix) for its CFG file:
+        # <site_prefix>_d8_global.cfg.  This is to prevent confusion
+		# since this was the only CFG file that used site_prefix.
+		#-------------------------------------------------------------    
         self.d8.site_prefix  = self.site_prefix
+        self.d8.case_prefix  = self.case_prefix   # (used in d8_base.py)
         self.d8.in_directory = self.in_directory
-        self.d8.initialize( cfg_file=None,
-                            SILENT=self.SILENT,
+        self.d8.initialize( cfg_file=None, SILENT=self.SILENT, \
                             REPORT=self.REPORT )
         
-        ## self.code = self.d8.code   # Don't need this.
-        
-        #-------------------------------------------      
-        # We'll need this once we shift from using
-        # "tf_d8_base.py" to the new "d8_base.py"
-        #-------------------------------------------
-        # self.d8.update(self.time, SILENT=False, REPORT=True)
+        #---------------------------------------------------
+        # The next 2 "update" calls are needed when we use
+        # the new "d8_base.py", but are not needed when
+        # using the older "tf_d8_base.py".      
+        #---------------------------------------------------
+        self.d8.update(self.time, SILENT=False, REPORT=True)
+
+        #----------------------------------------------------------- 
+        # Note: This is also needed, but is not done by default in
+        #       d8.update() because it hurts performance of Erode.
+        #----------------------------------------------------------- 
+        self.d8.update_noflow_IDs()
 
     #   initialize_d8_vars()
     #-------------------------------------------------------------
     def initialize_computed_vars(self):
-              
+
+        #--------------------------------------------------------
+        # (5/17/12) If MANNING, we need to set z0vals to -1 so
+        # they are always defined for use with EMELI framework.
+        #--------------------------------------------------------
+        # BMI_base.read_config_file() reads "float" scalars as
+        # numpy "float64" data type.  Applying np.float64()
+        # will break references.
+        #--------------------------------------------------------
+        if (self.MANNING):
+            if (self.nval is not None):
+                self.nval_min = self.nval.min()
+                self.nval_max = self.nval.max()
+                #---------------------------------------
+                print '    min(nval) =', self.nval_min
+                print '    max(nval) =', self.nval_max
+                #---------------------------------------
+            self.z0val     = self.initialize_scalar(-1, dtype='float64')
+            self.z0val_min = self.initialize_scalar(-1, dtype='float64')
+            self.z0val_max = self.initialize_scalar(-1, dtype='float64')
+            
+        if (self.LAW_OF_WALL):
+            if (self.z0val is not None):
+                self.z0val_min = self.z0val.min()
+                self.z0val_max = self.z0val.max()
+                #-----------------------------------------
+                print '    min(z0val) =', self.z0val_min
+                print '    max(z0val) =', self.z0val_max
+                #-----------------------------------------
+            self.nval      = self.initialize_scalar(-1, dtype='float64')
+            self.nval_min  = self.initialize_scalar(-1, dtype='float64')
+            self.nval_max  = self.initialize_scalar(-1, dtype='float64')
+
+        #------------------------------------------------------------           
+        # If neither set, use a constant velocity?  (Test: 5/18/15)
+        #------------------------------------------------------------
+        if not(self.MANNING) and not(self.LAW_OF_WALL):
+            print '#### WARNING: In CFG file, MANNING=0 and LAW_OF_WALL=0.'
+            #-----------------------------------
+            self.z0val     = self.initialize_scalar(-1, dtype='float64')
+            self.z0val_min = self.initialize_scalar(-1, dtype='float64')
+            self.z0val_max = self.initialize_scalar(-1, dtype='float64')
+            #--------------------------------------------------------------            
+            self.nval      = self.initialize_scalar(-1, dtype='float64')
+            self.nval_min  = self.initialize_scalar(-1, dtype='float64')
+            self.nval_max  = self.initialize_scalar(-1, dtype='float64')
+
+        #-----------------------------------------------
+        # Print mins and maxes of some other variables
+        # that were initialized by read_input_files().
+        #-----------------------------------------------
+#         print '    min(slope)      =', self.slope.min()
+#         print '    max(slope)      =', self.slope.max()
+        print '    min(width)      =', self.width.min()
+        print '    max(width)      =', self.width.max()
+#         print '    min(angle)      =', self.angle.min() * self.rad_to_deg, ' [deg]'
+#         print '    max(angle)      =', self.angle.max() * self.rad_to_deg, ' [deg]'
+        print '    min(sinuosity)  =', self.sinu.min()
+        print '    max(sinuosity)  =', self.sinu.max()
+        print '    min(init_depth) =', self.d0.min()
+        print '    max(init_depth) =', self.d0.max() 
+            
         #-----------------------------------------------
         # Convert bank angles from degrees to radians. 
-        #-----------------------------------------------
-        self.angle = self.angle * self.deg_to_rad  # [radians]
+        #-------------------------------------------------
+        # Already done in read_input_files().  (11/16/16)
+        #-------------------------------------------------
+        ## self.angle = self.angle * self.deg_to_rad  # [radians]
         
         #------------------------------------------------
         # 8/29/05.  Multiply ds by (unitless) sinuosity
@@ -826,25 +893,44 @@ class channels_component( BMI_base.BMI_component ):
         # water depth grid to a nonzero scalar value.
         #-----------------------------------------------
         print 'Initializing u, f, d grids...'
-        self.u = np.zeros([self.ny, self.nx], dtype='Float64')
-        self.f = np.zeros([self.ny, self.nx], dtype='Float64')
-        self.d = np.zeros([self.ny, self.nx], dtype='Float64') + self.d0
+        self.u = self.initialize_grid( 0, dtype='float64' )
+        self.f = self.initialize_grid( 0, dtype='float64' )
+        self.d = self.initialize_grid( 0, dtype='float64' )
+        self.d += self.d0  # (Add initial depth, if any.)
 
+        #------------------------------------------
+        # Use a constant velocity (Test: 5/18/15)
+        #------------------------------------------
+        # if not(self.MANNING) and not(self.LAW_OF_WALL):
+        #    ## self.u[:] = 1.5  # [m/s]
+        #    self.u[:] = 3.0  # [m/s]
+            
         #########################################################
         # Add this on (2/3/13) so make the TF driver happy
         # during its initialize when it gets reference to R.
         # But in "update_R()", be careful not to break the ref.
         # "Q" may be subject to the same issue.
         #########################################################
-        self.Q = np.zeros([self.ny, self.nx], dtype='Float64')
-        self.R = np.zeros([self.ny, self.nx], dtype='Float64')
+        self.Q = self.initialize_grid( 0, dtype='float64' )
+        self.R = self.initialize_grid( 0, dtype='float64' )
+
+        ##############################################################################
+        # seconds_per_year = 3600 * 24 * 365 = 31,536,000
+        # mm_per_meter     = 1000
+        ##############################################################################
+        # baseflow_rate     = 250.0   # [mm per year],  was 230.0
+        # baseflow_rate_mps = baseflow_rate / (31536000.0 * 1000.0)  #[m/s]
+        # self.GW_init = np.zeros([self.ny, self.nx], dtype='Float64')
+        # self.GW_init += baseflow_rate_mps
+        ##############################################################################
+
 
         #---------------------------------------------------
         # Initialize new grids. Is this needed?  (9/13/14)
         #---------------------------------------------------
-        self.tau    = np.zeros([self.ny, self.nx], dtype='Float64')
-        self.u_star = np.zeros([self.ny, self.nx], dtype='Float64')
-        self.froude = np.zeros([self.ny, self.nx], dtype='Float64')
+        self.tau    = self.initialize_grid( 0, dtype='float64' )
+        self.u_star = self.initialize_grid( 0, dtype='float64' )
+        self.froude = self.initialize_grid( 0, dtype='float64' )
                         
         #---------------------------------------
         # These are used to check mass balance
@@ -874,7 +960,7 @@ class channels_component( BMI_base.BMI_component ):
         # both width and then P_wet are also zero in places.
         # Therefore initialize Rh as shown.
         #-------------------------------------------------------
-        self.Rh = np.zeros([self.ny, self.nx], dtype='Float64')
+        self.Rh = self.initialize_grid( 0, dtype='float64' )
         ## self.Rh = self.A_wet / self.P_wet   # [m]
         ## print 'P_wet.min() =', self.P_wet.min()
         ## print 'width.min() =', self.width.min()
@@ -883,13 +969,6 @@ class channels_component( BMI_base.BMI_component ):
         self.initialize_outlet_values()
         self.initialize_peak_values()
         self.initialize_min_and_max_values()  ## (2/3/13)
-
-        #########################################
-        # Maybe save all refs in a dictionary
-        # called "self_values" here ? (2/19/13)
-        # Use a "reverse" var_name mapping?
-        # inv_map = dict(zip(map.values(), map.keys()))
-        #########################################
         
 ##        w  = np.where( self.width <= 0 )
 ##        nw = np.size( w[0] )   # (This is correct for 1D or 2D.)
@@ -1018,6 +1097,7 @@ class channels_component( BMI_base.BMI_component ):
         P  = self.P_rain  # (This is now liquid-only precip. 9/14/14)
         SM = self.SM
         GW = self.GW
+        ### GW = self.GW_init
         ET = self.ET
         IN = self.IN
         MR = self.MR
@@ -1367,7 +1447,7 @@ class channels_component( BMI_base.BMI_component ):
             w1 = ( angle == 0 )  # (arrays of True or False)
             w2 = np.invert( w1 )
             #-----------------------------------
-            A_top = width[w1] * self.d8.ds[w1]          
+            A_top = width[w1] * self.d8.ds[w1]    
             d[w1] = self.vol[w1] / A_top
             #-----------------------------------               
             denom  = 2.0 * np.tan(angle[w2])
@@ -1878,7 +1958,8 @@ class channels_component( BMI_base.BMI_component ):
                'ERROR: Simulation aborted.', ' ', \
                'Negative depth found: ' + str(dmin), \
                'Time step may be too large.', \
-               'Time step:      ' + str(dt) + ' [s]', ' ']
+               'Time step:      ' + str(dt) + ' [s]' ]
+
         for k in xrange(len(msg)):
             print msg[k]
         
@@ -1893,13 +1974,15 @@ class channels_component( BMI_base.BMI_component ):
 ##            brow = (badi / nx)
             crstr = str(bcol) + ', ' + str(brow)
 
-            msg = ['(Column, Row):  ' + crstr, \
+            msg = [' ', '(Column, Row):  ' + crstr, \
                    'Flow depth:     ' + str(d[brow, bcol])]
             for k in xrange(len(msg)):
                 print msg[k]
 
         print star_line 
         print ' '
+        raise RuntimeError('Negative depth found.')  # (11/16/16)
+
         return OK
 
     #   check_flow_depth
@@ -1926,7 +2009,7 @@ class channels_component( BMI_base.BMI_component ):
                'ERROR: Simulation aborted.', ' ', \
                'Negative or NaN velocity found: ' + str(umin), \
                'Time step may be too large.', \
-               'Time step:      ' + str(dt) + ' [s]', ' ']
+               'Time step:      ' + str(dt) + ' [s]']
         for k in xrange(len(msg)):
             print msg[k]
 
@@ -1941,13 +2024,15 @@ class channels_component( BMI_base.BMI_component ):
 ##            brow = (badi / nx)
             crstr = str(bcol) + ', ' + str(brow)
 
-            msg = ['(Column, Row):  ' + crstr, \
+            msg = [' ', '(Column, Row):  ' + crstr, \
                    'Velocity:       ' + str(u[brow, bcol])]
             for k in xrange(len(msg)):
                 print msg[k]
 
         print star_line
         print ' '
+        raise RuntimeError('Negative or NaN velocity found.')  # (11/16/16)
+
         return OK
 
             
@@ -2007,72 +2092,157 @@ class channels_component( BMI_base.BMI_component ):
 
         # os.chdir( start_dir )
 
-    #   open_input_files()        
+    #   open_input_files()
     #-------------------------------------------------------------------  
     def read_input_files(self):
 
-        #---------------------------------------------------
-        # The flow codes are always a grid, size of DEM.
-        #---------------------------------------------------
-        # NB! model_input.py also has a read_grid() function.
-        #---------------------------------------------------        
-        rti = self.rti
-##        print 'Reading D8 flow grid (in CHANNELS)...'
-##        self.code = rtg_files.read_grid(self.code_file, rti,
-##                                        RTG_type='BYTE')
-##        print ' '
-        
+        #-------------------------------------------------------    
+        # Note:  All grids are assumed to have same dimensions
+        #        as the DEM.
         #-------------------------------------------------------
-        # All grids are assumed to have a data type of Float32.
+        rti = self.rti
+ 
+        #-------------------------------------------------------
+        # All grids are assumed to have a data type of Float32
+        # as stored in their binary grid file.
+        #-------------------------------------------------------
+        # If EOF is reached, model_input.read_next() does not
+        # change the value of the scalar or grid.
         #-------------------------------------------------------
         slope = model_input.read_next(self.slope_unit, self.slope_type, rti)
-        if (slope != None): self.slope = slope
-        
-        # If EOF was reached, hopefully numpy's "fromfile"
-        # returns None, so that the stored value will be
-        # the last value that was read.
+        if (slope is not None):
+            self.update_var( 'slope', slope )
 
         if (self.MANNING):
             nval = model_input.read_next(self.nval_unit, self.nval_type, rti)
-            if (nval != None):
-                self.nval     = nval
-                self.nval_min = nval.min()
-                self.nval_max = nval.max()
-                
+            if (nval is not None):
+                self.update_var( 'nval', nval )
+
         if (self.LAW_OF_WALL):
             z0val = model_input.read_next(self.z0val_unit, self.z0val_type, rti)
-            if (z0val != None):
-                self.z0val     = z0val
-                self.z0val_min = z0val.min()
-                self.z0val_max = z0val.max()
-        
+            if (z0val is not None):
+                self.update_var( 'z0val', z0val )
+ 
         width = model_input.read_next(self.width_unit, self.width_type, rti)
-        if (width != None): self.width = width
-        
+        if (width is not None):
+            #-------------------------------------------------------
+            # Width can be zero on 4 edges, but this can result in
+            # a "divide by zero" error later on, so need to adjust.
+            #-------------------------------------------------------
+            w1 = ( width == 0 )  # (arrays of True or False)
+            width[w1] = self.d8.dw[w1]
+            self.update_var( 'width', width )
+
         angle = model_input.read_next(self.angle_unit, self.angle_type, rti)
-        if (angle != None):
+        if (angle is not None):
             #-----------------------------------------------
             # Convert bank angles from degrees to radians. 
             #-----------------------------------------------
-            self.angle = angle * self.deg_to_rad  # [radians]
-            ### self.angle = angle  # (before 9/9/14)
+            angle *= self.deg_to_rad   # [radians]
+            self.update_var( 'angle', angle )
 
         sinu = model_input.read_next(self.sinu_unit, self.sinu_type, rti)
-        if (sinu != None): self.sinu = sinu
+        if (sinu is not None):
+            self.update_var( 'sinu', sinu )
         
         d0 = model_input.read_next(self.d0_unit, self.d0_type, rti)
-        if (d0 != None): self.d0 = d0
+        if (d0 is not None):
+            self.update_var( 'd0', d0 )
 
-        ## code = model_input.read_grid(self.code_unit, \
-        ##                            self.code_type, rti, dtype='UInt8')
-        ## if (code != None): self.code = code
-
-    #   read_input_files()     
+    #   read_input_files()        
+    #-------------------------------------------------------------------  
+#     def read_input_files_last(self):
+# 
+#         #----------------------------------------------------
+#         # The D8 flow codes are always a grid, size of DEM.
+#         #----------------------------------------------------
+#         # NB! model_input.py also has a read_grid() function.
+#         #----------------------------------------------------        
+#         rti = self.rti
+# ##        print 'Reading D8 flow grid (in CHANNELS)...'
+# ##        self.code = rtg_files.read_grid(self.code_file, rti,
+# ##                                        RTG_type='BYTE')
+# ##        print ' '
+#         
+#         #-------------------------------------------------------
+#         # All grids are assumed to have a data type of Float32.
+#         #-------------------------------------------------------
+#         slope = model_input.read_next(self.slope_unit, self.slope_type, rti)
+#         if (slope is not None):
+#             self.slope = slope
+#             ## print '    min(slope) =', slope.min()
+#             ## print '    max(slope) =', slope.max()
+#         
+#         # If EOF was reached, hopefully numpy's "fromfile"
+#         # returns None, so that the stored value will be
+#         # the last value that was read.
+# 
+#         if (self.MANNING):
+#             nval = model_input.read_next(self.nval_unit, self.nval_type, rti)
+#             if (nval is not None):
+# #                 if (self.nval_type.lower() == 'scalar'):
+# # 					self.update_scalar( 'nval', nval )
+# #                 else:
+# # 				    self.nval = nval
+#                 self.nval     = nval
+#                 self.nval_min = nval.min()
+#                 self.nval_max = nval.max()
+#                 print '    min(nval) =', self.nval_min
+#                 print '    max(nval) =', self.nval_max
+# 
+#         if (self.LAW_OF_WALL):
+#             z0val = model_input.read_next(self.z0val_unit, self.z0val_type, rti)
+#             if (z0val is not None):
+#                 self.z0val     = z0val
+#                 self.z0val_min = z0val.min()
+#                 self.z0val_max = z0val.max()
+#                 print '    min(z0val) =', self.z0val_min
+#                 print '    max(z0val) =', self.z0val_max
+#         
+#         width = model_input.read_next(self.width_unit, self.width_type, rti)
+#         if (width is not None):
+#             #-------------------------------------------------------
+#             # Width can be zero on 4 edges, but this can result in
+#             # a "divide by zero" error later on, so need to adjust.
+#             #-------------------------------------------------------
+#             w1 = ( width == 0 )  # (arrays of True or False)
+#             width[w1] = self.d8.dw[w1]
+#             self.width = width
+#             print '    min(width) =', width.min()
+#             print '    max(width) =', width.max()
+# 
+#         angle = model_input.read_next(self.angle_unit, self.angle_type, rti)
+#         if (angle is not None):
+#             print '    min(angle) =', angle.min(), ' [deg]'
+#             print '    max(angle) =', angle.max(), ' [deg]'
+#             #-----------------------------------------------
+#             # Convert bank angles from degrees to radians. 
+#             #-----------------------------------------------
+#             self.angle = angle * self.deg_to_rad  # [radians]
+#             ### self.angle = angle  # (before 9/9/14)
+# 
+#         sinu = model_input.read_next(self.sinu_unit, self.sinu_type, rti)
+#         if (sinu is not None):
+#             self.sinu = sinu
+#             print '    min(sinuosity) =', sinu.min()
+#             print '    max(sinuosity) =', sinu.max()
+#         
+#         d0 = model_input.read_next(self.d0_unit, self.d0_type, rti)
+#         if (d0 is not None):
+#             self.d0 = d0
+#             print '    min(d0) =', d0.min()
+#             print '    max(d0) =', d0.max()
+# 
+#         ## code = model_input.read_grid(self.code_unit, \
+#         ##                            self.code_type, rti, dtype='UInt8')
+#         ## if (code is not None): self.code = code
+# 
+#     #   read_input_files_last()     
     #-------------------------------------------------------------------  
     def close_input_files(self):
 
         # if not(self.slope_unit.closed):
-        # if (self.slope_unit != None):
+        # if (self.slope_unit is not None):
 
         #-------------------------------------------------
         # NB!  self.code_unit was never defined as read.
@@ -2568,7 +2738,7 @@ def Manning_Formula(Rh, S, nval):
     #        Note that Q = Ac * u, where Ac is cross-section
     #        area.  For a trapezoid, Ac does not equal w*d.
     #---------------------------------------------------------
-    ##  if (N == None): N = np.float64(0.03)
+    ##  if (N is None): N = np.float64(0.03)
 
     two_thirds = np.float64(2) / 3.0
     
@@ -2610,7 +2780,7 @@ def Law_of_the_Wall(d, Rh, S, z0val):
     #        which is 11.4 km!  So the approximation only
     #        holds within some range of values.
     #--------------------------------------------------------
-##        if (self.z0val == None):    
+##        if (self.z0val is None):    
 ##            self.z0val = np.float64(0.011417)   # (about 1 cm)
 
     #------------------------

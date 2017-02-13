@@ -9,6 +9,7 @@
 #
 #  class HIS_component
 #
+#      get_component_name()
 #      get_attribute()
 #      get_input_var_names() 
 #      get_output_var_names()
@@ -90,6 +91,12 @@ class HIS_component(BMI_base.BMI_component):
     ## _input_var_names  = np.array( _input_var_names )
     ## _output_var_names = np.array( _output_var_names )
 
+    #-------------------------------------------------------------------
+    def get_component_name(self):
+  
+        return 'TopoFlow_Data_HIS'
+
+    #   get_component_name() 
     #-------------------------------------------------------------------
     def get_attribute(self, att_name):
 
@@ -269,7 +276,7 @@ class HIS_component(BMI_base.BMI_component):
         #----------------------------------
         if (self.comp_status == 'Disabled'):
             if not(SILENT):
-                print 'HIS Data component: Disabled.'
+                print 'HIS Data component: Disabled in CFG file.'
             self.T_air  = np.float64(0)   ####################################
             self.P      = np.float64(0)
             self.DONE   = True
@@ -563,15 +570,7 @@ class HIS_component(BMI_base.BMI_component):
         self.status = 'finalized'  # (OpenMI 2.0 convention)
 
         # self.print_final_report(comp_name='HIS Data component')
-
-        #---------------------------
-        # Release all of the ports
-        #----------------------------------------
-        # Make this call in "finalize()" method
-        # of the component's CCA Imple file
-        #----------------------------------------
-        # self.release_cca_ports( port_names, d_services )
-        
+     
     #   finalize()
     #-------------------------------------------------------------------
     def set_computed_input_vars(self):
@@ -685,7 +684,7 @@ class HIS_component(BMI_base.BMI_component):
 ##        #------------------------------------------------------- 
 ##        for k in xrange(self.n_layers):
 ##            Ks = model_input.read_next(self.Ks_unit[k], self.Ks_type[k], rti)
-##            if (Ks != None): self.Ks[k] = Ks
+##            if (Ks is not None): self.Ks[k] = Ks
           
     #   read_input_files()       
     #-------------------------------------------------------------------  

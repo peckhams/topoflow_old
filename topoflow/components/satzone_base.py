@@ -3,9 +3,8 @@
 # self.qs_layer_0 = self.qs[0]
 ##########################################
 
-## See quick fix for n_layers at "(5/11/10)"
 
-## Copyright (c) 2001-2013, Scott D. Peckham
+## Copyright (c) 2001-2016, Scott D. Peckham
 ## January 2009   (converted from IDL)
 ## May, July, August 2009
 ## May 2010 (changes to initialize() and read_cfg_file()
@@ -102,16 +101,25 @@
 import numpy as np
 import os
 
-from topoflow.utils import BMI_base
 from topoflow.utils import cfg_files as cfg
-# from topoflow.utils import d8_base
 from topoflow.utils import model_input
 from topoflow.utils import model_output
-from topoflow.utils import tf_d8_base as d8_base
 from topoflow.utils import tf_utils
+from topoflow.utils import rti_files
+
+## from topoflow.utils import BMI_base
+from topoflow.components import infil_base   # (for build_layered_var())
+
+#-------------------------------------------------------
+# NOTE:  Do not import "d8_base" itself, it won't work
+#-------------------------------------------------------
+from topoflow.components import d8_global as d8_base    # (11/16/16)
+## from topoflow.utils import tf_d8_base as d8_base
 
 #-----------------------------------------------------------------------
-class satzone_component( BMI_base.BMI_component ):
+### class satzone_component( BMI_base.BMI_component ):
+# (11/16/16) Inherit from infil_base to get build_layered_var()
+class satzone_component( infil_base.infil_component ):
 
 
     #-----------------------------------------------------------
@@ -136,20 +144,14 @@ class satzone_component( BMI_base.BMI_component ):
         #------------------------
         # Define some constants
         #------------------------
-        self.nodata = np.float64(-9999)
-    
+        self.nodata   = np.float64(-9999)
+        self.RICHARDS = False
+
     #   set_constants()
     #-------------------------------------------------------------------
     def initialize(self, cfg_file=None, mode="nondriver",
                    SILENT=False):
 
-        #------------------------------------------------------------
-        # Notes:  If the GUI is used, then the GW timestep will
-        #         get set either by File > Load Vars or by
-        #         Read_Run_Info_Panel.  If the GUI is not used,
-        #         then it will be read from the input file and set.
-        #         So it will be nonzero (default) before here.
-        #------------------------------------------------------------
         if not(SILENT):
             print ' '
             print 'Groundwater component: Initializing...'
@@ -160,8 +162,12 @@ class satzone_component( BMI_base.BMI_component ):
         
         #-----------------------------------------------
         # Load component parameters from a config file
-        #-----------------------------------------------
-        self.initialize_layer_vars()  # (5/11/10)
+        #-------------------------------------------------------------
+        # NOTE!  initialize_config_vars() calls read_config_file(),
+        #        which now calls initialize_layer_vars(). (11/15/16)
+        #-------------------------------------------------------------
+        self.set_constants()  
+        ## self.initialize_layer_vars()  # (5/11/10)
         self.initialize_config_vars() 
         self.read_grid_info()     # (need self.rti in next part)
         self.initialize_basin_vars()  # (5/14/10)
@@ -172,7 +178,7 @@ class satzone_component( BMI_base.BMI_component ):
         
         if (self.comp_status == 'Disabled'):
             if not(SILENT):
-                print 'Groundwater component: Disabled.'
+                print 'Groundwater component: Disabled in CFG file.'
             
             #-------------------------------------------------------
             # Other processes, such as evap, may still need DEM.
@@ -183,65 +189,18 @@ class satzone_component( BMI_base.BMI_component ):
             self.elev_file = self.in_directory + self.elev_file
             self.elev_unit = model_input.open_file(self.elev_type,
                                                    self.elev_file)
-            DEM_type_str = self.rti.data_type
+            DEM_dtype = rti_files.get_numpy_data_type( self.rti.data_type )
             elev = model_input.read_next(self.elev_unit, self.elev_type,
-                                      self.rti, dtype=DEM_type_str)
+                                         self.rti, dtype=DEM_dtype)
             model_input.close_file(self.elev_unit)
-            if (elev != None): self.elev = elev
+            if (elev is not None): self.elev = elev
 
             #---------------------------------------------------
             # Initialize GW, vol_GW, h_table, h_last, y, etc.
             #--------------------------------------------------
             self.initialize_computed_vars()  # (2/19/13)
             ##################################################
-
-
-            ########################################################
-            #  This is disabled for now.  Is it really needed?
-            #  Note that we haven't called "get_ports()" yet.
-            ########################################################
-            
-            #---------------------------------------------------
-            # If there is no GW method and if the infiltration
-            # method is not Richards equation, then we must
-            # initialize y, h and h_last here.  ET can still
-            # take water from d, P and SM.
-            #---------------------------------------------------
-            # If (mode == "nondriver"), caller should have added
-            # ip" port by now.
-            #---------------------------------------------------
-##            infil_method = self.ip.get_scalar_long('method')
-##            if (infil_method != 4):  # (not Richards 1D)
-##                self.y = zeros([self.n_layers, self.ny, self.nx], dtype='Float64')
-##                self.h_last = self.h_table.copy()
-
-        #----------------------------------------------------
-        # This block is done in initialize_computed_vars().
-        #----------------------------------------------------
-##            self.GW     = self.initialize_scalar( 0, dtype='float64')
-##            self.vol_GW = self.initialize_scalar( 0, dtype='float64')
-##
-##            ## self.initialize_water_table()
-##            self.h_table = zeros([self.ny, self.nx], dtype='Float64')
-##            # self.elev    = zeros([self.ny, self.nx], dtype='Float64')
-##            ###### (elev -> h_surf, z or dem ??) #######
-##            
-##            #---------------------------------------------------
-##            # Just do this for now, but not optimal. (8/25/09)
-##            #---------------------------------------------------
-##            self.y = zeros([self.n_layers, self.ny, self.nx], dtype='Float64')
-##            self.h_last = self.h_table.copy()
-##
-##            #----------------------------------------------------------------
-##            # Note: The variables qs, th and y are ndarrays.  If we define
-##            #       another variable as a slice or subset of these, such as
-##            #       qs_top = qs[0], or y_top = y[0,:,:], then they will
-##            #       also change whenever the main ndarray changes. (2/19/13)
-##            #----------------------------------------------------------------    
-##            self.y_layer_0 = self.y[0,:,:]
-##            self.y_layer_1 = self.y[1,:,:]
-##            self.y_layer_2 = self.y[2,:,:]
-                     
+      
             self.DONE = True
             self.status = 'initialized'  # (OpenMI 2.0 convention)
             return
@@ -249,14 +208,22 @@ class satzone_component( BMI_base.BMI_component ):
         #----------------------------
         # Initialize more variables
         #----------------------------
-        self.initialize_d8_vars()  # (after read_input_files() ??)
+        self.initialize_d8_vars()
         
         #---------------------------------------------
         # Open input files needed to initialize vars 
         #---------------------------------------------
         self.open_input_files()
         self.read_input_files()
-        
+  
+        #----------------------------------------------
+        # Must come before initialize_computed_vars()
+        # because it uses ALL_SCALARS.
+        #-----------------------------------------------------
+        # Used in other components, but not here. (11/16/16)
+        #-----------------------------------------------------
+        ## self.check_input_types()
+      
         #------------------------------------------------
         # DEM was read by read_input_files().
         # Data type of DEM need not be 'FLOAT'.
@@ -271,7 +238,6 @@ class satzone_component( BMI_base.BMI_component ):
         
     #   initialize()
     #-------------------------------------------------------------------
-    ## def update(self, dt=-1.0, time_seconds=None):
     def update(self, dt=-1.0):
          
         #-------------------------------------------------
@@ -332,15 +298,7 @@ class satzone_component( BMI_base.BMI_component ):
         self.status = 'finalized'  # (OpenMI 2.0 convention)
 
         self.print_final_report(comp_name='Groundwater component')
-
-        #---------------------------
-        # Release all of the ports
-        #----------------------------------------
-        # Make this call in "finalize()" method
-        # of the component's CCA Imple file
-        #----------------------------------------
-        # self.release_cca_ports( port_names, d_services )
-        
+    
     #   finalize()
     #-------------------------------------------------------------------
     def set_computed_input_vars(self):
@@ -358,16 +316,16 @@ class satzone_component( BMI_base.BMI_component ):
     #-------------------------------------------------------------------
     def initialize_layer_vars(self):
 
-        #-------------------------------------------------------
-        # Notes: We need to call initialize_layer_vars()
-        #        before initialize_config_vars(), which may
-        #        call read_cfg_file().  However, this means
-        #        we haven't read "n_layers" yet, so just
-        #        hardwire it here for now.  Use a value that
-        #        is sure to be >= actual value.  (5/11/10)
-        #-------------------------------------------------------
-        n_layers = 6
-        # n_layers = self.n_layers
+        #----------------------------------------------------------
+        # Notes: initialize_config_vars() calls read_cfg_file().
+        #        If read_cfg_file() finds a variable "n_layers",
+        #        then it calls initialize_layer_vars() so that
+        #        subsequent layer variables - as indicated by a
+        #        subscript in the CFG file - can be read directly
+        #        into a list or array.
+        #----------------------------------------------------------
+        ## n_layers = 6    # (before 11/16/16)
+        n_layers = self.n_layers
         
         #---------------------------------------
         # Get arrays for soil layer parameters
@@ -385,9 +343,15 @@ class satzone_component( BMI_base.BMI_component ):
         # can later change any list entry to a scalar or grid
         # (type 'np.ndarray'), according to its "Ks_type".
         #---------------------------------------------------------
-        self.Ks  = list(np.zeros(n_layers, dtype='float64'))
-        self.qs  = list(np.zeros(n_layers, dtype='float64'))
-        self.th  = list(np.zeros(n_layers, dtype='float64'))
+        # While CFG file for Richards 1D uses "Ks_val[0]", the
+        # CFG file for Green-Ampt, etc. just uses "Ks[0]".
+        # Too late to change it to be consistent.
+        # Later, build_layered_vars() will use these lists to
+        # build ndarrays *with the same names*.
+        #---------------------------------------------------------  
+        self.Ks  = list( np.zeros(n_layers, dtype='float64') )
+        self.qs  = list( np.zeros(n_layers, dtype='float64') )
+        self.th  = list( np.zeros(n_layers, dtype='float64') )
 
         #----------------------------------------------------------------
         # Note: The variables qs, th and y are ndarrays.  If we define
@@ -397,13 +361,17 @@ class satzone_component( BMI_base.BMI_component ):
         #----------------------------------------------------------------
         #       This doesn't work for Python lists, however! (2/19/13)
         #----------------------------------------------------------------
-        self.qs_layer_0 = self.qs[0]
-        self.qs_layer_1 = self.qs[1]
-        self.qs_layer_2 = self.qs[2]
-        #-----------------------------
-        self.th_layer_0 = self.th[0]
-        self.th_layer_1 = self.th[1]
-        self.th_layer_2 = self.th[2]
+
+        #--------------------------------------------------
+        # These are not used anywhere;  for illustration?
+        #--------------------------------------------------
+#         self.qs_layer_0 = self.qs[0]
+#         self.qs_layer_1 = self.qs[1]
+#         self.qs_layer_2 = self.qs[2]
+#         #-----------------------------
+#         self.th_layer_0 = self.th[0]
+#         self.th_layer_1 = self.th[1]
+#         self.th_layer_2 = self.th[2]
         
     #   initialize_layer_vars()
     #-------------------------------------------------------------------
@@ -417,10 +385,29 @@ class satzone_component( BMI_base.BMI_component ):
         #----------------------------------
         # Do this here?  See update_Q_gw.
         #----------------------------------
-        self.Q_gw = np.zeros([self.ny, self.nx], dtype='float64')
-        self.GW   = np.zeros([self.ny, self.nx], dtype='float64') #(5/20/10)
         self.vol_GW = self.initialize_scalar(0, dtype='float64')
-        
+        self.GW     = self.initialize_grid(0, dtype='float64')
+        self.Q_gw   = self.initialize_grid(0, dtype='float64')
+ 
+        #-----------------------------------------------------
+        # Compute dz as 1D array from scalars in self.dz_val      
+        #-----------------------------------------------------
+        # Compute the z-vector, for plotting profiles
+        #----------------------------------------------
+        self.dz_val = self.th   ###### (11/16/16)
+        self.build_layer_z_vector()
+
+        #------------------------------------------------
+        # Now build a 1D or 3D array for each input var
+        #----------------------------------------------------------
+        # (3/12/08) Same code should work if (self.n_layers eq 1)
+        #----------------------------------------------------------
+        # Convert from lists to arrays; same name. (11/15/16)
+        #----------------------------------------------------------
+        self.Ks  = self.build_layered_var( self.Ks )
+        self.qs  = self.build_layered_var( self.qs )
+        self.th  = self.build_layered_var (self.th )
+       
         #---------------------------------
         # If water table > land surface,
         # increment the flow depth grid.
@@ -431,16 +418,13 @@ class satzone_component( BMI_base.BMI_component ):
     #-------------------------------------------------------------------
     def initialize_water_table(self):
 
-        #******************************************************
-        #  Any faster to use np.empty vs. np.zeros ??
-        #******************************************************
-
         #----------------------------------------
         # Convert h_table from scalar to grid ?
         #----------------------------------------
         nh = np.size( self.h0_table )
-        if (nh == 1):    
-            self.h_table = self.h0_table.copy() + np.zeros([self.ny, self.nx], dtype='Float64')
+        if (nh == 1):
+            h0_scalar = self.h0_table.copy() 
+            self.h_table = self.initialize_grid(h0_scalar, dtype='float64')   
         else:    
             self.h_table = self.h0_table.copy()
 
@@ -540,21 +524,27 @@ class satzone_component( BMI_base.BMI_component ):
         # the "channel_base" component.
         #---------------------------------------------
         self.d8 = d8_base.d8_component()
-        ###############################################
-        # (5/19/10)  Do next line here for now, until
-        # the d8 cfg_file includes static prefix.
-        # Same is done in channels_base.py.
-        ###############################################
-        # tf_d8_base.read_grid_info() also needs
-        # in_directory to be set. (10/27/11)
-        ###############################################
-        
+ 
         #--------------------------------------------------         
         # D8 component builds its cfg filename from these  
         #--------------------------------------------------      
         self.d8.site_prefix  = self.site_prefix
         self.d8.in_directory = self.in_directory
-        self.d8.initialize( cfg_file=None )
+        self.d8.initialize( cfg_file=None, SILENT=self.SILENT, \
+                            REPORT=self.REPORT )
+
+        #---------------------------------------------------
+        # The next 2 "update" calls are needed when we use
+        # the new "d8_base.py", but are not needed when
+        # using the older "tf_d8_base.py".      
+        #---------------------------------------------------
+        self.d8.update(self.time, SILENT=False, REPORT=True)
+
+        #----------------------------------------------------------- 
+        # Note: This is also needed, but is not done by default in
+        #       d8.update() because it hurts performance of Erode.
+        #----------------------------------------------------------- 
+        self.d8.update_noflow_IDs()       
 
     #   initialize_d8_vars()
     #-------------------------------------------------------------------
@@ -1374,37 +1364,37 @@ class satzone_component( BMI_base.BMI_component ):
         # All grids are assumed to have a data type of Float32.
         #-------------------------------------------------------
         elev = model_input.read_next(self.elev_unit, self.elev_type, rti)
-        if (elev != None): self.elev = elev
+        if (elev is not None): self.elev = elev
 
         h0_table = model_input.read_next(self.h0_table_unit, self.h0_table_type, rti)
-        if (h0_table != None): self.h0_table = h0_table
+        if (h0_table is not None): self.h0_table = h0_table
 
         # This is not used yet. ####################
 ##        d_bedrock = model_input.read_next(self.d_bedrock_unit, self.d_bedrock_type, rti)
-##        if (d_bedrock != None): self.d_bedrock = d_bedrock
+##        if (d_bedrock is not None): self.d_bedrock = d_bedrock
 
         #-----------------------------------------------------
         # These are computed variables, not input variables,
         # although we may read their initial value from file
         #-----------------------------------------------------
 ##        d_freeze = model_input.read_next(self.d_freeze_unit, self.d_freeze_type, rti)
-##        if (d_freeze != None): self.d_freeze = d_freeze
+##        if (d_freeze is not None): self.d_freeze = d_freeze
 ##
 ##        d_thaw = model_input.read_next(self.d_thaw_unit, self.d_thaw_type, rti)
-##        if (d_thaw != None): self.d_thaw = d_thaw
+##        if (d_thaw is not None): self.d_thaw = d_thaw
         
         #----------------------------------------------------
         # These are used by the new, more general GW method
         #----------------------------------------------------
         for j in xrange(self.n_layers):
             Ks = model_input.read_next(self.Ks_unit[j], self.Ks_type[j], rti)
-            if (Ks != None): self.Ks[j] = Ks
+            if (Ks is not None): self.Ks[j] = Ks
 
             qs = model_input.read_next(self.qs_unit[j], self.qs_type[j], rti)
-            if (qs != None): self.qs[j] = qs
+            if (qs is not None): self.qs[j] = qs
 
             th = model_input.read_next(self.th_unit[j], self.th_type[j], rti)
-            if (th != None): self.th[j] = th            
+            if (th is not None): self.th[j] = th            
         
     #   read_input_files()        
     #-------------------------------------------------------------------  

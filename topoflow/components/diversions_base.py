@@ -104,7 +104,7 @@ class diversions_component( BMI_base.BMI_component ):
         #-------------------------------
         if (self.comp_status == 'Disabled'):
             if not(SILENT):
-                print 'Diversions component: Disabled.'
+                print 'Diversions component: Disabled in CFG file.'
             self.n_canals          = self.initialize_scalar( 0, dtype='int32')  # int
             self.n_sinks           = self.initialize_scalar( 0, dtype='int32')
             self.n_sources         = self.initialize_scalar( 0, dtype='int32')

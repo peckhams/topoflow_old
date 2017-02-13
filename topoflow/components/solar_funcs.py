@@ -366,7 +366,7 @@ def Atmospheric_Transmissivity( lat_deg, Julian_day, W_p,
     #         lat_deg is latitude in decimal degrees.
     #         Atmospheric Trans. = tau = unitless and in [0,1].
     #------------------------------------------------------------
-    if (gamma_dust == None):    
+    if (gamma_dust is None):    
         gamma_dust = Dust_Attenuation()
         
     Gamma  = Day_Angle(Julian_day)   # [radians]
@@ -393,7 +393,7 @@ def Direct_Radiation_Flux( lat_deg, Julian_day, W_p,
     #         lat_deg is latitude in decimal degrees.
     #         Atmospheric Trans. = tau = unitless and in [0,1].
     #------------------------------------------------------------
-    if (gamma_dust == None):    
+    if (gamma_dust is None):    
         gamma_dust = Dust_Attenuation()
         
     tau   = Atmospheric_Transmissivity(lat_deg, Julian_day,
@@ -408,7 +408,7 @@ def Direct_Radiation_Flux( lat_deg, Julian_day, W_p,
 def Scattering_Attenuation( lat_deg, Julian_day, W_p,
                             th, gamma_dust=None ):
 
-    if (gamma_dust == None):    
+    if (gamma_dust is None):    
         gamma_dust = Dust_Attenuation()
 
     Gamma = Day_Angle(Julian_day)   # [radians]
@@ -427,7 +427,7 @@ def Scattering_Attenuation( lat_deg, Julian_day, W_p,
 def Diffuse_Radiation_Flux( lat_deg, Julian_day, W_p,
                             th, gamma_dust=None ):
 
-    if (gamma_dust == None):    
+    if (gamma_dust is None):    
         gamma_dust = Dust_Attenuation()
 
     gam_s = Scattering_Attenuation(lat_deg, Julian_day, W_p,
@@ -442,7 +442,7 @@ def Diffuse_Radiation_Flux( lat_deg, Julian_day, W_p,
 def Global_Radiation_Flux( lat_deg, Julian_day, W_p,
                            th, gamma_dust=None ):
 
-    if (gamma_dust == None):    
+    if (gamma_dust is None):    
         gamma_dust = Dust_Attenuation()
         
     K_dir = Direct_Radiation_Flux(lat_deg, Julian_day, W_p,
@@ -465,7 +465,7 @@ def BS_Radiation_Flux( lat_deg, Julian_day, W_p,
     #         A table of typical albedos is given by Dingman,
     #         Table D-2 on page 584.
     #----------------------------------------------------------
-    if (gamma_dust == None):    
+    if (gamma_dust is None):    
         gamma_dust = Dust_Attenuation()
         
     gam_s = Scattering_Attenuation(lat_deg, Julian_day, W_p,
@@ -525,7 +525,7 @@ def Equivalent_Latitude( lat_deg, alpha, beta, DEGREES=False ):
     term1   = np.sin(beta) * np.cos(alpha) * np.cos(lat_rad)
     term2   = np.cos(beta) * np.sin(lat_rad)
     
-    eq_lat  = np.arcsin(term1 + term2)
+    eq_lat   = np.arcsin(term1 + term2)
     
     #--------------------------------------
     # Convert to degrees?  Sunrise_Offset
@@ -705,7 +705,7 @@ def Clear_Sky_Radiation( lat_deg, Julian_day, W_p,
     # Tsr = T_ss = 0, when abs(eq_lat_deg) gt 66.5.
     #------------------------------------------------
     # Without WHERE call, cProfile time was reduced
-    # from 0.604 to 0.582.
+    # from 0.604 to
     #------------------------------------------------    
     dark = np.logical_or( (TSN_offset <= T_sr), (TSN_offset >= T_ss) )  
     K_cs[ dark ] = np.float64(0)
@@ -737,7 +737,7 @@ def Julian_Day( month_num, day_num, hour_num=None ):
     
     JD = np.sum(month_days[:month_num]) + np.maximum(day_num - 1, 0)
     
-    if (hour_num != None):    
+    if (hour_num is not None):    
         JD = JD + (hour_num / np.float64(24))
     
     return JD
@@ -877,7 +877,7 @@ def Earth_Perihelion( year=None ):
     #         returns the time when this event occurs as a
     #         Julian date in the given year.
     #-------------------------------------------------------------
-    if (year == None):    
+    if (year is None):    
         year = Current_Year()
     if (year < 1992) or (year > 2020):    
         year = Current_Year()
@@ -935,7 +935,7 @@ def Equation_Of_Time( Julian_day, year=None,
     #            IDL>  Gamma = Day_Angle(JD)
     #            IDL>  delta = Declination(Gamma)
     #----------------------------------------------------- 
-    if (year == None):   
+    if (year is None):   
         year = Current_Year()
     if (year < 1992) or (year > 2020):    
         year = Current_Year()
@@ -1076,7 +1076,7 @@ def True_Solar_Noon( Julian_day, longitude, GMT_offset=None,
     # Add or subtract 1 hour for
     # Daylight Savings Time ?
     #-----------------------------
-    if (DST_offset != None):
+    if (DST_offset is not None):
         T_noon = T_noon + DST_offset
     
     return T_noon

@@ -217,7 +217,7 @@ class rtg_file():
             self.ny   = info.nrows           
             ## print 'Stored new info in state.'
             
-##        if (info != None):
+##        if (info is not None):
 ##            #------------------------------
 ##            # Save info to a new RTI file
 ##            #------------------------------
@@ -359,7 +359,7 @@ class rtg_file():
         #--------------------------------------
         # Different ways to specify data type
         #--------------------------------------
-        if (rtg_type != None):
+        if (rtg_type is not None):
             dtype = rti_files.get_numpy_data_type( rtg_type )
 
         #--------------------------------

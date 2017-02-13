@@ -56,6 +56,7 @@
 #
 #  class diversions_component:  (inherits from diversions_base.py)
 #
+#      get_component_name()
 #      get_attribute()          # (10/26/11)
 #      get_input_var_names()    # (5/16/12, Bolton)
 #      get_output_var_names()   # (5/16/12, Bolton)
@@ -172,7 +173,13 @@ class diversions_component( diversions_base.diversions_component ):
     #------------------------------------------------
     ## _input_var_names  = np.array( _input_var_names )
     ## _output_var_names = np.array( _output_var_names )
-    
+
+    #-------------------------------------------------------------------
+    def get_component_name(self):
+  
+        return 'TopoFlow_Diversions_Fraction_Method'
+
+    #   get_component_name()     
     #-------------------------------------------------------------------
     def get_attribute(self, att_name):
 

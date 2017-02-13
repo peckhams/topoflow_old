@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (c) 2001-2013, Scott D. Peckham
+# Copyright (c) 2001-2017, Scott D. Peckham
 #
 #-----------------------------------------------------------------------
 
@@ -9,7 +9,7 @@ import os
 import tempfile
 # See:  http://docs.python.org/2/library/tempfile.html
 
-from topoflow.framework import emeli
+from topoflow.framework import emeli  ###########
 ## from topoflow.utils import tf_utils
 
 #-----------------------------------------------------------------------
@@ -25,13 +25,13 @@ from topoflow.framework import emeli
 #  bobs_erode_test()  # Use framework to run Erode.
 #
 #-----------------------------------------------------------------------
-def topoflow_test( driver_port_name='hydro_model',
+def topoflow_test( driver_comp_name ='topoflow_driver',
                    cfg_prefix=None, cfg_directory=None,
                    time_interp_method='Linear'):
 
-    #-----------------------------------------------------
-    # Note: The "driver_port_name" defaults to using a
-    #       component of "hydro_model" type as the driver.
+    #----------------------------------------------------------
+    # Note: The "driver_comp_name " defaults to using a
+    #       component of "topoflow_driver" type as the driver.
     #       The component of this type specified in the
     #       provider_file will be the driver component.
     #
@@ -49,7 +49,7 @@ def topoflow_test( driver_port_name='hydro_model',
 
     #-------------------------------------------------------
     # (2/6/13) Since the framework runs the clock now, do
-    # we still need to specify a "driver_port" ??
+    # we still need to specify a "driver_comp" ??
     # Might still be necessary for use in CSDMS framework.
     #-------------------------------------------------------
     f = emeli.framework()
@@ -62,23 +62,72 @@ def topoflow_test( driver_port_name='hydro_model',
     if (cfg_prefix == None):
         cfg_prefix = 'June_20_67'
     if (cfg_directory == None):
-        cfg_directory = examples_dir + 'Treynor_Iowa/'
+        cfg_directory = examples_dir + 'Treynor_Iowa_30m/'
     
     #------------------------------
     # Run the full TopoFlow model
     #------------------------------
-    f.run_model( driver_port_name=driver_port_name,
+    f.run_model( driver_comp_name =driver_comp_name ,
                  cfg_prefix=cfg_prefix,
                  cfg_directory=cfg_directory,
                  time_interp_method=time_interp_method )
 
 #   topoflow_test()
 #-----------------------------------------------------------------------
+def topoflow_test2( driver_comp_name ='topoflow_driver',
+                   cfg_prefix=None, cfg_directory=None,
+                   time_interp_method='Linear'):
+
+    #-----------------------------------------------------------
+    # Note: The "driver_comp_name " defaults to using a
+    #       component of "topoflow_driver" type as the driver.
+    #       The component of this type specified in the
+    #       provider_file will be the driver component.
+    #
+    #       Any other component in the provider_file can
+    #       also be used as the driver.  Examples are:
+    #          meteorology
+    #          channels
+    #          snow
+    #          satzone
+    #          evap
+    #          infil
+    #          diversions
+    #          ice
+    #-----------------------------------------------------
+
+    #-------------------------------------------------------
+    # (2/6/13) Since the framework runs the clock now, do
+    # we still need to specify a "driver_comp" ??
+    # Might still be necessary for use in CSDMS framework.
+    #-------------------------------------------------------
+    f = emeli.framework()
+    examples_dir = emeli.paths['examples']
+    ## examples_dir = f.paths['examples']
+    
+    #--------------------
+    # Default arguments
+    #--------------------
+    if (cfg_prefix == None):
+        cfg_prefix = 'Test1'
+    if (cfg_directory == None):
+        cfg_directory = examples_dir + 'C2_basin/'
+    
+    #------------------------------
+    # Run the full TopoFlow model
+    #------------------------------
+    f.run_model( driver_comp_name =driver_comp_name ,
+                 cfg_prefix=cfg_prefix,
+                 cfg_directory=cfg_directory,
+                 time_interp_method=time_interp_method )
+
+#   topoflow_test2()
+#-----------------------------------------------------------------------
 def erode_test( cfg_prefix=None, cfg_directory=None,
                 time_interp_method='Linear'):
          
     f = emeli.framework()
-    driver_port_name = 'LEM'
+    driver_comp_name  = 'LEM'
     examples_dir = emeli.paths['examples']
     ## examples_dir = f.paths['examples']
 
@@ -93,7 +142,7 @@ def erode_test( cfg_prefix=None, cfg_directory=None,
     #----------------------
     # Run the Erode model
     #----------------------   
-    f.run_model( driver_port_name=driver_port_name,
+    f.run_model( driver_comp_name =driver_comp_name ,
                  cfg_prefix=cfg_prefix,
                  cfg_directory=cfg_directory,
                  time_interp_method=time_interp_method )
@@ -220,7 +269,7 @@ def framework_test1():
     f = emeli.framework()
     examples_dir = emeli.paths['examples']
     ## examples_dir = f.paths['examples']
-    ## driver_port_name = 'hydro_model'  # (TopoFlow Driver test)
+    ## driver_comp_name  = 'topoflow_driver'  # (TopoFlow Driver test)
 
     #-----------------------------------------
     # Set the working directory for test run
@@ -372,7 +421,7 @@ def framework_test2():
     f = emeli.framework()
     examples_dir = emeli.paths['examples']
     ## examples_dir = f.paths['examples']    
-    ## driver_port_name = 'hydro_model'  # (TopoFlow Driver test)
+    ## driver_comp_name  = 'topoflow_driver'  # (TopoFlow Driver test)
 
     f.read_repository( SILENT=False )
 
@@ -424,10 +473,10 @@ def framework_test2():
     # f.update_all()  # (not ordered)
 
 ##    for k in xrange(10):
-##        for port_name in f.provider_list:
-##            print 'Calling update() for port_name =', port_name
-##            if (port_name != 'hydro_model'):
-##                bmi = f.comp_set[ port_name ]
+##        for comp_name in f.provider_list:
+##            print 'Calling update() for comp_name =', comp_name
+##            if (comp_name != 'topoflow_driver'):
+##                bmi = f.comp_set[ comp_name ]
 ##                bmi.update( -1.0 )
             
     #----------------------------------------------
@@ -435,7 +484,7 @@ def framework_test2():
     #----------------------------------------------
 ##    print ' '
 ##    print "Calling driver's update() method..."
-##    f.update( 'hydro_model' )
+##    f.update( 'topoflow_driver' )
     
     #----------------
     # Final message
@@ -445,13 +494,13 @@ def framework_test2():
 
 #   framework_test2()
 #-----------------------------------------------------------------------
-def bobs_erode_test( driver_port_name='LEM',
+def bobs_erode_test( driver_comp_name ='LEM',
                      cfg_prefix=None, cfg_directory=None,
                      time_interp_method='Linear'):
 
     #-------------------------------------------------------
     # (2/6/13) Since the framework runs the clock now, do
-    # we still need to specify a "driver_port" ??
+    # we still need to specify a "driver_comp" ??
     # Might still be necessary for use in CSDMS framework.
     #-------------------------------------------------------
     f = emeli.framework()
@@ -470,7 +519,7 @@ def bobs_erode_test( driver_port_name='LEM',
     #------------------------------
     # Run the full TopoFlow model
     #------------------------------
-    f.run_model( driver_port_name=driver_port_name,
+    f.run_model( driver_comp_name =driver_comp_name ,
                  cfg_prefix=cfg_prefix,
                  cfg_directory=cfg_directory,
                  time_interp_method=time_interp_method )

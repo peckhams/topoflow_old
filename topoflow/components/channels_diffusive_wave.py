@@ -18,6 +18,7 @@
 #
 #  class channels_component
 #
+#      get_component_name()
 #      get_attribute()           # (10/26/11)
 #      get_input_var_names()     # (defined in channels_base.py)
 #      get_output_var_names()    # (defined in channels_base.py)
@@ -53,6 +54,12 @@ class channels_component(channels_base.channels_component):
         'dialog_title':       'Channels: Diffusive Wave Parameters',
         'time_units':         'seconds' }
 
+    #-------------------------------------------------------------------
+    def get_component_name(self):
+  
+        return 'TopoFlow_Channels_Diffusive_Wave'
+
+    #   get_component_name()
     #-------------------------------------------------------------------
     def get_attribute(self, att_name):
 

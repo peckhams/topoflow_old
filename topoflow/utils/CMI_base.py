@@ -105,7 +105,7 @@ from topoflow.components import topoflow_driver
 import sys
 import traceback
 
-# import numpy
+# import numpy as np
 # import os
 # import time
 
@@ -475,7 +475,7 @@ class CMI_component:
 #             print '        Returning a value of zero.'
 #             print '######################################'
 #             print ' '
-#             return numpy.float64( 0 )
+#             return np.float64( 0 )
 
     #   get_values()
     #-------------------------------------------------------------------
@@ -494,7 +494,7 @@ class CMI_component:
 #         # Check data type and rank for input values.
 #         #---------------------------------------------
 #         val_dtype = str( values.dtype )
-#         val_rank  = numpy.rank( values )
+#         val_rank  = np.ndim( values )
 #         
 #         if (val_rank != rank):
 #             print '#############################################'

@@ -27,6 +27,7 @@
 #
 #  class evap_component
 #
+#      get_component_name()
 #      get_attribute()             # (10/26/11)
 #      get_input_var_names()       # (5/15/12)
 #      get_output_var_names()      # (5/15/12)
@@ -193,7 +194,13 @@ class evap_component( evap_base.evap_component ):
     #------------------------------------------------
     ## _input_var_names  = np.array( _input_var_names )
     ## _output_var_names = np.array( _output_var_names )
-            
+
+    #-------------------------------------------------------------------
+    def get_component_name(self):
+  
+        return 'TopoFlow_Evaporation_Priestley-Taylor'
+
+    #   get_component_name()             
     #-------------------------------------------------------------------
     def get_attribute(self, att_name):
 
@@ -380,16 +387,16 @@ class evap_component( evap_base.evap_component ):
         # All grids are assumed to have a data type of Float32.
         #-------------------------------------------------------
         alpha = model_input.read_next(self.alpha_unit, self.alpha_type, rti)
-        if (alpha != None): self.alpha = alpha
+        if (alpha is not None): self.alpha = alpha
 
         K_soil = model_input.read_next(self.K_soil_unit, self.K_soil_type, rti)
-        if (K_soil != None): self.K_soil = K_soil
+        if (K_soil is not None): self.K_soil = K_soil
 
         soil_x = model_input.read_next(self.soil_x_unit, self.soil_x_type, rti)
-        if (soil_x != None): self.soil_x = soil_x
+        if (soil_x is not None): self.soil_x = soil_x
 
         T_soil_x = model_input.read_next(self.T_soil_x_unit, self.T_soil_x_type, rti)
-        if (T_soil_x != None): self.T_soil_x = T_soil_x
+        if (T_soil_x is not None): self.T_soil_x = T_soil_x
         
     #   read_input_files()        
     #-------------------------------------------------------------------  

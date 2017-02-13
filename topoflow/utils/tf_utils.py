@@ -122,20 +122,22 @@ def TF_Build_Date():
     #---------------------------------------------------------
     # Notes:  Update this whenever a new version is released
     #---------------------------------------------------------
-    return '9/22/14'
+    return '11/16/16'
+    ## return '9/22/14'  ## (3.4)
 
 #   TF_Build_Date()
 #-------------------------------------------------------------------
 def TF_Version_Number():
 
-    return 3.4
+    return 3.5
 
 #   TF_Version_Number()
 #-------------------------------------------------------------------
 def TF_Version():
 
     date_str   = '(' + TF_Build_Date() + ')'
-    num_str    = str(TF_Version_Number()) + ' beta '
+    num_str    = str(TF_Version_Number())
+    ## num_str    = str(TF_Version_Number()) + ' beta '
     ver_string = 'TopoFlow Version ' + num_str + date_str
 
     return ver_string

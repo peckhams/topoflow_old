@@ -45,6 +45,7 @@
 #
 #  class topoflow_driver      (inherits from BMI_base.py)
 #
+#      get_component_name()
 #      get_attribute()          # (10/26/11)
 #      get_input_var_names()    # (5/16/12, Bolton)
 #      get_output_var_names()   # (5/16/12, Bolton)
@@ -279,7 +280,13 @@ class topoflow_driver( BMI_base.BMI_component ):
     #------------------------------------------------
     ## _input_var_names  = np.array( _input_var_names )
     ## _output_var_names = np.array( _output_var_names )
-         
+
+    #-------------------------------------------------------------------
+    def get_component_name(self):
+  
+        return 'TopoFlow_Driver'  ##### TopoFlow_Run_Monitor,  Report_Maker?
+
+    #   get_component_name()           
     #-------------------------------------------------------------------
     def get_attribute(self, att_name):
 
@@ -477,7 +484,7 @@ class topoflow_driver( BMI_base.BMI_component ):
         #----------------------------------
         if (self.comp_status == 'Disabled'):
             if not(SILENT):
-                print 'TopoFlow component: Disabled.'
+                print 'TopoFlow Main component: Disabled in CFG file.'
             self.DONE = True
             self.status = 'initialized.'  # (OpenMI 2.0 convention)
             return
@@ -666,7 +673,7 @@ class topoflow_driver( BMI_base.BMI_component ):
         # Print reports
         #----------------
         self.print_final_report()
-        self.print_mins_and_maxes( FINAL=True )
+##        self.print_mins_and_maxes( FINAL=True )   # (Moved into final report.)
 ##        self.print_uniform_precip_data()  # (not ready yet)
 ##        self.print_mass_balance_report()  # (not ready yet)
 
@@ -683,15 +690,7 @@ class topoflow_driver( BMI_base.BMI_component ):
         TF_Print('Finished.' + '  (' + self.case_prefix + ')')
         TF_Print(' ')
         self.status = 'finalized'
-
-        #---------------------------
-        # Release all of the ports
-        #----------------------------------------
-        # Make this call in "finalize()" method
-        # of the component's CCA Imple file
-        #----------------------------------------
-        # self.release_cca_ports( port_names, d_services )
-        
+   
     #   finalize()
     #-------------------------------------------------------------            
     def check_finished(self):
@@ -1214,32 +1213,37 @@ class topoflow_driver( BMI_base.BMI_component ):
                 percent_out = np.float64(100) * vol_Q / volume_in
             else:    
                 percent_out = np.float64(0)
-        
+  
+        #-----------------------------------------------      
+        # Prepare to save report as a list of strings
+        #-----------------------------------------------
+        report = list()  ############# (NEW: 11/15/16)
+
         #-------------------
-        # Print the report
+        # Build the report
         #-------------------
         hline = ''.ljust(60, '-')
-        TF_Print( hline )
-        TF_Print( TF_Version() )
-        TF_Print( time.asctime() )  #####
-        TF_Print(' ')
-        # TF_Print('Simulated Hydrograph for ' + NAME)
-        TF_Print('Input directory:      ' + self.in_directory)
-        TF_Print('Output directory:     ' + self.out_directory)
-        TF_Print('Site prefix:          ' + self.site_prefix)
-        TF_Print('Case prefix:          ' + self.case_prefix)
+        report.append( hline )
+        report.append( TF_Version() )
+        report.append( time.asctime() )  #####
+        report.append(' ')
+        # report.append('Simulated Hydrograph for ' + NAME)
+        report.append('Input directory:      ' + self.in_directory)
+        report.append('Output directory:     ' + self.out_directory)
+        report.append('Site prefix:          ' + self.site_prefix)
+        report.append('Case prefix:          ' + self.case_prefix)
         if (COMMENT is not None):
-            TF_Print(' ')
-            TF_Print( COMMENT )
+            report.append(' ')
+            report.append( COMMENT )
         
-        TF_Print(' ')
-        TF_Print('Simulated time:      ' + str(T_final) + ' [min]')
-        TF_Print('Program run time:    ' + run_time_str)
-        TF_Print(' ')
-        TF_Print('Number of timesteps: ' + str(n_steps))
-        TF_Print('Number of columns:   ' + str(self.nx) )
-        TF_Print('Number of rows:      ' + str(self.ny) )
-        TF_Print(' ')
+        report.append(' ')
+        report.append('Simulated time:      ' + str(T_final) + ' [min]')
+        report.append('Program run time:    ' + run_time_str)
+        report.append(' ')
+        report.append('Number of timesteps: ' + str(n_steps))
+        report.append('Number of columns:   ' + str(self.nx) )
+        report.append('Number of rows:      ' + str(self.ny) )
+        report.append(' ')
 
         #------------------------------------------------------------
         # (2/6/13) With the new framework and use of CSDMS Standard
@@ -1262,159 +1266,86 @@ class topoflow_driver( BMI_base.BMI_component ):
         # TF_Print('Sampled timestep:    ' + str(sample_dt) + ' [s]')
 
         if (self.stop_method == 'Until_model_time'):    
-            TF_Print('T_stop:            ' + str(T_stop) + ' [min]')
-            TF_Print(' ')
-        TF_Print('Main outlet ID:    ' + str(outlet_ID) + ' (row, col)')
-        # TF_Print('Outlet (col,row):  ' + TF_String(out_col) + ', ' + TF_String(out_row))
-        TF_Print('Basin_area:        ' + str(basin_area) + ' [km^2] ')
-        #*** TF_Print,'Basin_length:      ' + TF_String(basin_length) + ' [m]'
-        TF_Print(' ')
+            report.append('T_stop:            ' + str(T_stop) + ' [min]')
+            report.append(' ')
+        report.append('Main outlet ID:    ' + str(outlet_ID) + ' (row, col)')
+        report.append('Basin_area:        ' + str(basin_area) + ' [km^2] ')
+        #*** report.append('Basin_length:      ' + TF_String(basin_length) + ' [m]')
+        report.append(' ')
             
         if (hasattr(self, 'nval_min')):
-            TF_Print("Min Manning's n:   " + str(self.nval_min))
-            TF_Print("Max Manning's n:   " + str(self.nval_max))
+            if (self.nval_min != -1):
+                report.append("Min Manning's n:   " + str(self.nval_min))
+                report.append("Max Manning's n:   " + str(self.nval_max))
 
         if (hasattr(self, 'z0val_min')):
-            TF_Print("Min z0 value:      " + str(self.z0val_min) + ' [m]')
-            TF_Print("Max z0 value:      " + str(self.z0val_max) + ' [m]')
+            if (self.z0val_min != -1):
+                report.append("Min z0 value:      " + str(self.z0val_min) + ' [m]')
+                report.append("Max z0 value:      " + str(self.z0val_max) + ' [m]')
             
-        TF_Print(' ')
-        TF_Print('Q_final:           ' + str(Q_final) + ' [m^3/s]')
-        TF_Print('Q_peak:            ' + str(Q_peak)  + ' [m^3/s]')
-        TF_Print('T_peak:            ' + str(T_peak)  + ' [min]')
-        TF_Print('u_peak:            ' + str(u_peak)  + ' [m/s]')
-        TF_Print('Tu_peak:           ' + str(Tu_peak) + ' [min]')
-        TF_Print('d_peak:            ' + str(d_peak)  + ' [m]')
-        TF_Print('Td_peak:           ' + str(Td_peak) + ' [min]')
-        TF_Print(' ')
+        report.append(' ')
+        report.append('Q_final:           ' + str(Q_final) + ' [m^3/s]')
+        report.append('Q_peak:            ' + str(Q_peak)  + ' [m^3/s]')
+        report.append('Q_peak_time:       ' + str(T_peak)  + ' [min]')
+        report.append('u_peak:            ' + str(u_peak)  + ' [m/s]')
+        report.append('u_peak_time:       ' + str(Tu_peak) + ' [min]')
+        report.append('d_peak:            ' + str(d_peak)  + ' [m]')
+        report.append('d_peak_time:       ' + str(Td_peak) + ' [min]')
+        report.append(' ')
         
+        ##############################################################################
         if (TRACK_VOLUME):    
-            TF_Print('Total volume out:  ' + str(vol_Q) + ' [m^3]')
+            report.append('Total volume out:  ' + str(vol_Q) + ' [m^3]')
             if (basin_area != 0):    
-                TF_Print('Rain volume in:    ' + str(volume_in)   + ' [m^3]')
-                TF_Print('Percentage out:    ' + str(percent_out) + ' [%]')
-                TF_Print(' ')
+                report.append('Rain volume in:    ' + str(volume_in)   + ' [m^3]')
+                report.append('Percentage out:    ' + str(percent_out) + ' [%]')
+                report.append(' ')
+        ##############################################################################
                 
         #--------------------------------
         # Print the maximum precip rate
         #--------------------------------
         MPR = (P_max * self.mps_to_mmph)   # ([m/s] -> [mm/hr])
-        TF_Print('Max(precip rate):  ' + str(MPR) + ' [mm/hr]')
-        TF_Print(' ')
+        report.append('Max(precip rate):  ' + str(MPR) + ' [mm/hr]')
+        report.append(' ')
 
         #--------------------------------------------
         # Print the area_time integrals over domain
         #--------------------------------------------
-        TF_Print('vol_P:           ' + str(vol_P)  + ' [m^3]')
-        TF_Print('vol_Q:           ' + str(vol_Q)  + ' [m^3]')
-        TF_Print('vol_SM:          ' + str(vol_SM) + ' [m^3]')
-        TF_Print('vol_MR:          ' + str(vol_MR) + ' [m^3]')
-        TF_Print('vol_ET:          ' + str(vol_ET) + ' [m^3]')
-        TF_Print('vol_IN:          ' + str(vol_IN) + ' [m^3]')
-        TF_Print('vol_Rg:          ' + str(vol_Rg) + ' [m^3]')
-        TF_Print('vol_GW:          ' + str(vol_GW) + ' [m^3]')
-        TF_Print('vol_R:           ' + str(vol_R)  + ' [m^3]')
-        TF_Print(' ')
-        
-        #---------------------
-        # Write to logfile ?
-        #---------------------
-        if not(self.WRITE_LOG): return
-        log_unit = self.log_unit
-        log_unit.write("\n")
-        log_unit.write( TF_Version() + "\n" )
-        log_unit.write(time.asctime() + "\n")  #####
-        log_unit.write("\n")
-        # log_unit.write('Simulated Hydrograph for ' + NAME + "\n")
-        log_unit.write('Input directory:      ' + self.in_directory  + "\n")
-        log_unit.write('Output directory:     ' + self.out_directory + "\n")
-        log_unit.write('Site prefix:          ' + self.site_prefix   + "\n")
-        log_unit.write('Case prefix:          ' + self.case_prefix   + "\n")
-        if (COMMENT is not None):
-            log_unit.write("\n")
-            log_unit.write(COMMENT)
-        log_unit.write("\n")
-        log_unit.write('Simulated time:      ' + str(T_final)    + " [min]\n")
-        log_unit.write('Program run time:    ' + run_time_str + "\n")
-        log_unit.write("\n")
-        log_unit.write('Number of timesteps: ' + str(n_steps) + "\n")
-        log_unit.write('Number of columns:   ' + str(self.nx) + "\n" )
-        log_unit.write('Number of rows:      ' + str(self.ny) + "\n" )
-        log_unit.write('\n')
+        report.append('Total accumulated volumes over entire DEM:')
+        report.append('vol_P   (rainfall):      ' + str(vol_P)  + ' [m^3]   (snowfall excluded)')
+        report.append('vol_Q   (discharge):     ' + str(vol_Q)  + ' [m^3]   (main basin outlet)')
+        report.append('vol_SM  (snowmelt):      ' + str(vol_SM) + ' [m^3]')
+        report.append('vol_MR  (icemelt):       ' + str(vol_MR) + ' [m^3]')
+        report.append('vol_ET  (evaporation):   ' + str(vol_ET) + ' [m^3]')
+        report.append('vol_IN  (infiltration):  ' + str(vol_IN) + ' [m^3]')
+        report.append('vol_Rg  (recharge):      ' + str(vol_Rg) + ' [m^3]   (to water table)')
+        report.append('vol_GW  (baseflow):      ' + str(vol_GW) + ' [m^3]')
+        report.append('vol_R   (runoff):        ' + str(vol_R)  + ' [m^3]   R = (P+SM+MR) - (ET+IN)')
+        report.append(' ')
 
-        #------------------
-        # See Note above.
-        #------------------
-##        log_unit.write('Channel timestep:    ' + str(cp_dt) + " [s]\n")
-##        log_unit.write('Precip/met timestep: ' + str(mp_dt) + " [s]\n")    
-##        log_unit.write('Snowmelt timestep:   ' + str(sp_dt) + " [s]\n")
-##        log_unit.write('ET timestep:         ' + str(ep_dt) + " [s]\n")
-##        log_unit.write('Infiltr. timestep:   ' + str(ip_dt) + " [s]\n")
-##        log_unit.write('Sat. zone timestep:  ' + str(gp_dt) + " [s]\n")
-##        log_unit.write('Icemelt timestep:    ' + str(iip_dt) + " [s]\n")
-        # log_unit.write('Overland timestep:   ' + str(op_dt)  + " [s]\n")
-        # log_unit.write('Sampled timestep:    ' + str(sample_dt)  + " [s]\n")
-        
-        if (self.stop_method == 'Until_model_time'):    
-            log_unit.write('T_stop:            ' + str(T_stop) + " [min]\n")
-            log_unit.write("\n")
-        log_unit.write('Main Outlet ID:    ' + str(outlet_ID) + "(row, col)\n")
-        # log_unit.write('Outlet (col,row):  ' + str(out_col) + ', ' + str(out_row) + "\n")
-        log_unit.write('Basin_area:        ' + str(basin_area)   + " [km^2]\n")
-        #*** log_unit.write('Basin_length:      ' + str(basin_length) + " [m]\n")
-        log_unit.write("\n")
+        #----------------------------------        
+        # Print the report to the console
+        #----------------------------------
+        for line in report:
+            print line
 
-        if (hasattr(self, 'nval_min')):
-            log_unit.write("Min Manning's n:   " + str(self.nval_min) + "\n")
-            log_unit.write("Max Manning's n:   " + str(self.nval_max) + "\n")
-        if (hasattr(self, 'z0val_min')):
-            log_unit.write("Min z0 value:      " + str(self.z0val_min) + ' [m]\n')
-            log_unit.write("Max z0 value:      " + str(self.z0val_max) + ' [m]\n')
-        log_unit.write("\n")
-        
-##        if (MANNING):    
-##            # See above: nmin = min(nval, max=nmax)
-##            log_unit.write("Min Manning's n:   " + str(nmin) + "\n")
-##            log_unit.write("Max Manning's n:   " + str(nmax) + "\n")
-##        
-##        if (LAW_OF_WALL):    
-##            # See above: z0min = min(z0val, max=z0max)
-##            log_unit.write("Min z0 value:      " + str(z0min) + " [m]\n")
-##            log_unit.write("Max z0 value:      " + str(z0max) + " [m]\n")
-##        log_unit.write("\n")
-        
-        log_unit.write('Q_final:           ' + str(Q_final) + " [m^3/s]\n")
-        log_unit.write('Q_peak:            ' + str(Q_peak)  + " [m^3/s]\n")
-        log_unit.write('T_peak:            ' + str(T_peak)  + " [min]\n")
-        log_unit.write('u_peak:            ' + str(u_peak)  + " [m/s]\n")
-        log_unit.write('Tu_peak:           ' + str(Tu_peak) + " [min]\n")
-        log_unit.write('d_peak:            ' + str(d_peak)  + " [m]\n")
-        log_unit.write('Td_peak:           ' + str(Td_peak) + " [min]\n")
-        log_unit.write("\n")
-        
-        if (TRACK_VOLUME):    
-            log_unit.write('Total volume out:  ' + str(vol_Q) + " [m^3]\n")
-            if (basin_area != 0):    
-                log_unit.write('Rain volume in:    ' + str(volume_in)   + " [m^3]\n") 
-                log_unit.write('Percentage out:    ' + str(percent_out) + " [%]\n")
-                log_unit.write("\n")
+        #----------------------------------
+        # Print the report to a logfile ?
+        #----------------------------------
+        if (self.WRITE_LOG):
+            for line in report:
+                self.log_unit.write( line + '\n' )
 
-        log_unit.write('Max(precip rate):  ' + str(MPR) + " [mm/hr]\n")
-        log_unit.write("\n")
-        
-        #--------------------------------------------
-        # Print the area_time integrals over domain
-        #--------------------------------------------
-        log_unit.write('vol_P:           ' + str(vol_P)  + ' [m^3]\n')
-        log_unit.write('vol_Q:           ' + str(vol_Q)  + ' [m^3]\n')
-        log_unit.write('vol_SM:          ' + str(vol_SM) + ' [m^3]\n')
-        log_unit.write('vol_MR:          ' + str(vol_MR) + ' [m^3]\n')
-        log_unit.write('vol_ET:          ' + str(vol_ET) + ' [m^3]\n')
-        log_unit.write('vol_IN:          ' + str(vol_IN) + ' [m^3]\n')
-        log_unit.write('vol_Rg:          ' + str(vol_Rg) + ' [m^3]\n')
-        log_unit.write('vol_GW:          ' + str(vol_GW) + ' [m^3]\n')
-        log_unit.write("\n")
-        
+        self.print_mins_and_maxes( FINAL=True )
+
+        if (self.WRITE_LOG):
+            #------------------------------------------------
+            # This line is printed to console in finalize()
+            #------------------------------------------------
+            self.log_unit.write( 'Finished. (' + self.case_prefix + ')\n' )
+            self.log_unit.write( '\n' )
+      
     #   print_final_report()
     #-------------------------------------------------------------
     def print_mins_and_maxes(self, FINAL=False):
@@ -1439,29 +1370,33 @@ class topoflow_driver( BMI_base.BMI_component ):
         #----------------------------------------------------
         dstr = TF_String( d_min, FORMAT=f1 )
         dstr = dstr + ', ' + TF_String( d_max, FORMAT=f1 )
+
+        #-----------------------------------------------      
+        # Prepare to save report as a list of strings
+        #-----------------------------------------------
+        report = list()  ############# (NEW: 11/15/16)
         
         if (FINAL):    
-            TF_Print('Final grid mins and maxes:')
+            report.append('Final grid mins and maxes:')
         else:    
-            TF_Print('------------------------------------------')
-        TF_Print('Min(Q), Max(Q):   ' + Qstr + ' [m^3/s]')
-        TF_Print('Min(u), Max(u):   ' + ustr + ' [m/s]')
-        TF_Print('Min(d), Max(d):   ' + dstr + ' [m]')
-        TF_Print(' ')
-        
-        #----------------------
-        # Write to log file ?
-        #----------------------
+            report.append('------------------------------------------')
+        report.append('Min(Q), Max(Q):   ' + Qstr + ' [m^3/s]')
+        report.append('Min(u), Max(u):   ' + ustr + ' [m/s]')
+        report.append('Min(d), Max(d):   ' + dstr + ' [m]')
+        report.append(' ')
+
+        #----------------------------------        
+        # Print the report to the console
+        #----------------------------------
+        for line in report:
+            print line
+
+        #----------------------------------
+        # Print the report to a logfile ?
+        #----------------------------------
         if (self.WRITE_LOG):
-            log_unit = self.log_unit
-            if (FINAL):    
-                log_unit.write("Final grid mins and maxes:\n")
-            else:    
-                log_unit.write("------------------------------------------\n")
-            log_unit.write('Min(Q), Max(Q):   ' + Qstr + " [m^3/s]\n")
-            log_unit.write('Min(u), Max(u):   ' + ustr + " [m/s]\n")
-            log_unit.write('Min(d), Max(d):   ' + dstr + " [m]\n")
-            log_unit.write("\n")
+            for line in report:
+                self.log_unit.write( line + '\n' )
         
     #   print_mins_and_maxes()
     #-------------------------------------------------------------

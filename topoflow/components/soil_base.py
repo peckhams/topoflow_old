@@ -285,7 +285,12 @@ class soil_base( BMI_base.BMI_component ):
     #-----------------------------------------------------------------------
     def initialize(self, cfg_file=None, REPORT=False):
 
-        #----------------------------------------------------------
+        #-------------------------------------------------------------
+#         types = array(['Sand', 'Loamy sand', 'Sandy loam', \
+#                        'Silty loam', 'Loam', 'Sandy clay loam', \
+#                        'Silty clay loam', 'Clay loam', \
+#                        'Sandy clay', 'Silty clay', 'Clay'])
+        #-------------------------------------------------------------
         # Notes:  The values here are from Table 6.1 (p. 235) in
         #         Dingman (2002), 2nd. edition.  Data originally
         #         from Clapp and Hornberger (1978).

@@ -24,6 +24,8 @@
 #      update_nondrivers()          ####### (OBSOLETE ??)
 #      finalize()
 #      initialize_layer_vars()      # (5/11/10)
+#      build_layered_var()
+#      build_layer_z_vector()       # Moved here, 11/13/16.
 #      set_computed_input_vars()
 #      ---------------------------
 #      check_input_types()
@@ -150,9 +152,9 @@ class infil_component( BMI_base.BMI_component):
             print ' '
             print 'Infiltration component: Initializing...'
             
-        self.status     = 'initializing'  # (OpenMI 2.0 convention)
-        self.mode       = mode
-        self.cfg_file   = cfg_file
+        self.status   = 'initializing'  # (OpenMI 2.0 convention)
+        self.mode     = mode
+        self.cfg_file = cfg_file
 
         #-------------------------------------------------
         # Richards' method is special, so check for it
@@ -163,9 +165,12 @@ class infil_component( BMI_base.BMI_component):
         
         #-----------------------------------------------
         # Load component parameters from a config file
-        #-----------------------------------------------        
+        #------------------------------------------------------------- 
+        # NOTE!  initialize_config_vars() calls read_config_file(),
+        #        which now calls initialize_layer_vars(). (11/16/16)
+        #-------------------------------------------------------------       
         self.set_constants()
-        self.initialize_layer_vars()  # (5/11/10)
+        ## self.initialize_layer_vars()  # (5/11/10)
         self.initialize_config_vars() 
         self.read_grid_info()
         self.initialize_basin_vars()  # (5/14/10)
@@ -176,7 +181,7 @@ class infil_component( BMI_base.BMI_component):
         #----------------------------------
         if (self.comp_status == 'Disabled'):
             if not(SILENT):
-                print 'Infiltration component: Disabled.'
+                print 'Infiltration component: Disabled in CFG file.'
             #-------------------------------------------------
             # IN = infiltration rate at land surface
             # Rg = vertical flow rate just above water table
@@ -208,7 +213,6 @@ class infil_component( BMI_base.BMI_component):
         
     #   initialize()
     #-------------------------------------------------------------------
-    ## def update(self, dt=-1.0, time_seconds=None):
     def update(self, dt=-1.0):
 
         #-------------------------------------------------
@@ -221,7 +225,7 @@ class infil_component( BMI_base.BMI_component):
         # Update computed values 
         #-------------------------
         # self.update_nondrivers()      ####### (10/7/10)
-        self.update_surface_influx()  # (P_total = P + SM)
+        self.update_surface_influx()    # (P_total = P + SM)
         self.update_infil_rate()
         self.adjust_infil_rate()
         self.update_IN_integral()
@@ -261,74 +265,158 @@ class infil_component( BMI_base.BMI_component):
     def finalize(self):
 
         self.status = 'finalizing'  # (OpenMI 2.0 convention)
-##        if (self.mode == 'driver'):  # (10/7/10)
-##            self.mp.finalize()
-##            self.sp.finalize()
-##            self.ep.finalize()
-##            self.gp.finalize()
-##            self.cp.finalize()
         self.close_input_files()   ##  TopoFlow input "data streams"
         self.close_output_files()
         self.status = 'finalized'  # (OpenMI 2.0 convention)
 
         self.print_final_report(comp_name='Infiltration component')
-
-        #---------------------------
-        # Release all of the ports
-        #----------------------------------------
-        # Make this call in "finalize()" method
-        # of the component's CCA Imple file
-        #----------------------------------------
-        # self.release_cca_ports( port_names, d_services )
-        
+    
     #   finalize()
     #-------------------------------------------------------------------
-    def initialize_layer_vars(self):
+#     def initialize_layer_vars(self):
+# 
+#         pass
+#         
+#     #   initialize_layer_vars()
+    #-------------------------------------------------------------------
+    def build_layer_z_vector(self):
 
-        #-------------------------------------------------------
-        # Notes: We need to call initialize_layer_vars()
-        #        before initialize_config_vars(), which may
-        #        call read_cfg_file().  However, this means
-        #        we haven't read "n_layers" yet, so just
-        #        hardwire it here for now. (5/11/10)
-        #-------------------------------------------------------
-        n_layers = 1
-        # n_layers = self.n_layers
-        
-        #-------------------------------------------------
-        # Get arrays to store soil params for each layer
-        #-------------------------------------------------
-        self.soil_type = np.zeros([n_layers], dtype='|S100')
-##        self.dz_val    = np.zeros([n_layers], dtype='Float64')    #### + dz3
-##        self.nz_val    = np.zeros([n_layers], dtype='Int16')      #### + nz3
         #----------------------------------------------------------
-        self.Ks_type  = np.zeros(n_layers, dtype='|S100')
-        self.Ki_type  = np.zeros(n_layers, dtype='|S100')
-        self.qs_type  = np.zeros(n_layers, dtype='|S100')
-        self.qi_type  = np.zeros(n_layers, dtype='|S100')
-        self.G_type   = np.zeros(n_layers, dtype='|S100')
-        self.gam_type = np.zeros(n_layers, dtype='|S100')
-        #--------------------------------------------------------        
-        self.Ks_file  = np.zeros(n_layers, dtype='|S100')
-        self.Ki_file  = np.zeros(n_layers, dtype='|S100')
-        self.qs_file  = np.zeros(n_layers, dtype='|S100')
-        self.qi_file  = np.zeros(n_layers, dtype='|S100')
-        self.G_file   = np.zeros(n_layers, dtype='|S100')
-        self.gam_file = np.zeros(n_layers, dtype='|S100')
+        # Most infil components don't have nz_val & dz_val set in
+        # their CFG file, so add next few lines to be safe.
+        #----------------------------------------------------------
+        if not(self.RICHARDS):
+            #-------------------------------------
+            # Need these for "build_layered_var"
+            #-------------------------------------
+            self.nz_val = np.zeros(self.n_layers, dtype='float64') + 1
+            self.nz = np.sum( self.nz_val )
+            return
+#         if (self.nz_val is None):
+#             self.nz_val = 1
+#         if (self.dz_val is None):
+#             self.dz_val = 1
+
         #---------------------------------------------------------
-        # Note: self.Ks is a Python list.  Initially, each entry
-        # is a numpy scalar (type 'np.float64').  However, we
-        # can later change any list entry to a scalar or grid
-        # (type 'np.ndarray'), according to its "Ks_type".
+        # Compute "total nz".  Need this for "build_layered_var"
         #---------------------------------------------------------
-        self.Ks  = list(np.zeros(n_layers, dtype='Float64'))
-        self.Ki  = list(np.zeros(n_layers, dtype='Float64'))
-        self.qs  = list(np.zeros(n_layers, dtype='Float64'))
-        self.qi  = list(np.zeros(n_layers, dtype='Float64'))
-        self.G   = list(np.zeros(n_layers, dtype='Float64'))
-        self.gam = list(np.zeros(n_layers, dtype='Float64'))
+        self.nz = np.sum( self.nz_val )
+
+        #-----------------------------------------------------
+        # Compute dz as 1D array from scalars in self.dz_val
+        #-----------------------------------------------------
+        # NB! Values in self.dz_val are scalars vs. pointers
+        # so we can't use the build_layered_var routine.
+        #-----------------------------------------------------
+        dz_min = self.dz_val.min()
+        dz_max = self.dz_val.max()
+        if (dz_min == dz_max):
+            #----------------------
+            # dz is just a scalar
+            #----------------------
+            self.dz = self.dz_val[0]
+        else:
+            #-------------------
+            # dz is a 1D array
+            #-------------------
+            self.dz = np.zeros(self.nz, dtype=dtype)
+
+            #--------------------------------------------------
+            # Create array of indices.  See build_layered_var
+            #--------------------------------------------------
+            i = np.concatenate(([np.int32(0)], np.int32(np.cumsum(self.nz_val))) )
+            for j in xrange(self.n_layers):
+                self.dz[ i[j]: i[j+1]-1 ] = self.dz_val[j]
+
+        #----------------------------------------------
+        # Compute the z-vector, for plotting profiles
+        #----------------------------------------------
+        dz = np.repeat(self.dz_val[0], self.nz_val[0])  # (1D ndarray)
+        for j in xrange(1, self.n_layers):
+            layer_dz = self.dz_val[j]
+            layer_nz = self.nz_val[j]
+            dz_j = np.repeat(layer_dz, layer_nz)  # (1D ndarray)
+            dz = np.concatenate( (dz, dz_j) )
+        ############################################
+        # NB! As written (and in IDL version), the
+        #     z-vector does not start with 0.
+        ############################################
+        self.z = np.cumsum(dz)
+
+    #   build_layer_z_vector()
+    #------------------------------------------------------------------- 
+    def build_layered_var(self, var_list_for_layers):
+
+        #--------------------------------------------------------------
+        # Notes:  This routine examines the parameters for each soil
+        #         layer as set in the CFG file.  If all layers have
+        #         a scalar value for a given parameter, then a 1D
+        #         array (z-profile) is constructed for that variable
+        #         and used for all grid cells.
+        #         However, if any layer has a 2D value, then a 3D
+        #         array is constructed for the variable.
+        #         Due to Python's dynamic data typing, functions that
+        #         use the variable will work correctly whether it is
+        #         a 1D or 3D array.
+
+        #         Note that self.nz was previously set to the sum:
+        #            long(total(self.nz_val))
+        #-----------------------------------------------------------------
+        # Note:   Code moved here from infil_richards_1D (11/13/16).
+        #-----------------------------------------------------------------
+
+        #-----------------------------
+        # Create an array of indices
+        #-----------------------------
+        #i[0] = 0
+        #i[1] = self.nz_val[0]
+        #i[2] = self.nz_val[0] + self.nz_val[1]
+        #etc.
+        #----------------------------------------------
+        i = np.concatenate(([np.int32(0)], np.int32(np.cumsum(self.nz_val))) )
         
-    #   initialize_layer_vars()
+        #----------------------------------------
+        # Do all layers have a scalar parameter
+        # value for this particular variable ??
+        #----------------------------------------
+        nmax = np.int16(1)
+        for j in xrange(self.n_layers):
+            nj = var_list_for_layers[j].size
+            nmax = np.maximum( nmax, nj )
+        ALL_SCALARS = (nmax == 1)
+        
+        #--------------------------------------------------
+        # Build either a 1D or 3D array for this variable
+        #--------------------------------------------------
+        if (ALL_SCALARS):
+            #------------------------------------------
+            # All layers have a scalar value for this
+            # variable, so build a 1D array.
+            #------------------------------------------
+            var = np.zeros([self.nz], dtype='float64')
+            for j in xrange(self.n_layers):
+                var[i[j]: i[j + 1]] = var_list_for_layers[j]
+        else:
+            #------------------------------------------------
+            # One or more layers have a grid value for this
+            # variable, so build a 3D array or "data cube".    
+            #--------------------------------------------------------
+            # Note that all nz "levels" in a *given* layer can be
+            # initialized to a grid, but not yet to different grids
+            #--------------------------------------------------------
+            var = np.zeros([self.nz, self.ny, self.nx], dtype='float64')
+            for j in xrange(self.n_layers):
+                for k in xrange(i[j], i[j + 1]):
+                    var[k,:,:] = var_list_for_layers[j]
+                
+                #-------------------------------------------------------------
+                # Next line doesn't work if var_list_for_layers[j] is a grid
+                #-------------------------------------------------------------
+                #  var[*, *, i[j]:i[j+1]-1 ] = var_list_for_layersr[j]
+
+        return var
+
+    #   build_layered_var
     #-------------------------------------------------------------------
     def set_computed_input_vars(self):
 
@@ -376,7 +464,7 @@ class infil_component( BMI_base.BMI_component):
 
         #------------------------------------------------------
         # Notes: Usually this will be overridden by a given
-        #        method of computing ET.  But this one should
+        #        method of computing IN.  But this one should
         #        work for Green-Ampt and Smith-Parlange.
         #------------------------------------------------------
         are_scalars = np.array([
@@ -384,60 +472,30 @@ class infil_component( BMI_base.BMI_component):
                          self.is_scalar('SM'),
                          self.is_scalar('h_table'),
                          #----------------------------
-                         self.is_scalar('Ks'),
-                         self.is_scalar('Ki'),
-                         self.is_scalar('qs'),
-                         self.is_scalar('qi'),
-                         self.is_scalar('G')  ])
+                         self.is_scalar('Ks_list[0]'),
+                         self.is_scalar('Ki_list[0]'),
+                         self.is_scalar('qs_list[0]'),
+                         self.is_scalar('qi_list[0]'),
+                         self.is_scalar('G_list[0]')  ])
+#                          self.is_scalar('Ks'),
+#                          self.is_scalar('Ki'),
+#                          self.is_scalar('qs'),
+#                          self.is_scalar('qi'),
+#                          self.is_scalar('G')  ])
 
         self.ALL_SCALARS = np.all(are_scalars)
         
     #   check_input_types()
     #-------------------------------------------------------------------
-    def initialize_computed_vars(self):
-  
-        #-----------------------------------------------
-        # Note: h  = water table elevation [m]
-        #       z  = land surface elevation [m]
-        #
-        #       Currently, h and z are always grids,
-        #       so IN will be a grid.
-        #       z, h and IN must be compatible.
-        #-----------------------------------------------
-        
-        #---------------------------------------------
-        # Reset cumulative infiltrated depth to zero
-        # before each model run (not in __init__)
-        # This block must come before if (RICHARDS).
-        #---------------------------------------------
-        self.vol_IN = self.initialize_scalar( 0, dtype='float64')
-        self.vol_Rg = self.initialize_scalar( 0, dtype='float64')
-        
-        if (self.RICHARDS):
-            self.initialize_richards_vars()
-            return
-        
-        if (self.ALL_SCALARS):
-            #-----------------------------------------------------
-            # Note: "I" is initialized to 1e-6 to avoid a divide
-            #       by zero when first computing fc, which does
-            #       have a singularity at the origin.
-            #-----------------------------------------------------
-            self.IN     = self.initialize_scalar( 0, dtype='float64')
-            self.Rg     = self.initialize_scalar( 0, dtype='float64') 
-            self.I      = self.initialize_scalar( 1e-6, dtype='float64')
-            self.tp     = self.initialize_scalar( -1, dtype='float64')
-            self.fp     = self.initialize_scalar( 0, dtype='float64')
-            self.r_last = self.initialize_scalar( 0, dtype='float64') # (P+SM at prev step)
-        else:
-            self.IN     = np.zeros([self.ny, self.nx], dtype='float64')
-            self.Rg     = np.zeros([self.ny, self.nx], dtype='float64')
-            self.I      = np.zeros([self.ny, self.nx], dtype='float64') + 1e-6
-            self.tp     = np.zeros([self.ny, self.nx], dtype='float64') - 1
-            self.fp     = np.zeros([self.ny, self.nx], dtype='float64')
-            self.r_last = np.zeros([self.ny, self.nx], dtype='float64')
-      
-    #   initialize_computed_vars()
+#     def initialize_computed_vars(self):
+#   
+#         #-----------------------------------------------------------
+#         # Note: This is implemented separately by each of the
+#         #       infiltration components. 
+#         #-----------------------------------------------------------
+#         pass
+# 
+#     #   initialize_computed_vars()
     #-------------------------------------------------------------------
     def update_surface_influx(self):
 
@@ -814,22 +872,22 @@ class infil_component( BMI_base.BMI_component):
         #------------------------------------------------------- 
         for k in xrange(self.n_layers):
             Ks = model_input.read_next(self.Ks_unit[k], self.Ks_type[k], rti)
-            if (Ks != None): self.Ks[k] = Ks
+            if (Ks is not None): self.Ks[k] = Ks
 
             Ki = model_input.read_next(self.Ki_unit[k], self.Ki_type[k], rti)
-            if (Ki != None): self.Ki[k] = Ki
+            if (Ki is not None): self.Ki[k] = Ki
 
             qs = model_input.read_next(self.qs_unit[k], self.qs_type[k], rti)
-            if (qs != None): self.qs[k] = qs
+            if (qs is not None): self.qs[k] = qs
 
             qi = model_input.read_next(self.qi_unit[k], self.qi_type[k], rti)
-            if (qi != None): self.qi[k] = qi
+            if (qi is not None): self.qi[k] = qi
             
             G  = model_input.read_next(self.G_unit[k], self.G_type[k], rti)
-            if (G != None): self.G[k] = G
+            if (G is not None): self.G[k] = G
 
             gam = model_input.read_next(self.gam_unit[k], self.gam_type[k], rti)
-            if (gam != None): self.gam[k] = gam
+            if (gam is not None): self.gam[k] = gam
           
     #   read_input_files()       
     #-------------------------------------------------------------------  
