@@ -63,7 +63,9 @@ def topoflow_test( driver_comp_name ='topoflow_driver',
         cfg_prefix = 'June_20_67'
     if (cfg_directory == None):
         cfg_directory = examples_dir + 'Treynor_Iowa_30m/'
-    
+    if (driver_comp_name == None):
+        driver_comp_name ='topoflow_driver'
+
     #------------------------------
     # Run the full TopoFlow model
     #------------------------------
