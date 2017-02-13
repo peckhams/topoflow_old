@@ -31,11 +31,9 @@ update_var() is now called in:
    met_base.py
    model_input.py  (This improves performance for every case where a
      time-varying input variable is read from a file into memory.)
-----------
-EXPLAIN THE ADVANTAGE AND GOAL.
-  (Check how float64 scalars are handled, and whether they are
-   preserved as a reference, etc.  (0d numpy arrays, etc., use
-   of [:] or ".fill", etc.)
+Using these new methods ensures that references to numpy arrays,
+including "0d arrays", are preserved and properly updated which results
+in shorter runtimes.  See comments in the code for details.
 
 * Now there is a CFG file for the D8_Global class, which has the form:
   [cfg_prefix]_d8_global.cfg
