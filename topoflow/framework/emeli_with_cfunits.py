@@ -142,16 +142,12 @@ from topoflow.framework import time_interpolation    # (time_interpolator class)
 # import OrderedDict_backport  # (for Python 2.4 to 2.7)
 
 #--------------------------------------------------------------
-# TOGGLED THIS OFF SINCE NOT NEEDED AND INSTALLING
-# UDUNITS-2 IS A PAIN, ESPECIALLY ON WINDOWS.  NEED
-# TO FIND A PURE PYTHON SOLUTION.
-#--------------------------------------------------------------
 # Load the unit conversion package.
 # This requires installing UDUnits2.2 on your Mac first, e.g.
 #     brew install udunits
 # and then installing the Python API package: cfunits
 #--------------------------------------------------------------
-# from cfunits import Units
+from cfunits import Units
 
 import sys    #### for testing
 
@@ -1901,13 +1897,13 @@ class framework():
 			#---------------------------------------------------
             # Storing scale factors and offsets may be faster.
 			#---------------------------------------------------
-#             p_units = p_bmi.get_var_units( long_var_name )
-#             u_units = u_bmi.get_var_units( long_var_name )
-#             if (u_units != p_units):
-# 			    #---------------------------------------------
-#                 # Note: conform fails if units are the same.
-# 			    #---------------------------------------------
-# 				values = Units.conform( values, Units(p_units), Units(u_units) )
+            p_units = p_bmi.get_var_units( long_var_name )
+            u_units = u_bmi.get_var_units( long_var_name )
+            if (u_units != p_units):
+			    #---------------------------------------------
+                # Note: conform fails if units are the same.
+			    #---------------------------------------------
+				values = Units.conform( values, Units(p_units), Units(u_units) )
 
             #-------------------------------------------
             # Call Regridder to regrid values from the
