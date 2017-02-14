@@ -324,7 +324,7 @@ class infil_component( BMI_base.BMI_component):
             #--------------------------------------------------
             # Create array of indices.  See build_layered_var
             #--------------------------------------------------
-            i = np.concatenate(([np.int32(0)], np.int32(np.cumsum(self.nz_val))) )
+            i = np.concatenate(([np.int32(0)], np.cumsum(self.nz_val).astype(int)))
             for j in xrange(self.n_layers):
                 self.dz[ i[j]: i[j+1]-1 ] = self.dz_val[j]
 
@@ -373,7 +373,7 @@ class infil_component( BMI_base.BMI_component):
         #i[2] = self.nz_val[0] + self.nz_val[1]
         #etc.
         #----------------------------------------------
-        i = np.concatenate(([np.int32(0)], np.int32(np.cumsum(self.nz_val))) )
+        i = np.concatenate(([np.int32(0)], np.cumsum(self.nz_val).astype(int))) 
         
         #----------------------------------------
         # Do all layers have a scalar parameter
