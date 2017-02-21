@@ -1,6 +1,6 @@
 
 TopoFlow 3.5 Release Notes
-February 19, 2017
+February 21, 2017
 
 ===============================
   Enhancements & New Features
@@ -161,7 +161,11 @@ February 19, 2017
 * The update_water_balance() method in evap_base.py is commented out.
   It has not been examined/tested for a long time.
 
-==============================================================================
+* There is an unidentified problem with the component:
+      topoflow/components/channels_dynamic_wave.py
+  It may be a problem with the mathematical model, a bug, or a numerical
+  instability.
+
 
 
 
