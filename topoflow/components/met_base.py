@@ -602,21 +602,18 @@ class met_component( BMI_base.BMI_component ):
         # (5/19/12) This makes P "mutable", which allows
         # its updated values to be seen by any component
         # that has a reference to it.
+        # Note that P will typically be read from a file.
         #-------------------------------------------------
-        # Write a "initialize_computed_vars()" method?
-        #-------------------------------------------------
-        self.P      = self.initialize_scalar(0, dtype='float64')
-        self.P_rain = self.initialize_scalar(0, dtype='float64')
-        self.P_snow = self.initialize_scalar(0, dtype='float64')
+        self.P      = self.initialize_var( self.P_type )
+        self.P_rain = self.initialize_var( self.P_type )
+        self.P_snow = self.initialize_var( self.P_type )
                     
-        #------------------------------------------------------
-        # NB! "Sample steps" must be defined before we return
-        #     Check all other process modules.
-        #------------------------------------------------------
+        #------------------------------------------------------------
+        # If "Enabled", will call initialize_computed_vars() below.
+        #------------------------------------------------------------
         if (self.comp_status == 'Disabled'):
             if not(SILENT):
                 print 'Meteorology component: Disabled in CFG file.'
-            ## self.P        = np.float64(0)
             self.e_air    = self.initialize_scalar(0, dtype='float64')
             self.e_surf   = self.initialize_scalar(0, dtype='float64')
             self.em_air   = self.initialize_scalar(0, dtype='float64')
@@ -1038,10 +1035,11 @@ class met_component( BMI_base.BMI_component ):
         # P_rain is used by channel_base.update_R.
         #-------------------------------------------------
         P_rain = self.P * (self.T_air > 0)
-        if (np.ndim( self.P_rain ) == 0):
-            self.P_rain.fill( P_rain )   #### (mutable scalar)
-        else:
-            self.P_rain[:] = P_rain
+        self.update_var( 'P_rain', P_rain )  ## (2/14/17)
+#         if (np.ndim( self.P_rain ) == 0):
+#             self.P_rain.fill( P_rain )   #### (mutable scalar)
+#         else:
+#             self.P_rain[:] = P_rain
   
         if (self.DEBUG):
             if (self.P_rain.max() > 0):
@@ -1081,10 +1079,11 @@ class met_component( BMI_base.BMI_component ):
         # P_snow is used by snow_base.update_depth.
         #-------------------------------------------------
         P_snow = self.P * (self.T_air <= 0)
-        if (np.ndim( self.P_snow ) == 0):
-            self.P_snow.fill( P_snow )   #### (mutable scalar)
-        else:
-            self.P_snow[:] = P_snow
+        self.update_var( 'P_snow', P_snow )   ## (2/14/17)
+#         if (np.ndim( self.P_snow ) == 0):
+#             self.P_snow.fill( P_snow )   #### (mutable scalar)
+#         else:
+#             self.P_snow[:] = P_snow
 
         if (self.DEBUG):
             if (self.P_snow.max() > 0):
@@ -1512,9 +1511,9 @@ class met_component( BMI_base.BMI_component ):
         if (self.DEBUG):
             print 'Calling update_net_shortwave_radiation()...'
 
-        #--------------------------------
-        # Compute Qn_SW for this time
-        #--------------------------------
+        #---------------------------------------
+        # Compute Qn_SW for this time  [W m-2]
+        #---------------------------------------
         Qn_SW = solar.Clear_Sky_Radiation( self.lat_deg,
                                            self.julian_day,
                                            self.W_p,
@@ -1524,10 +1523,11 @@ class met_component( BMI_base.BMI_component ):
                                            self.albedo,
                                            self.dust_atten )
 
-        if (np.ndim( self.Qn_SW ) == 0):
-            self.Qn_SW.fill( Qn_SW )   #### (mutable scalar)
-        else:
-            self.Qn_SW[:] = Qn_SW  # [W m-2]
+        self.update_var( 'Qn_SW', Qn_SW )  ## (2/14/17)
+#         if (np.ndim( self.Qn_SW ) == 0):
+#             self.Qn_SW.fill( Qn_SW )   #### (mutable scalar)
+#         else:
+#             self.Qn_SW[:] = Qn_SW  # [W m-2]
         
     #   update_net_shortwave_radiation()
     #-------------------------------------------------------------------
@@ -1655,10 +1655,11 @@ class met_component( BMI_base.BMI_component ):
             
         Qn_tot = self.Qn_SW + self.Qn_LW   # [W m-2]
 
-        if (np.ndim( self.Qn_tot ) == 0):
-            self.Qn_tot.fill( Qn_tot )   #### (mutable scalar)
-        else:
-            self.Qn_tot[:] = Qn_tot  # [W m-2]
+        self.update_var( 'Qn_tot', Qn_tot )   ## (2/14/17)
+#         if (np.ndim( self.Qn_tot ) == 0):
+#             self.Qn_tot.fill( Qn_tot )   #### (mutable scalar)
+#         else:
+#             self.Qn_tot[:] = Qn_tot  # [W m-2]
                        
     #   update_net_total_radiation()
     #-------------------------------------------------------------------
@@ -1724,10 +1725,11 @@ class met_component( BMI_base.BMI_component ):
         Q_sum = self.Qn_SW + self.Qn_LW + self.Qh + \
                 self.Qe + self.Qa + self.Qc    # [W m-2]
 
-        if (np.ndim( self.Q_sum) == 0):
-            self.Q_sum.fill( Q_sum )   #### (mutable scalar)
-        else:
-            self.Q_sum[:] = Q_sum  # [W m-2]
+        self.update_var( 'Q_sum', Q_sum )   ## (2/14/17)
+#         if (np.ndim( self.Q_sum) == 0):
+#             self.Q_sum.fill( Q_sum )   #### (mutable scalar)
+#         else:
+#             self.Q_sum[:] = Q_sum  # [W m-2]
             
     #   update_net_energy_flux()   
     #-------------------------------------------------------------------  
@@ -1797,10 +1799,13 @@ class met_component( BMI_base.BMI_component ):
         P = model_input.read_next(self.P_unit, self.P_type, rti,
                                   factor=self.mmph_to_mps)
 
+        ## print '######### self.P_type = ' + self.P_type
+        ## print '######### np.ndim( P ) = ' + str(np.ndim(P))
+
         if (P is not None):
             ## print 'MET: (time,P) =', self.time, P
             
-            self.update_var( 'P', P )  ################# TEST: 11/15/16
+            self.update_var( 'P', P )  ### 11/15/16
 
             ## if (self.P_type.lower() != 'scalar'):
 #             if (np.ndim( self.P ) == 0):

@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2001-2014, Scott D. Peckham
+#  Copyright (c) 2001-2017, Scott D. Peckham
 #
 #  Sep 2014.  New standard names and BMI updates and testing.
 #  Aug 2014.  Updates to standard names and BMI.

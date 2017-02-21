@@ -71,7 +71,7 @@ class time_interp_data():
         # Note: We can use "in-place" assignments for v1
         #       and v2 as long as their rank is > 0.
         #----------------------------------------------------
-        
+
         #---------------------------------------------
         # Update the "start values" (old end values)
         # (in-place, if possible)
@@ -278,6 +278,13 @@ class time_interpolator():
                 #-------------------------------------------------                
                 for long_var_name in self.vars_provided[ comp_name ]:       
                     v2 = bmi.get_values( long_var_name )
+ 
+#                     print '##### In time interpolator:'
+#                     print '##### provider comp_name = ' + comp_name
+#                     print '##### long_var_name = ' + long_var_name
+#                     print '##### v2.dtype = ' + str(v2.dtype)
+#                     print ' '
+
                     #-------------------------------------
                     # Save (v2,t2) and update the time
                     # interpolation parameters a and b.
@@ -307,162 +314,156 @@ class time_interpolator():
         
     #   initialize()
     #-------------------------------------------------------------------        
-    def update( self, comp_name, time ):
-
-        #------------------------------------------------------------
-        # Note: This function provides automatic time-interpolation
-        #       for components that have different time steps.
-        #------------------------------------------------------------
-        # Note: The "framework time step" will be the same as the
-        #       component with the smallest time step.
-        #
-        #       If follows that if the time argument is "framework
-        #       time", then we only need to call bmi.update() once
-        #       for any component to make its internal time greater
-        #       than the framework time.
-        #
-        #       We must make sure that this method works when called
-        #       for the component (comp_name) that has the smallest
-        #       time step.  In that case, we don't need to do any
-        #       time interpolation and should take the "None" branch
-        #       below.  #### CHECK THAT THIS HAPPENS. ####
-        #------------------------------------------------------------
-        # Note: A component's current time is incremented every
-        #       time its bmi.update() method is called, as when
-        #       done by the initialize() method.
-        #------------------------------------------------------------ 
-        DEBUG = False
-        ## DEBUG = True
-        bmi = self.comp_set[ comp_name ]
-
-        #-----------------------------------------------------
-        # Get current time of component with this comp_name.
-        # Convert units to framework time units, if needed.
-        #-----------------------------------------------------
-        comp_time_units = bmi.get_time_units()
-        comp_time       = bmi.get_current_time()
-        # comp_time0      = comp_time.copy()
-        comp_time = self.convert_time_units( comp_time, comp_time_units )
-        #--------------
-        # For testing
-        #--------------
-##        print 'comp_name =', comp_name
-##        print 'comp_time before =', comp_time0
-##        print 'comp_time after  =', comp_time
-##        print ' '
-        
-        if (DEBUG):
-            print '============================================='
-            print 'In update_time_interpolation():'
-            print '  time (fmwk) =', time
-            print '  comp_name   =', comp_name
-            print '  comp_time   =', comp_time
-
-        #--------------------------------------------
-        # Do we need to update interpolation vars ?
-        #------------------------------------------------
-        # Note: DISABLED components have comp_time = 0.
-        #------------------------------------------------
-        ### if (time < comp_time):   # (This works, too.)
-        if (time <= comp_time):
-            if (DEBUG):
-                print '  NO update for: ' + comp_name + ' interp. vars'
-            return
-
-        #------------------------------------------------
-        # The current "framework time" has passed this
-        # model component's internal time so we need to
-        # call the model's bmi.update() method and then
-        # update the time interpolation vars.
-        #------------------------------------------------
-        if (DEBUG):
-            print '  Framework updated: ' + comp_name + ' interp. vars'
-
-        #------------------------------------------------
-        # Note: We need to check the component status
-        #       here because otherwise bmi.update() is
-        #       called every time below for DISABLED
-        #       components.
-        #------------------------------------------------
-        # Using (status = 'initialized') works because
-        # the initialize() method caused all other
-        # components to reach "updated" status.
-        #------------------------------------------------       
-        comp_status = bmi.get_status()
-        # if (comp_status == 'disabled'):  # (not used/ready yet)
-        if (comp_status == 'initialized'):  # (this works)
-            return
-        
-        #---------------------------     
-        # Case of no interpolation
-        #---------------------------
-        if (self.interpolation_method == 'None'):
-            #-------------------------------------------------
-            # Since the framework has the smallest timestep,
-            # we should only need to call bmi.update() once
-            # in order to get comp_time > time.
-            #-------------------------------------------------
-            bmi.update( -1.0 )
-            ## self.update( comp_name )  # (Checks for failure.)
-            return
-        
-        #-------------------------------      
-        # Case of Linear interpolation
-        #-------------------------------
-        if (self.interpolation_method == 'Linear'):
-                
-            #--------------------------------------------
-            # Call this component's update() just once.
-            #--------------------------------------------
-            bmi.update( -1.0 )
-            ## self.update( comp_name )  # (has error messages)
-
-            #---------------------------------------
-            # Get t2 and convert units, if needed.
-            #---------------------------------------
-            comp_time_units = bmi.get_time_units()
-            t2 = bmi.get_current_time()
-            t2 = self.convert_time_units( t2, comp_time_units )
-
-            #---------------------------------------------------
-            # Get values at end of interpolation time interval
-            #--------------------------------------------------- 
-            for long_var_name in self.vars_provided[ comp_name ]:
-                #------------------------------------------------
-                # Note: bmi.get_values() works for any rank.
-                #------------------------------------------------
-                # self.time_interp_vars is a dictionary that is
-                # initialized in the framework's initialize().
-                #------------------------------------------------ 
-                v2 = bmi.get_values( long_var_name )
-                
-                #--------------
-                # For testing
-                #--------------
-##                if (long_var_name == 'atmosphere_water__precipitation_leq-volume_flux'):
-##                    print '(time, P) =', t2, v2
-                    
-                i_vars = self.time_interp_vars[ long_var_name ]
-                #-------------------------------------
-                # This also updates v1 and t1 first.
-                #-------------------------------------
-                i_vars.update(v2, t2)
-
-                #--------------
-                # For testing
-                #--------------
-##                print 'Updated component: ' + comp_name
-##                print '   (t1, t2) =', i_vars.t1, i_vars.t2
-               
-            return
-
-        #-------------------------------------      
-        # Case of Cubic Spline interpolation
-        #-------------------------------------  
-##         if (self.interpolation_method == 'Cubic'):
-        
-
-    #   update()
+#     def update( self, comp_name, time ):
+# 
+#         #------------------------------------------------------------
+#         # Note: This function provides automatic time-interpolation
+#         #       for components that have different time steps.
+#         #------------------------------------------------------------
+#         # Note: The "framework time step" will be the same as the
+#         #       component with the smallest time step.
+#         #
+#         #       If follows that if the time argument is "framework
+#         #       time", then we only need to call bmi.update() once
+#         #       for any component to make its internal time greater
+#         #       than the framework time.
+#         #
+#         #       We must make sure that this method works when called
+#         #       for the component (comp_name) that has the smallest
+#         #       time step.  In that case, we don't need to do any
+#         #       time interpolation and should take the "None" branch
+#         #       below.  #### CHECK THAT THIS HAPPENS. ####
+#         #------------------------------------------------------------
+#         # Note: A component's current time is incremented every
+#         #       time its bmi.update() method is called, as when
+#         #       done by the initialize() method.
+#         #------------------------------------------------------------ 
+#         DEBUG = False
+#         ## DEBUG = True
+#         bmi = self.comp_set[ comp_name ]
+# 
+#         #-----------------------------------------------------
+#         # Get current time of component with this comp_name.
+#         # Convert units to framework time units, if needed.
+#         #-----------------------------------------------------
+#         comp_time_units = bmi.get_time_units()
+#         comp_time       = bmi.get_current_time()
+#         # comp_time0      = comp_time.copy()
+#         comp_time = self.convert_time_units( comp_time, comp_time_units )
+#         #--------------
+#         # For testing
+#         #--------------
+# ##        print 'comp_name =', comp_name
+# ##        print 'comp_time before =', comp_time0
+# ##        print 'comp_time after  =', comp_time
+# ##        print ' '
+#         
+#         if (DEBUG):
+#             print '============================================='
+#             print 'In update_time_interpolation():'
+#             print '  time (fmwk) =', time
+#             print '  comp_name   =', comp_name
+#             print '  comp_time   =', comp_time
+# 
+#         #--------------------------------------------
+#         # Do we need to update interpolation vars ?
+#         #------------------------------------------------
+#         # Note: DISABLED components have comp_time = 0.
+#         #------------------------------------------------
+#         ### if (time < comp_time):   # (This works, too.)
+#         if (time <= comp_time):
+#             if (DEBUG):
+#                 print '  NO update for: ' + comp_name + ' interp. vars'
+#             return
+# 
+#         #------------------------------------------------
+#         # The current "framework time" has passed this
+#         # model component's internal time so we need to
+#         # call the model's bmi.update() method and then
+#         # update the time interpolation vars.
+#         #------------------------------------------------
+#         if (DEBUG):
+#             print '  Framework updated: ' + comp_name + ' interp. vars'
+# 
+#         #------------------------------------------------
+#         # Note: We need to check the component status
+#         #       here because otherwise bmi.update() is
+#         #       called every time below for DISABLED
+#         #       components.
+#         #------------------------------------------------
+#         # Using (status = 'initialized') works because
+#         # the initialize() method caused all other
+#         # components to reach "updated" status.
+#         #------------------------------------------------       
+#         comp_status = bmi.get_status()
+#         # if (comp_status == 'disabled'):  # (not used/ready yet)
+#         if (comp_status == 'initialized'):  # (this works)
+#             return
+#         
+#         #---------------------------     
+#         # Case of no interpolation
+#         #---------------------------
+#         if (self.interpolation_method == 'None'):
+#             #-------------------------------------------------
+#             # Since the framework has the smallest timestep,
+#             # we should only need to call bmi.update() once
+#             # in order to get comp_time > time.
+#             #-------------------------------------------------
+#             bmi.update( -1.0 )
+#             ## self.update( comp_name )  # (Checks for failure.)
+#             return
+#         
+#         #-------------------------------      
+#         # Case of Linear interpolation
+#         #-------------------------------
+#         if (self.interpolation_method == 'Linear'):
+#                 
+#             #--------------------------------------------
+#             # Call this component's update() just once.
+#             #--------------------------------------------
+#             bmi.update( -1.0 )
+#             ## self.update( comp_name )  # (has error messages)
+# 
+#             #---------------------------------------
+#             # Get t2 and convert units, if needed.
+#             #---------------------------------------
+#             comp_time_units = bmi.get_time_units()
+#             t2 = bmi.get_current_time()
+#             t2 = self.convert_time_units( t2, comp_time_units )
+# 
+#             #---------------------------------------------------
+#             # Get values at end of interpolation time interval
+#             #--------------------------------------------------- 
+#             for long_var_name in self.vars_provided[ comp_name ]:
+#                 #------------------------------------------------
+#                 # Note: bmi.get_values() works for any rank.
+#                 #------------------------------------------------
+#                 # self.time_interp_vars is a dictionary that is
+#                 # initialized in the framework's initialize().
+#                 #------------------------------------------------ 
+#                 v2 = bmi.get_values( long_var_name )
+#                          
+#                 i_vars = self.time_interp_vars[ long_var_name ]
+#                 #-------------------------------------
+#                 # This also updates v1 and t1 first.
+#                 #-------------------------------------
+#                 i_vars.update(v2, t2)
+# 
+#                 #--------------
+#                 # For testing
+#                 #--------------
+# ##                print 'Updated component: ' + comp_name
+# ##                print '   (t1, t2) =', i_vars.t1, i_vars.t2
+#                
+#             return
+# 
+#         #-------------------------------------      
+#         # Case of Cubic Spline interpolation
+#         #-------------------------------------  
+# ##         if (self.interpolation_method == 'Cubic'):
+#         
+# 
+#     #   update()
     #-------------------------------------------------------------------        
     def update2( self, comp_name ):
 
@@ -539,13 +540,7 @@ class time_interpolator():
                 # initialized in the framework's initialize().
                 #------------------------------------------------ 
                 v2 = bmi.get_values( long_var_name )
-                
-                #--------------
-                # For testing
-                #--------------
-##                if (long_var_name == 'atmosphere_water__precipitation_leq-volume_flux'):
-##                    print '(time, P) =', t2, v2
-                    
+              
                 i_vars = self.time_interp_vars[ long_var_name ]
                 #-------------------------------------
                 # This also updates v1 and t1 first.
@@ -574,7 +569,8 @@ class time_interpolator():
             self.update( comp_name, time )
 
     #   update_all()
-    #-------------------------------------------------------------------        
+    #------------------------------------------------------------------- 
+    # def get_values( self, long_var_name, bmi, time ):       
     def get_values( self, long_var_name, comp_name, time ):
 
         #-------------------------------------------------------
@@ -585,12 +581,17 @@ class time_interpolator():
         # Note: The update() method is called for comp_name
         #       before this is called.
         #-------------------------------------------------------
-        bmi = self.comp_set[ comp_name ]  # (pass in bmi ?)
+        # Tried passing in bmi vs. comp_name, and didn't see
+        # any change in runtime. (2/16/17)
+        #-------------------------------------------------------
+        bmi = self.comp_set[ comp_name ]
 
         #-------------------------------------------------------
         # Has this component been disabled?  If so, it doesn't
         # advance time or update its initial values so time
-        # interpolation is not needed.
+        # interpolation is not needed.  This means that its
+        # status will be "initialized" until the end of the
+        # model run and will never become "updating" or "updated".
         #------------------------------------------------------------
         # TopoFlow components currently have a "comp_status"
         # attribute that is either "Enabled" or "Disabled", set in
@@ -608,6 +609,26 @@ class time_interpolator():
            (comp_status == 'finalized'):
             return bmi.get_values( long_var_name )
 
+        #----------------------------------------------------------
+        # Don't interpolate variables with integer type (2/16/17)
+        #----------------------------------------------------------
+        # e.g. Diversions component passes vars like "n_canals"
+        # of integer type.  Interpolation would require floats
+        # and also it doesn't vary in time.
+        #----------------------------------------------------------
+        # Could write a new BMI function that returns whether a
+        # variable varies in time or not.
+        #----------------------------------------------------------
+        # The previous version of bmi.get_var_type() used exec(),
+        # which made this repeated call slow down the Trenor run
+        # significantly, from a runtime of 7.7 sec to 10.5 sec.
+        # New version has much less impact on runtime. (2/16/17)
+        # But this is not needed and doesn't help runtime.
+        #----------------------------------------------------------
+#         dtype = bmi.get_var_type( long_var_name )
+#         if (dtype[0:3] == 'int'):
+#             return bmi.get_values( long_var_name )
+
         #---------------------------     
         # Case of no interpolation
         #-------------------------------------------------------
@@ -622,11 +643,12 @@ class time_interpolator():
             #------------------------------------
             bmi_time = bmi.get_current_time()
             if (time > bmi_time):
-                print '#########################################'
-                print ' ERROR: time > bmi_time in get_values().'
-                print '        time, bmi_time =', time, bmi_time
-                print '        comp_name =', comp_name
-                print '#########################################'
+                print '=================================================='
+                print ' ERROR:  In time_interpolation.get_values():'
+                print '   Model time > BMI component time'
+                print '     for component =', comp_name
+                print '   Model time, BMI_time =', time, bmi_time
+                print '=================================================='
                 print ' '
                 
             return bmi.get_values( long_var_name )
@@ -644,11 +666,12 @@ class time_interpolator():
             # For testing. Is time in interval?
             #------------------------------------           
             if (time > i_vars.t2):
-                print '#######################################'
-                print ' ERROR: time > t2 in get_values().'
-                print '        time, t2 =', time, i_vars.t2
-                print '        comp_name =', comp_name
-                print '#######################################'
+                print '=================================================='
+                print ' ERROR:  In time_interpolation.get_values():'
+                print '   Model time is outside interpolation window'
+                print '     for component =', comp_name
+                print '   model_time, t2 =', time, i_vars.t2
+                print '=================================================='
                 print ' '
 
             value = (i_vars.a * time) + i_vars.b
@@ -661,9 +684,13 @@ class time_interpolator():
 
             return value
             
-        #-------------------------------------      
-        # Case of Cubic Spline interpolation
-        #-------------------------------------  
+        #---------------------------------------------      
+        # Case of Cubic Dynamic Spline interpolation
+        #----------------------------------------------------------- 
+        # Have worked out the math to show that this method is not
+        # stable without knowing values at the end of model run.
+        # This has been written up but not yet published.
+        #----------------------------------------------------------- 
 ##         if (self.interpolation_method == 'Cubic'):
 ##            #------------------------------------------------
 ##            # Compute and return a time-interpolated value.

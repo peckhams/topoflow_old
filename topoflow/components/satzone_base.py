@@ -1,11 +1,13 @@
 
 # SEARCH FOR THIS!  It doesn't work for Python lists! (2/19/13)
 # self.qs_layer_0 = self.qs[0]
-##########################################
 
-
-## Copyright (c) 2001-2016, Scott D. Peckham
-## January 2009   (converted from IDL)
+###########################################################################
+## Copyright (c) 2001-2017, Scott D. Peckham
+##
+## Feb. 2017  (Basic checks. Since adjust_flow_depth() doesn't work,
+##             must have water table elev < DEM everywhere at start.
+## Jan. 2009  (Converted from IDL to Python.)
 ## May, July, August 2009
 ## May 2010 (changes to initialize() and read_cfg_file()
 
@@ -527,8 +529,14 @@ class satzone_component( infil_base.infil_component ):
  
         #--------------------------------------------------         
         # D8 component builds its cfg filename from these  
-        #--------------------------------------------------      
+		#-------------------------------------------------------------
+        # (2/11/2017) The initialize() method in d8_base.py now
+        # uses case_prefix (vs. site_prefix) for its CFG file:
+        # <site_prefix>_d8_global.cfg.  This is to prevent confusion
+		# since this was the only CFG file that used site_prefix.
+		#-------------------------------------------------------------       
         self.d8.site_prefix  = self.site_prefix
+        self.d8.case_prefix  = self.case_prefix   # (used in d8_base.py)
         self.d8.in_directory = self.in_directory
         self.d8.initialize( cfg_file=None, SILENT=self.SILENT, \
                             REPORT=self.REPORT )
@@ -538,7 +546,10 @@ class satzone_component( infil_base.infil_component ):
         # the new "d8_base.py", but are not needed when
         # using the older "tf_d8_base.py".      
         #---------------------------------------------------
-        self.d8.update(self.time, SILENT=False, REPORT=True)
+        # Note:  update_most() skips update_area_grid().
+        #---------------------------------------------------
+        ## self.d8.update(self.time, SILENT=False, REPORT=True)
+        self.d8.update_most(self.time, SILENT=False, REPORT=True)
 
         #----------------------------------------------------------- 
         # Note: This is also needed, but is not done by default in
@@ -548,42 +559,42 @@ class satzone_component( infil_base.infil_component ):
 
     #   initialize_d8_vars()
     #-------------------------------------------------------------------
-    def adjust_flow_depths(self):
-
-        #---------------------------------------------------------        
-        # Note: This is meant to be called from the method
-        #       initialize_computed_vars(), but isn't called yet
-        #       because it is not implemented correctly.
-        #       It is only needed if there are places where the
-        #       water table is above the land surface.
-        #---------------------------------------------------------
-        
-        #------------------------------------------------------------
-        # If water table > land surface, increment flow depth grid.
-        #------------------------------------------------------------
-        diff = (self.h_table - self.elev)
-        ### w = np.where(diff > 0)
-        w    = np.where(np.logical_and(np.logical_and((diff > 0), \
-                                           (self.elev > self.nodata)), \
-                                           (np.isfinite(self.elev))))
-        nw = np.size(w[0])
-        if (nw != 0):
-            d = self.d   ## (2/3/13, new framework)
-            #######################################
-            #  THIS IS NOT CORRECT FOR CHANNELS
-            #######################################            
-            d[w] = d[w] + diff[w]
-            self.cp.set_grid_double('d', d)  ###########
-            
-        #--------------------------
-        # For debugging & testing
-        #--------------------------
-        dmin = d.min()
-        dmax = d.max()
-        dstr = str(dmin) + ', ' + str(dmax) + ')'
-        print 'Initial depths due to water table: (dmin, dmax) = (' + dstr
-
-    #   adjust_flow_depths()
+#     def adjust_flow_depths(self):
+# 
+#         #---------------------------------------------------------        
+#         # Note: This is meant to be called from the method
+#         #       initialize_computed_vars(), but isn't called yet
+#         #       because it is not implemented correctly.
+#         #       It is only needed if there are places where the
+#         #       water table is above the land surface.
+#         #---------------------------------------------------------
+#         
+#         #------------------------------------------------------------
+#         # If water table > land surface, increment flow depth grid.
+#         #------------------------------------------------------------
+#         diff = (self.h_table - self.elev)
+#         ### w = np.where(diff > 0)
+#         w    = np.where(np.logical_and(np.logical_and((diff > 0), \
+#                                            (self.elev > self.nodata)), \
+#                                            (np.isfinite(self.elev))))
+#         nw = np.size(w[0])
+#         if (nw != 0):
+#             d = self.d   ## (2/3/13, new framework)
+#             #######################################
+#             #  THIS IS NOT CORRECT FOR CHANNELS
+#             #######################################            
+#             d[w] = d[w] + diff[w]
+#             self.cp.set_grid_double('d', d)  ###########
+#             
+#         #--------------------------
+#         # For debugging & testing
+#         #--------------------------
+#         dmin = d.min()
+#         dmax = d.max()
+#         dstr = str(dmin) + ', ' + str(dmax) + ')'
+#         print 'Initial depths due to water table: (dmin, dmax) = (' + dstr
+# 
+#     #   adjust_flow_depths()
     #-------------------------------------------------------------------
     def update_Sh(self):
 
@@ -941,8 +952,8 @@ class satzone_component( infil_base.infil_component ):
         #------------------------------------            
         dz_min = dzw.min()
         dz_max = dzw.max()  #***********************
-        print '   dz_min = ' + str(dz_min)
-        print '   dz_max = ' + str(dz_max)
+#         print '   dz_min = ' + str(dz_min)
+#         print '   dz_max = ' + str(dz_max)
         ## print ' '
 
         #-------------------------------------------
@@ -1005,8 +1016,15 @@ class satzone_component( infil_base.infil_component ):
         n_rising  = np.size( wR[0] )
         wF = np.where( dzw <= 0 )
         n_falling = np.size( wF[0] )
-        print '   n_rising  = ' + str(n_rising)
-        print '   n_falling = ' + str(n_falling)
+
+        #-----------------------------------
+        # Print information on water table
+        #-----------------------------------
+        print '  In update_water_table():'
+        print '    dz_min    = ' + str(dz_min)
+        print '    dz_max    = ' + str(dz_max)
+        print '    n_rising  = ' + str(n_rising)
+        print '    n_falling = ' + str(n_falling)
         
         #-----------------------------------------
         # For debugging: save initial value of h     #*****************

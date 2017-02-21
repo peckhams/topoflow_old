@@ -114,6 +114,21 @@ def read_outlet_file( self ):
             n += 1
     n_outlets = n
 
+    #-------------------------------------------------
+    # Reduce size from n_lines to n_outlets
+    # due to possible blank lines in file. (2/19/17)
+    #-------------------------------------------------
+    outlet_cols   = outlet_cols[:n]
+    outlet_rows   = outlet_rows[:n]
+    basin_areas   = basin_areas[:n]
+    basin_reliefs = basin_reliefs[:n]
+  
+#     print 'outlet_cols = '
+#     print outlet_cols
+#     print 'outlet_rows = '
+#     print outlet_rows
+#     print ' '
+
 	#------------------------------------------------	
 	# Save area and relief of first basin into self
 	#------------------------------------------------

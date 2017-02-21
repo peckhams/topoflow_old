@@ -1321,7 +1321,7 @@ class topoflow_driver( BMI_base.BMI_component ):
         report.append('vol_IN  (infiltration):  ' + str(vol_IN) + ' [m^3]')
         report.append('vol_Rg  (recharge):      ' + str(vol_Rg) + ' [m^3]   (to water table)')
         report.append('vol_GW  (baseflow):      ' + str(vol_GW) + ' [m^3]')
-        report.append('vol_R   (runoff):        ' + str(vol_R)  + ' [m^3]   R = (P+SM+MR) - (ET+IN)')
+        report.append('vol_R   (runoff):        ' + str(vol_R)  + ' [m^3]   R = (P+SM+MR+GW) - (ET+IN)')
         report.append(' ')
 
         #----------------------------------        

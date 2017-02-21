@@ -7,7 +7,7 @@ This class inherits from the infiltration "base class" in "infil_base.py".
 See: Smith, R.E. (2002) Infiltration Theory for Hydrologic Applications,
 Water Resources Monograph 15, AGU.
 """
-## Copyright (c) 2009-2016, Scott D. Peckham
+## Copyright (c) 2009-2017, Scott D. Peckham
 ##
 ## January 2013   (Revised handling of input/output names).
 ## October 2012   (CSDMS Standard Names and BMI)
@@ -254,13 +254,13 @@ class infil_component( infil_base.infil_component ):
         self.soil_type = np.zeros([n_layers], dtype='|S100')
 ##        self.dz_val    = np.zeros([n_layers], dtype='Float64')    #### + dz3
 ##        self.nz_val    = np.zeros([n_layers], dtype='Int16')      #### + nz3
-        #----------------------------------------------------------
+        #-------------------------------------------------------
         self.Ks_type  = np.zeros(n_layers, dtype='|S100')
         self.Ki_type  = np.zeros(n_layers, dtype='|S100')
         self.qs_type  = np.zeros(n_layers, dtype='|S100')
         self.qi_type  = np.zeros(n_layers, dtype='|S100')
         self.G_type   = np.zeros(n_layers, dtype='|S100')
-        #--------------------------------------------------------        
+        #-----------------------------------------------------        
         self.Ks_file  = np.zeros(n_layers, dtype='|S100')
         self.Ki_file  = np.zeros(n_layers, dtype='|S100')
         self.qs_file  = np.zeros(n_layers, dtype='|S100')
@@ -419,6 +419,12 @@ class infil_component( infil_base.infil_component ):
         self.G_unit   = []
 
         for k in xrange(self.n_layers):
+            #-------------------------------------------------------------
+            # If (var_type == 'Scalar'), then the filenames here will be
+            # a null string, prepended with in_directory.  But note that
+            # model_input.open_file() returns None if type is "Scalar".
+            # So None will then be appended to the "unit list".
+            #-------------------------------------------------------------
             self.Ks_file[k] = self.in_directory + self.Ks_file[k]
             self.Ki_file[k] = self.in_directory + self.Ki_file[k]
             self.qs_file[k] = self.in_directory + self.qs_file[k]
@@ -459,7 +465,7 @@ class infil_component( infil_base.infil_component ):
             G  = model_input.read_next(self.G_unit[k], self.G_type[k], rti)
             if (G is not None): self.G[k] = G
           
-    #   read_input_files()       
+    #   read_input_files()
     #-------------------------------------------------------------------  
     def close_input_files(self):
 

@@ -410,6 +410,74 @@ class d8_component( BMI_base.BMI_component ):
             
     #   update()
     #-------------------------------------------------------------------
+    def update_most(self, time=None, DEM=None,
+               SILENT=True, REPORT=False):
+
+        self.status = 'updating'  # (OpenMI 2.0 convention)
+        if not(SILENT):
+            print 'D8 component: Updating...'
+        # if (self.mode == 'main'):
+        #     self.print_time_and_value(self.z_outlet, 'z_out', '[m]')
+        
+        #-------------------------
+        # Update computed values
+        #------------------------------------------------------
+        # Note that ds grid is used to compute updated slopes
+        #------------------------------------------------------
+        ## fill_pits.fill_pits()   ## pass DEM to here? ## 
+
+        self.update_flow_grid(DEM=DEM,
+                              SILENT=SILENT, REPORT=REPORT)
+        self.update_parent_ID_grid()
+        self.update_parent_IDs()     # (needed for gradients)
+        self.update_flow_from_IDs()
+        self.update_flow_to_IDs()
+        #-----------------------------------------------------------
+        # Next line was removed because it was hurting performance
+        # of erode_d8_global.py and erode_d8_local.py even though
+        # "noflow_IDs" were not being used. (1/25/12)
+        #-----------------------------------------------------------
+        ### self.update_noflow_IDs()
+        self.update_flow_width_grid(SILENT=SILENT, REPORT=REPORT)   # (dw)
+        self.update_flow_length_grid(SILENT=SILENT, REPORT=REPORT)  # (ds)
+
+        #--------------------------------------------------------------
+        # Area grid is not needed for Channel and Satzone components
+        # and computing it can be costly. (2/19/17)
+        #--------------------------------------------------------------
+        ## self.update_area_grid(SILENT=SILENT, REPORT=REPORT)
+        ##############################################################
+
+        #-------------------------------------------
+        # Read from files as needed to update vars 
+        #-------------------------------------------
+        # if (self.time_index > 0):
+        #     self.read_input_files()
+
+        #----------------------------------------------
+        # Use this for saving D8 flow and area grids
+        #------------------------------------------------
+        # Write user-specified data to output files ?
+        #------------------------------------------------
+        self.write_output_files( time )    # (uncommented on 11/8/11)
+
+        #------------------------
+        # Check computed values
+        #------------------------
+##        if (OK):
+##            self.status = 'updated'  # (OpenMI 2.0 convention)
+##        else:
+##            self.status = 'failed'
+##            self.DONE   = True
+
+        #------------------------
+        # Update internal clock
+        #------------------------
+        self.update_time()
+        self.status = 'updated'  # (OpenMI 2.0 convention)
+            
+    #   update_most()
+    #-------------------------------------------------------------------
     def set_computed_input_vars(self):
 
         self.LR_PERIODIC  = (self.LR_PERIODIC != 0)
@@ -464,8 +532,9 @@ class d8_component( BMI_base.BMI_component ):
             print self.DEM_file
             return
         DEM = rtg_files.read_grid( self.DEM_file, self.rti, SILENT=False )
-        if not(SILENT):
-            print '   min(DEM), max(DEM) =', DEM.min(), DEM.max()
+#         if not(SILENT):
+#             print '   min(DEM), max(DEM) =', DEM.min(), DEM.max()
+        print '  min(DEM), max(DEM) =', DEM.min(), ',', DEM.max(), '[m]'
         self.DEM = DEM
 
         #---------------------------------------------------

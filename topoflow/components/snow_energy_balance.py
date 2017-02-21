@@ -161,7 +161,7 @@ class snow_component( snow_base.snow_component ):
     #-----------------------------------------------------------------       
     _var_units_map = {
         'atmosphere_bottom_air__mass-per-volume_density': 'kg m-3',
-        'atmosphere_bottom_air__mass-specific_isobaric_heat_capacity': 'J kg-1 K-1 ', # (see Notes above)
+        'atmosphere_bottom_air__mass-specific_isobaric_heat_capacity': 'J kg-1 K-1', # (see Notes above)
         'atmosphere_bottom_air__temperature': 'deg_C',  # (see Notes above)
         'atmosphere_water__snowfall_leq-volume_flux': 'm s-1',
         'land_surface_net-total-energy__energy_flux': 'W m-2',

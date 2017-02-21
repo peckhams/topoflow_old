@@ -1,6 +1,15 @@
+
+#  For details on how velocity is computed, see:
+#    Peckham, S.D. (2009) Geomorphometry and spatial hydrologic modeling,
+#    In: Hengl, T. and Reuter, H.I. (Eds), Geomorphometry: Concepts, Software
+#    and Applications, Chapter 25, Developments in Soil Science,
+#    vol. 33, Elsevier, 579-602, 
+#    http://dx.doi.org/10.1016/S0166-2481(08)00025-1.
+
+#--------------------------------------------------------------------------------
+#  Copyright (c) 2001-2017, Scott D. Peckham
 #
-#  Copyright (c) 2001-2014, Scott D. Peckham
-#
+#  Feb 2017.  Cleaned up and re-tested.  Fixed missing dinv = 1/d.
 #  Sep 2014.  New standard names and BMI updates and testing.
 #  Nov 2013.  Converted TopoFlow to a Python package.
 #  Feb 2013.  Adapted to use EMELI framework.
@@ -83,121 +92,197 @@ class channels_component(channels_base.channels_component):
     def update_velocity(self):
 
         #--------------------------------------------------------
-        # NOTES:  This update to u uses values of u, d, Q, and
-        #         S_free from the last time step, then u is
-        #         overwritten with new values.
+        # Note:  This update to u uses values of u, d, Q, and
+        #        S_free from the last time step, then u is
+        #        overwritten with new values.
+        #--------------------------------------------------------
+        # Note:  update_free_surface_slope() is called in
+        #        channels_base.update() before calling this.
+        #--------------------------------------------------------
+        # Note:  For speed, multiply scalars first, then grids.
+        #        u, d and Q are always grids
         #--------------------------------------------------------
 
-        #----------------------------
-        # Update free surface slope
-        #-----------------------------------------------------
-        # This is called to update self.S_free for DIFFUSIVE
-        # and DYNAMIC cases in channel_base.update().
-        #-----------------------------------------------------
-        ### self.update_free_surface_slope()
-   
-        #----------------------------------------
-        # Compute the wetted bed area (2/12/07)
-        #----------------------------------------
-        #pb = d / np.cos(angle)
-        #;ww = np.where(np.abs(angle) >= (np.pi/2d), nww)  ;(should disallow)
-        #;if (nww ne 0) then pb[ww]=(d * 10d)
-        #pw = width + (2d * pb)
-        #bA = pw * ds_chan        ;(a 2D array)
-        #*** bA = da             ;(for testing only)
+		#------------------------------------------
+		# Start with the interior (nonflux) terms
+		#------------------------------------------
+		# When (n eq 0), should have (d gt 0) and
+		# (u eq 0), so (grav gt 0) and (acc gt 0)
+		# but fric = Atrm = Rtrm = 0.
+		#------------------------------------------
+		angle  = self.angle
+		width  = self.width
+		d      = self.d
+		u      = self.u
+		Q      = self.Q
+		f      = self.f
+
+		## d[ self.d8.noflow_IDs ] = 0.0
+
+		#-------------------------------
+		# Update inverse of flow depth
+		#----------------------------------------------
+		# Wherever d = 0, we should have u = 0, Q = 0.
+		#----------------------------------------------
+		dinv = d.copy()
+		wg = np.where( d > 0 )
+		ng = np.size( wg[0] )
+		if (ng > 0):
+			dinv[ wg ] = 1 / d[ wg ]
+		#-----------------------------
+		wb = np.where( d <= 0 )
+		nb = np.size( wb[0] )
+		if (nb > 0):
+			dinv[ wb ] = 0.0
+		#-----------------------------
+# 		wz = np.where( d <= 0 )
+# 		nz = np.size( wz[0] )
+# 		dinv = (1 / d)
+# 		if (nz > 0):
+# 			dinv[ wz] = 0
+# 			## u[ wz ]   = 0
+# 			## Q[ wz ]   = 0
+# 		-------------------------------------------
+# 		self.d_is_pos = (d > 0)
+# 		self.d_is_neg = np.invert( self.d_is_pos )
+
+		#-----------------------------------------
+		# Compute the "R term" first (need Atop)
+		#-----------------------------------------
+		wtop = width + (2 * d * np.tan(angle))     # (top width)
+		Atop = self.d8.ds * wtop                   # (top area)
+		Rtrm = (u * self.R) * (self.da / Atop)     # (da = pixel area)
+		Rtrm = Rtrm * dinv
+
+		#-----------------------
+		# Compute the "A term"
+		#------------------------------------------------------------
+		# Note:  A2 = "wetted surface area", which is not the same
+		#        as "wetted area" used to compute hydraulic radius.
+		#------------------------------------------------------------
+		Pw = width + (np.float64(2) * d / np.cos(angle))  # (wetted perimeter)
+		A2 = self.d8.ds * Pw                              # (wetted surf. area)
+		Atrm = (u * Q) * ((np.float64(1) / Atop) - (np.float64(1) / A2))
+		Atrm = Atrm * dinv
+
+		#---------------------------------------------------
+		# Compute gravity and friction terms (divided by d)
+		#--------------------------------------------------------
+		# Only the grav term will contribute at first, when d=0
+		#--------------------------------------------------------
+		grav = self.g * self.S_free
+		fric = (f * u * u * dinv)
+		## fric = f * (u ** np.float64(2)) * dinv
+
+
+		#----------------------------------------------------
+		# Compute the "acceleration" (positive or negative)
+		#----------------------------------------------------
+		## acc = (grav - fric)   ## for testing
+		## acc = (grav - fric - Rtrm)
+		acc = (Atrm - Rtrm + grav - fric)  #################################
+		### acc = (grav + Atrm - fric - Rtrm)
+
+# 		print '## d:     min, max =', d.min(),    d.max()
+# 		print '## u:     min, max =', u.min(),    u.max()
+# 		print '## f:     min, max =', f.min(),    f.max()
+# 		print '## grav:  min, max =', grav.min(), grav.max()
+# 		print '## fric:  min, max =', fric.min(), fric.max()
+# 		print '## Rtrm:  min, max =', Rtrm.min(), Rtrm.max()
+# 		print '## acc:   min, max =', acc.min(),  acc.max()
+# 		print '##==================================================='
+
+		#-------------------------------------------------
+		# Compute the new flow velocity just due to
+		# contributions from "interior" (nonflux) terms.
+		# We'll modify this with flux terms.
+		#-------------------------------------------------
+		## du = (self.dt * acc) 
+		u2  = u + (self.dt * acc)     # (before next part)
+
+		#------------------------------------
+		# Now prepare to compute flux terms
+		#------------------------------------
+		# Compute new velocity, (u + du)
+		#---------------------------------------------
+		# Note:  (Atop / wtop ) = (A2 / Pw) = d8.ds,
+		#        so (Pw / wtop) = (A2 / Atop).
+		#---------------------------------------------
+		# Note: fac and uu will always be grids.
+		#---------------------------------------------
+		fac = (self.dt / A2) * dinv
+		uu  = u * (Pw / wtop)
+		## uu  = u2 * (Pw / wtop)   ######## Use this instead ??
+
+		#---------------------------------------
+		# Note that "compound statements" with 
+		# a semicolon are OK.
+		#---------------------------------------
+		p1 = self.d8.p1   ;  w1 = self.d8.w1
+		p2 = self.d8.p2   ;  w2 = self.d8.w2
+		p3 = self.d8.p3   ;  w3 = self.d8.w3
+		p4 = self.d8.p4   ;  w4 = self.d8.w4
+		p5 = self.d8.p5   ;  w5 = self.d8.w5
+		p6 = self.d8.p6   ;  w6 = self.d8.w6
+		p7 = self.d8.p7   ;  w7 = self.d8.w7
+		p8 = self.d8.p8   ;  w8 = self.d8.w8
+
+		#-------------------------------------------
+		# Add momentum fluxes from D8 child pixels
+		#-------------------------------------------
+		if (self.d8.p1_OK):
+			u2[p1] += (u[w1] - uu[p1]) * Q[w1] * fac[p1]
+		if (self.d8.p2_OK):
+			u2[p2] += (u[w2] - uu[p2]) * Q[w2] * fac[p2]
+		if (self.d8.p3_OK):    
+			u2[p3] += (u[w3] - uu[p3]) * Q[w3] * fac[p3]
+		if (self.d8.p4_OK):    
+			u2[p4] += (u[w4] - uu[p4]) * Q[w4] * fac[p4]
+		if (self.d8.p5_OK):    
+			u2[p5] += (u[w5] - uu[p5]) * Q[w5] * fac[p5]
+		if (self.d8.p6_OK):    
+			u2[p6] += (u[w6] - uu[p6]) * Q[w6] * fac[p6]
+		if (self.d8.p7_OK):    
+			u2[p7] += (u[w7] - uu[p7]) * Q[w7] * fac[p7]
+		if (self.d8.p8_OK):    
+			u2[p8] += (u[w8] - uu[p8]) * Q[w8] * fac[p8]
+
+#         #-------------------------------------------
+#         # Add momentum fluxes from D8 child pixels
+#         #-------------------------------------------
+#         if (self.d8.p1_OK):
+#             ## print '## u[w1]: min, max =', u[w1].min(), u[w1].max()  #######
+#             u2[p1] += u[w1] * Q[w1] * fac[p1]
+#         if (self.d8.p2_OK):
+#             u2[p2] += u[w2] * Q[w2] * fac[p2]
+#         if (self.d8.p3_OK):    
+#             u2[p3] += u[w3] * Q[w3] * fac[p3]
+#         if (self.d8.p4_OK):    
+#             u2[p4] += u[w4] * Q[w4] * fac[p4]
+#         if (self.d8.p5_OK):    
+#             u2[p5] += u[w5] * Q[w5] * fac[p5]
+#         if (self.d8.p6_OK):    
+#             u2[p6] += u[w6] * Q[w6] * fac[p6]
+#         if (self.d8.p7_OK):    
+#             u2[p7] += u[w7] * Q[w7] * fac[p7]
+#         if (self.d8.p8_OK):    
+#             u2[p8] += u[w8] * Q[w8] * fac[p8]
+
+		#--------------------------------
+		# Don't allow u2 to be negative
+		#----------------------------------------------
+		# If uphill flow is allowed, to which pixel ?
+		# This worked when d0 grid was used.
+		#----------------------------------------------
+		u2 = np.maximum(u2, np.float64(0))
+
+		#---------------
+		# Copy u2 to u
+		#---------------
+		self.u[:] = u2
+		### self.u = u2
         
-        #-----------------
-        # Before 2/13/07
-        #----------------------------------------------
-        # Increment flow velocities: inputs - outputs
-        #----------------------------------------------
-        #*** grav = 9.81d * (S_free * d)    ;(USE  deff vs. d ??)
-        #grav = 9.81d * (S_free * deff)     ;(USE  deff vs. d ??)
-        #fric = u*(R + (f * u))
-        #acc  = (grav - fric)           ;(positive or negative)
-        #u2   = u + (dt * acc / deff)   ;(before next part)
-        
-        #------------------------------------------
-        # Start with the interior (nonflux) terms
-        #------------------------------------------
-        # When (n eq 0), should have (d gt 0) and
-        # (u eq 0), so (grav gt 0) and (acc gt 0)
-        # but fric = Atrm = Rtrm = 0.
-        #------------------------------------------
-        # Multiply all scalars first, then grids
-        # Note:  u, d and Q are always grids
-        # Note:  (Pw / wtop) = (A2 / Atop)
-        #------------------------------------------
-        grav = self.g * (self.S_free * self.d)
-        fric = self.f * (self.u ** np.float64(2))
-        #---------------------------------------
-        #####################################################
-        angle  = self.angle
-        width  = self.width
-        d      = self.d
-        u      = self.u
-        Q      = self.Q
-        #---------------------------------------
-        p1     = self.d8.p1   ; w1 = self.d8.w1
-        p2     = self.d8.p2   ; w2 = self.d8.w2
-        p3     = self.d8.p3   ; w3 = self.d8.w3
-        p4     = self.d8.p4   ; w4 = self.d8.w4
-        p5     = self.d8.p5   ; w5 = self.d8.w5
-        p6     = self.d8.p6   ; w6 = self.d8.w6
-        p7     = self.d8.p7   ; w7 = self.d8.w7
-        p8     = self.d8.p8   ; w8 = self.d8.w8
-        #####################################################
-        #---------------------------------------
-        wtop = width + (2 * d * np.tan(angle))    #(top width)
-        Atop = self.d8.ds * wtop                    #(top area)
-##        Atop = ds_chan * wtop                     #(top area)
-        Rtrm = (u * self.R) * (self.da / Atop)      #(da = pixel area)
-        #---------------------------------------
-        Pw = width + (np.float64(2) * d / np.cos(angle))  #(wetted perimeter)
-        A2 = self.d8.ds * Pw                          #(wetted surf. area)
-##        A2 = ds_chan * Pw                           #(wetted surf. area)
-        Atrm = (u * Q) * ((np.float64(1) / Atop) - (np.float64(1) / A2))
-        #---------------------------------------
-        acc = (grav + Atrm - fric - Rtrm)          #(positive or negative)
-        u2  = u + (self.dt * dinv * acc)           #(before next part)
-        #----------------------------------
-        fac = (self.dt / A2) * dinv                #(always grid)
-        uu  = u * (Pw / wtop)                      #(always grid)
-            
-        #-------------------------------------------
-        # Add momentum fluxes from D8 child pixels
-        #-------------------------------------------
-        if (self.d8.p1_OK):    
-            u2[p1] += (u[w1] - uu[p1]) * Q[w1] * fac[p1]
-        if (self.d8.p2_OK):    
-            u2[p2] += (u[w2] - uu[p2]) * Q[w2] * fac[p2]
-        if (self.d8.p3_OK):    
-            u2[p3] += (u[w3] - uu[p3]) * Q[w3] * fac[p3]
-        if (self.d8.p4_OK):    
-            u2[p4] += (u[w4] - uu[p4]) * Q[w4] * fac[p4]
-        if (self.d8.p5_OK):    
-            u2[p5] += (u[w5] - uu[p5]) * Q[w5] * fac[p5]
-        if (self.d8.p6_OK):    
-            u2[p6] += (u[w6] - uu[p6]) * Q[w6] * fac[p6]
-        if (self.d8.p7_OK):    
-            u2[p7] += (u[w7] - uu[p7]) * Q[w7] * fac[p7]
-        if (self.d8.p8_OK):    
-            u2[p8] += (u[w8] - uu[p8]) * Q[w8] * fac[p8]
-        
-        #--------------------------------
-        # Don't allow u2 to be negative
-        #----------------------------------------------
-        # If uphill flow is allowed, to which pixel ?
-        # This worked when d0 grid was used.
-        #----------------------------------------------
-        u2 = np.maximum(u2, np.float64(0))
-        
-        #---------------
-        # Copy u2 to u
-        #---------------
-        self.u = u2
-        
-    #    update_velocity()                       
+    #   update_velocity()                       
     #-------------------------------------------------------------------
 
 

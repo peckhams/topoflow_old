@@ -345,10 +345,24 @@ class ncts_file():
             
         #-------------------------------------
         # Open a new netCDF file for writing
-        #-------------------------------------
+        #--------------------------------------------------------------
+        # Format options are:  NETCDF3_CLASSIC, NETCDF3_64BIT_OFFSET,
+        # NETCDF3_64BIT_DATA, NETCDF4_CLASSIC, and NETCDF4
+        #-----------------------------------------------------------------
+        # NETCDF3_CLASSIC results in MUCH SMALLER filesizes than using
+        # NETCDF4_CLASSIC or NETCDF4.
+        #   NETCDF3_CLASSIC, June_20_67_0D-Q.nc, 5200 bytes
+        #   NETCDF4_CLASSIC, June_20_67_0D-Q.nc, 4217537 Bytes
+        # The 2nd one is 811 TIMES BIGGER, even after setting chunksize.
+        #-----------------------------------------------------------------
+        # For more info see:  http://unidata.github.io/netcdf4-python/
+        #-----------------------------------------------------------------
+        # The "nccopy" utility can convert between these formats.
+        #-----------------------------------------------------------------
         try:
-            ## format = 'NETCDF4'
-            format = 'NETCDF4_CLASSIC'
+            format = 'NETCDF3_CLASSIC'
+            ### format = 'NETCDF4'
+            ### format = 'NETCDF4_CLASSIC'  # (before 2/19/17)
             ncts_unit = nc.Dataset(file_name, mode='w', format=format)
             OK = True
         except:
@@ -397,14 +411,28 @@ class ncts_file():
         # Create variables using var_names
         #-----------------------------------
         # Returns "var" as a PyNIO object
-        #---------------------------------------------------
-        # NB! The 3rd argument here (dimension), must be a
-        #     tuple.  If there is only one dimension, then
-        #     we need to add a comma, as shown.
-        #---------------------------------------------------
-        for k in xrange(len(var_names)):
+        #----------------------------------------------------------
+        # NB! The 3rd argument here (dimension), must be a tuple.
+        # If there is only one dimension, then we need to add a
+        # comma, as shown.
+        #-----------------------------------------------------------
+        # (2/19/17) For "0D" netCDF files created by TF, the files
+        # are much too large with the default chunksize.  By using
+        # chunksizes=[1], filesize for Treynor is reduced by a
+        # factor of 6.9 (4.25 MB vs. 29.38 MB).
+        #-----------------------------------------------------------
+        # But even this is 287.9 times bigger than the TXT file!
+        #-----------------------------------------------------------
+        # Default chunksize in NetCDF 4.4.1.1 = 4MB.
+        #-----------------------------------------------------------
+        n_vars = len( var_names )
+        for k in xrange( n_vars ):
             var_name = var_names[k]
-            var = ncts_unit.createVariable(var_name, dtype_codes[k], ("time",))
+            ## var = ncts_unit.createVariable(var_name, dtype_codes[k], ("time",))
+            ## var = ncts_unit.createVariable(var_name, dtype_codes[k], ("time",), chunksizes=[512])
+            ## var = ncts_unit.createVariable(var_name, dtype_codes[k], ("time",), chunksizes=[1])
+            ## var = ncts_unit.createVariable(var_name, dtype_codes[k], ("time",), chunksizes=[4000])
+            var = ncts_unit.createVariable(var_name, dtype_codes[k], ("time",), chunksizes=[n_vars])
         
             #------------------------------------
             # Create attributes of the variable
@@ -511,7 +539,7 @@ class ncts_file():
         #         return a vector with the scalar value repeated
         #         once for each ID in self.IDs.
         #----------------------------------------------------------
-        
+       
         #---------------------------------
         # Is variable a grid or scalar ?
         #---------------------------------

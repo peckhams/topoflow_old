@@ -153,10 +153,12 @@ def erode_test( cfg_prefix=None, cfg_directory=None,
 #-----------------------------------------------------------------------
 def ref_test():
 
-    #---------------------------------------------------------
+    #----------------------------------------------------------
     # Notes: See "initialize_scalar()" method in BMI.base.py
     #        which is based on this test.
-    #---------------------------------------------------------
+    #        Could also use "id()" to check references.
+    #        Also see: >>> import operator >>> help(operator).
+    #----------------------------------------------------------
     import random
     
     class comp1():
@@ -182,14 +184,31 @@ def ref_test():
             
         #-------------------------------------------------
         def update(self):
+
             #--------------------------
             # These work with Case 1.
             #--------------------------
             # self.x += 1
             # self.x += random.random()
             # self.x *= random.random()
-            self.x.fill( random.random() )
-            
+            # self.x.fill( random.random() )
+            # self.x[True] = random.random()
+            #-------------------------------------------
+            # Can't use exec() in a nested function
+            # unless you include the "globals, locals"
+            #-------------------------------------------
+#             var_name = 'x'
+#             value = random.random()
+#             ## exec('self.' + var_name + '.fill(value)')
+#             ## exec('self.' + var_name + '[True] = value')
+#             exec('self.' + var_name + '.fill(value)') in globals(), locals()
+#             ## exec('self.' + var_name + '[True] = value') in globals(), locals()
+            #-------------------------------------------
+            var_name = 'x'
+            var = getattr( self, var_name )
+            var[True] = random.random()
+            #-------------------------------------------
+
             #----------------------------
             # Doesn't work with Case 1.
             #----------------------------            
@@ -203,7 +222,9 @@ def ref_test():
             #----------------------------------------------------------
             # new_x = np.array( random.random(), dtype='float64' )
             # setattr( self, 'x[:]', new_x )
-            
+            #----------------------------------------------------------
+            # setattr(self, 'x[True]', random.random() )  # ref is broken
+           
             #----------------------------
             # This works with Case 2.
             #----------------------------            
@@ -258,7 +279,18 @@ def ref_test():
     # exec("c2.x = c1.x") in globals(), locals()  # (works)
     # exec("c2.x = c1.x")       # (problem?)
     # exec("c2." + "x = c1.x")  # (problem?)
-    
+
+    #--------------------------
+    # 0d array tests (Case 1)
+    #--------------------------
+#     cmd = 'Command:  self.x += 1'
+#     cmd = 'self.x += random.random()'
+#     cmd = 'self.x *= random.random()'
+#     cmd = 'self.x.fill( random.random() )'
+#     cmd = 'self.x[True] = random.random()'
+#     cmd = "setattr(self, 'x[True]', random.random() )"
+#     print '0d array update test.  Command: ' + cmd
+
     for k in xrange(3):
         c1.update()
         c2.print_x()

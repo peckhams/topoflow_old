@@ -27,9 +27,10 @@ def open_file(var_type, input_file):
     # print 'var_type   =', var_type
     # print 'input_file =', input_file
     
-    #--------------------------------------------
-    # A scalar input value was provided already
-    #--------------------------------------------
+    #----------------------------------------------
+    # Was a scalar input value provided already ?
+    # If so, return file_unit = None.
+    #----------------------------------------------
     file_unit = None
     if (var_type.lower() == 'scalar'):
         return file_unit
@@ -68,8 +69,10 @@ def open_file(var_type, input_file):
 #-------------------------------------------------------------------
 def read_next2(self, var_name, rti, dtype='Float32', factor=1.0):
 
-    exec( 'file_unit = self.' + var_name + '_unit' )
-    exec( 'var_type  = self.' + var_name + '_type' )
+    file_unit = getattr( self, (var_name + '_unit') )
+    var_type  = getattr( self, (var_name + '_type') )
+#     exec( 'file_unit = self.' + var_name + '_unit' )
+#     exec( 'var_type  = self.' + var_name + '_type' )
 
 
     if (var_type.lower() == 'scalar'): 

@@ -1,6 +1,7 @@
 
-# Copyright (c) 2001-2013, Scott D. Peckham
+# Copyright (c) 2001-2017, Scott D. Peckham
 #
+# Feb 2017.     
 # Jan 2012      Fixed "print," bug and fixed "dtype" support.
 # June 2010     Reorganized & streamlined with "exec", etc.
 # October 2009  routines to allow more output file formats)
@@ -83,9 +84,9 @@ def check_netcdf():
         # See:  http://unidata.github.io/netcdf4-python/
         #----------------------------------------------------
         dtype_map = {'float64':'f8', 'float32':'f4',
-                        'int64':'i8', 'int32':'i4',
-                        'int16':'i2', 'int8':'i',
-                        'S|100':'S1'}  # ( ????? )       
+                    'int64':'i8', 'int32':'i4',
+                    'int16':'i2', 'int8':'i',
+                    'S|100':'S1'}  # ( ????? )       
         
         #-------------------------------------------------
         # These one-char codes are used for Nio in PyNIO
@@ -169,6 +170,17 @@ def open_new_gs_file(self, file_name, info=None,
     # but Erode needs other types.
     #--------------------------------------------
     try:
+#         gs_filename = getattr( self, (var_name + '_gs_file') )
+#         setattr( self, (var_name + '_ncgs_file'),
+#                  file_utils.replace_extension( gs_filename, '.nc') )
+#         setattr( self, (var_name + '_ncgs_unit'), ncgs_files.ncgs_file() )
+#         setattr( self, (var_name + '_ncgs_unit'),
+# 
+#         exec( ncgs_unit_str + ".open_new_file(" + ncgs_file_str +
+#               ", self.rti, var_name, long_name, units_name, " +
+#               "dtype=dtype, " +
+#               "time_units=time_units)" )
+        #--------------------------------------------------------------
         exec( ncgs_file_str + "= file_utils.replace_extension(" +
               gs_file_str + ", '.nc')" )
         exec( ncgs_unit_str + "=" + "ncgs_files.ncgs_file()" )

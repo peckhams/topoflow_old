@@ -13,7 +13,10 @@
 #  >>> cProfile.run('topoflow.framework.tests.test_framework.topoflow_test()')  
 #      
 #-----------------------------------------------------------------------      
-## Copyright (c) 2012-2016, Scott D. Peckham
+## Copyright (c) 2012-2017, Scott D. Peckham
+##
+## Feb 2017.  Use of cfunits for unit conversion.  Commented out
+##            due to issues installing UDUNITS2 library on Windows, etc.
 ##
 ## Nov 2016.  Updated to use comp_names vs. port_names throughout.
 ##            EMELI doesn't link components by type, but couples
@@ -778,12 +781,18 @@ class framework():
         #------------------------------
         # Convert units, if necessary
         #------------------------------
-        p_bmi   = self.comp_set[ provider_name ]
-        u_bmi   = self.comp_set[ user_name ]
-        p_units = p_bmi.get_var_units( long_var_name )
-        u_units = u_bmi.get_var_units( long_var_name )
-        if (u_units != p_units):
-            values = Units.conform( values, Units(p_units), Units(u_units) )
+#         p_bmi   = self.comp_set[ provider_name ]
+#         u_bmi   = self.comp_set[ user_name ]
+#         p_units = p_bmi.get_var_units( long_var_name )
+#         u_units = u_bmi.get_var_units( long_var_name )     
+#         if (u_units != p_units):
+# # 			print '#### long_var_name = ' + long_var_name
+# # 			print '#### provider_name = ' + provider_name
+# # 			print '#### user_name     = ' + user_name
+# # 			print '#### p_units       = ' + p_units
+# # 			print '#### u_units       = ' + u_units
+# 			#---------------------------------------------- 
+# 			values = Units.conform( values, Units(p_units), Units(u_units) )
 
         #---------------------------------------------------
         # Embed a reference to long_var_name from the
@@ -1875,6 +1884,7 @@ class framework():
             values = self.time_interpolator.get_values( long_var_name,
                                                         provider_name,
                                                         bmi_time )
+
             #-----------------------------------------
             # Call Unit Converter to convert from
             # provider's units to this user's units.

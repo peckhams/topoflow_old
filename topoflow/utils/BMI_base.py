@@ -1,9 +1,14 @@
 #
-#  We should use "initialize_scalar()" for all scalar assignments.
+#  Should use "initialize_scalar()" for all scalar assignments.
 #  See the Notes for that method.  Search for "np.float64(0".
 #      
-#  Copyright (c) 2009-2016, Scott D. Peckham
+#  Copyright (c) 2009-2017, Scott D. Peckham
 #
+#  Feb 2017. Added get_var_itemsize(), get_var_nbytes().
+#            Updated get_grid_shape(), get_grid_spacing() and
+#              get_grid_origin().
+#            Replaced all calls to exec() with calls to new methods:
+#              getattr_TF() and setattr_TF().
 #  Nov 2016. Added new BMI version 2 functions.
 #            In get_grid_shape(),   ordering is now [nz, ny, nx].
 #            In get_grid_spacing(), ordering is now [dz, dy, dx].
@@ -78,10 +83,10 @@
 #      get_var_name()                     # (override;  Not part of BMI)
 #      get_var_units()                    # (override)
 #      get_var_rank()                     ### deprecated in BMI 2; see get_grid_rank()
-#      get_var_grid()                     ### BMI version 2
+#      get_var_grid()                     # BMI version 2, not implemented yet.
 #      get_var_type()
-#      get_var_nbytes()                   ### BMI version 2
-#      get_var_itemsize()                 ### BMI version 2
+#      get_var_nbytes()                   # BMI version 2, ready.
+#      get_var_itemsize()                 # BMI version 2, ready.
 #      get_var_state()  or "mode()"       ############### "static" or "dynamic"  ###########
 #      -------------------------
 #      get_values()                       # (9/22/14)
@@ -125,6 +130,8 @@
 #      print_traceback()             # (10/10/10)
 #      -------------------------
 #      read_path_info()              # (2/12/17)
+#      getattr_TF()                  # (2/18/17)
+#      setattr_TF()                  # (2/18/17)
 #      read_config_file()            # (5/17/10, 5/9/11)
 #      initialize_config_vars()      # (5/6/10)
 #      set_computed_input_vars       # (5/6/10) over-ridden by each comp.
@@ -270,24 +277,28 @@ class BMI_component:
     #-------------------------------------------------------------------
     def get_grid_shape(self, long_var_name):
 
+        #------------------------------------------------- 
+        # Note:  This does not assume that all var_names
+        #        share the same grid (scalars, etc.)
+        #-------------------------------------------------
+        var = getattr( self, var_name )
+        try:
+           shape = np.array( var.shape )
+        except:
+           # If not ndarray, must be a simple scalar.
+           shape = np.array( (1,) )
+
         #-------------------------------------------------------
         # Note: This assumes same grid info for all var_names.
-        #-------------------------------------------------------
         # Note: Ordering must be [nz, ny, nx].
         #-------------------------------------------------------
-        if not(hasattr( self, 'grid_info' )):
-            self.read_grid_info()
-
-        info  = self.grid_info
-        shape = np.array( [0, info.ny, info.nx] )
-        ## shape = np.array( [info.nx, info.ny, 0] )
+#         if not(hasattr( self, 'grid_info' )):
+#             self.read_grid_info()
+# 
+#         info  = self.grid_info
+#         shape = np.array( [0, info.ny, info.nx] )
+#         ## shape = np.array( [info.nx, info.ny, 0] )
  
-        #---------------------------------------------------------  
-        # Note:  This should also work, and does not assume that
-        #        all var_names share the same grid.
-        #---------------------------------------------------------
-        ## exec( "shape = np.array(np.shape(self." + var_name + "))" )
-     
         return shape
     
     #   get_grid_shape()
@@ -295,7 +306,8 @@ class BMI_component:
     def get_grid_spacing(self, long_var_name):
 
         #-------------------------------------------------------
-        # Note: This assumes same grid info for all var_names.
+        # Note: This assumes the same grid info as DEM for
+        #       every var_name that has rank = 2.
         #-------------------------------------------------------
         # Note: Ordering must be [dz, dy, dx].
         #-------------------------------------------------------
@@ -303,33 +315,41 @@ class BMI_component:
         #       arcseconds, if (info.pixel_geom == 0).  In
         #       that case, xres (or dx) will vary with latitude
         #       and this method isn't really appropriate.
-        #--------------------------------------------------------
-        if not(hasattr( self, 'grid_info' )):
-            self.read_grid_info()
+        #-------------------------------------------------------
+        rank = self.get_var_rank( long_var_name )
+        if (rank == 2):
+			if not(hasattr( self, 'grid_info' )):
+				self.read_grid_info()
 
-        info = self.grid_info
-        spacing = np.array( [0, info.yres, info.xres] )
-        ## spacing = np.array( [info.xres, info.yres, 0] )
-        
-        return spacing
+			info = self.grid_info
+			spacing = np.array( [0, info.yres, info.xres] )
+			## spacing = np.array( [info.xres, info.yres, 0] )
+			return spacing
+        else:
+            return None
 
     #   get_grid_spacing()
     #-------------------------------------------------------------------
     def get_grid_origin(self, long_var_name):
 
-        #-------------------------------------------------------
-        # Note: This assumes same grid info for all var_names.
-        #-------------------------------------------------------
+        #---------------------------------------------------
+        # Note: This assumes the same grid info as DEM for
+        #       every var_name that has rank = 2.
+        #---------------------------------------------------
         # Note: Ordering must be [z0, y0, x0].
-        #-------------------------------------------------------        
-        if not(hasattr( self, 'grid_info' )):
-            self.read_grid_info()
+        #--------------------------------------------------- 
+        rank = self.get_var_rank( long_var_name )
+        if (rank == 2):       
+			if not(hasattr( self, 'grid_info' )):
+				self.read_grid_info()
 
-        info = self.grid_info
-        corner = np.array( [0, info.y_south_edge, info.x_west_edge] )
-        ## corner = np.array( [info.x_west_edge, info.y_south_edge, 0] )
-        
-        return corner
+			info = self.grid_info
+			corner = np.array( [0, info.y_south_edge, info.x_west_edge] )
+			## corner = np.array( [info.x_west_edge, info.y_south_edge, 0] )
+		
+			return corner
+        else:
+            return None
 
     #   get_grid_origin()
     #-------------------------------------------------------------------
@@ -410,6 +430,16 @@ class BMI_component:
         #------------------------------------------------
         self.da = pixels.get_da( info )
 
+        #------------------------------------------------
+        # Compute these for use by Diversions component
+        #------------------------------------------------
+        if (info.pixel_geom == 1):
+            self.dx = info.xres
+            self.dy = info.yres
+        else:
+            self.dx = (info.xres / 3600)  # [arcsec -> degree]
+            self.dy = (info.yres / 3600)
+
     #   read_grid_info()
     #-------------------------------------------------------------------
     #-------------------------------------------------------------------
@@ -446,132 +476,10 @@ class BMI_component:
         #------------------------------------------------------
         # Define this map just once in "__init__()"  ??
         #-------------------------------------------------
-        name_map = {
-            'model__time_step':'dt' }
+        name_map = { 'model__time_step':'dt' }
 
         return name_map[ long_var_name ]
-    
-##            #--------------------------
-##            # Shared erode model vars
-##            #--------------------------
-##            'derivative_wrt_time_of_land_surface_elevation':'dz_dt',
-##            'land_surface_d8_contributing_area':'A',
-##            'land_surface_d8_slope':'S',
-##            'land_surface_elevation':'DEM',
-##            
-##            #--------------------------
-##            # Shared meteorology vars
-##            #--------------------------
-##            'air_density':'rho_air',
-##            'air_relative_humidity':'RH',
-##            'air_temperature':'T_air',
-##            'air_thermal_capacity':'Cp_air',   # (CF uses thermal vs. heat, seems better)
-##            'air_turbulent_boundary_layer_roughness_length':'z0',
-##            'basin_cumulative_lwe_precipitated_water_volume':'vol_P',
-##            'land_surface_air_pressure':'p0',   # (or just "surface_air_pressure" ??)
-##            'land_surface_net_downward_energy_flux':'Q_sum',  # (not just SW+LW)
-##            'land_surface_net_downward_longwave_flux':'Qn_LW',   # (clear-sky in metadata)
-##            'land_surface_net_downward_shortwave_flux':'Qn_SW',
-##            'land_surface_net_latent_heat_flux':'Qe',   ##########
-##            'land_surface_temperature':'T_surf',
-##            'lwe_max_precipitation_rate':'P_max',
-##            'lwe_precipitation_rate':'P',
-##            'water_density':'rho_H2O',
-##            'wind_reference_height':'z',
-##            'wind_reference_height_speed':'uz',  ########### ???
-##            
-##            #----------------------
-##            # Shared channel vars
-##            #----------------------
-##            'basin_cumulative_runoff_water_volume':'vol_R',  ## (runoff vs. excess_rainrate ??)
-##            'basin_outlet_water_discharge':'Q_outlet',       ####
-##            'basin_outlet_water_mean_depth':'d_outlet',      ####           
-##            'basin_outlet_water_mean_speed':'u_outlet',      ####
-##            'channel_bed_max_roughness_length':'z0val_max',
-##                ## 'max_of_channel_bed_roughness_length':'z0val_max',  #("Function" operator)
-##            'channel_bed_max_manning_roughness_parameter':'nval_max',
-##            'channel_bed_min_roughness_length':'z0val_min',
-##            'channel_bed_min_manning_roughness_parameter':'nval_min',
-##            'channel_x-section_hydraulic_radius':'Rh',
-##            'channel_outgoing_sediment_discharge':'Qs',  #### check if "mass_flux", etc.
-##            'channel_outgoing_water_discharge':'Q',
-##            'channel_outgoing_peak_water_discharge':'Q_peak',
-##            'channel_outgoing_peak_water_discharge_time':'T_peak',   ### (time as "quantity suffix")          
-##                 ###'channel_incoming_water_discharge'   (if we need it)
-##            'channel_reach_total_water_volume':'vol',
-##                 ## channel_water_in_cell_volume
-##            'channel_water_mean_depth':'d',   # (in_cell_mean_depth ??)
-##                 ## 'mean_of_channel_water_depth':'d',  (mean => section_mean)
-##            'channel_water_mean_speed':'u',
-##                 ## 'mean_of_channel_water_speed':'d',
-##            'channel_water_peak_mean_depth':'d_peak',
-##            'channel_water_peak_mean_depth_time':'Td_peak',
-##            'channel_water_peak_mean_speed':'u_peak',
-##            'channel_water_peak_mean_speed_time':'Tu_peak',
-##            
-##            #---------------------------
-##            # Shared infiltration vars
-##            #---------------------------
-##            'basin_cumulative_infiltrated_water_volume':'vol_IN',
-##            'basin_cumulative_saturated_zone_infiltrated_water_volume':'vol_Rg',   ########
-##            'land_surface_water_infiltration_rate':'IN',   ### (downward_flow_rate ? remove "land"?)
-##            'subsurface_water_downward_flow_rate':'v',
-##                ## 'ground_water_downward_flow_rate':'v',  ######
-##            'water_table_recharge_rate':'Rg',  #####
-##                ## 'saturated_zone_infiltration_rate':'Rg',
-##            
-##            #-----------------------------
-##            # Shared saturated-zone vars
-##            #-----------------------------
-##            'basin_cumulative_subsurface_to_surface_seeped_water_volume':'vol_GW',
-##            'ground_water_table_elevation':'h_table',    # (insert the word "surface" after table?)
-##            'land_surface_elevation':'elev',  ######
-##            'soil_layer_0_porosity':'qs[0]',
-##            'soil_layer_0_thickness':'th[0,:,:]',
-##            'soil_layer_0_saturated_thickness':'y[0,:,:]',            
-##            'soil_layer_1_porosity':'qs[1]',
-##            'soil_layer_1_thickness':'th[1,:,:]',
-##            'soil_layer_1_saturated_thickness':'y[1,:,:]',            
-##            'soil_layer_2_porosity':'qs[2]',
-##            'soil_layer_2_thickness':'th[2,:,:]',
-##            'soil_layer_2_saturated_thickness':'y[2,:,:]',
-##            'soil_layer_porosity':'qs',
-##            'soil_layer_thickness':'th',
-##            'soil_layer_saturated_thickness':'y',  ######### (all soil layers;  how to specify an index?)
-##            'subsurface_to_surface_water_seepage_rate':'GW',   ################
-##                 ### land_surface_water_baseflow_seepage_rate
-##                 ### subsurface_water_seepage_rate
-##            'surface_soil_layer_porosity':'qs[0]',             # (same as soil_layer_0_porosity above)  ####
-##            'surface_soil_layer_saturated_thickness':'y[0,:,:]',  # (same as soil_layer_0_wetted_thickness above)  ####
-##            
-##            #--------------------------
-##            # Shared evaporation vars
-##            #--------------------------
-##            'basin_cumulative_evaporated_water_volume':'vol_ET',    ## (use "total" vs. "cumulative" ??)
-##            'land_surface_water_evaporation_rate':'ET',
-##            'land_surface_water_potential_evaporation_rate':'PET',  #### (not used)
-##            
-##            #-------------------
-##            # Shared snow vars
-##            #-------------------                   
-##            'basin_cumulative_snow_meltwater_volume':'vol_SM',  # (meltwater better than melted_water)
-##            'surface_snow_density':'rho_snow',
-##            'surface_snow_depth':'h_snow',
-##            'surface_snow_melt_rate':'SM',
-##            'surface_swe_depth':'h_swe',
-##            
-##            #------------------
-##            # Shared ice vars
-##            #------------------
-##            'basin_cumulative_ice_meltwater_volume':'vol_MR',
-##            'surface_ice_density':'rho_ice', ########
-##            'surface_ice_depth':'H',         ########  (change to "h_ice" ???)
-##            'surface_ice_melt_rate':'MR',    ########  (land_ice_basal_melt_rate ??)          
-##            #--------------------------------
-##            'time_step_size':'dt'}
-##
-##        return name_map[ long_var_name ]
-        
+
     #   get_var_name()
     #-------------------------------------------------------------------
     def get_var_units(self, long_var_name):
@@ -603,67 +511,79 @@ class BMI_component:
     #-------------------------------------------------------------------
     def get_var_rank(self, long_var_name):
 
-        var_name = self.get_var_name( long_var_name )  # (2/20/12)
-        
-        exec("rank = np.ndim(self." + var_name + ")")
-
-        ### print '######## rank(' + var_name + ') =', rank
-        
-        return rank
-    
-        ## return np.int32( rank )  ###### (need this ??)
+        #----------------------------------------------
+        # Note:  See Note for get_var_type() method.
+        #----------------------------------------------
+        # Can always use np.ndim(), but can only
+        # use var.ndim if var has type ndarray.
+        # This should now work if var is ord. scalar.      
+        #----------------------------------------------
+        var_name = self.get_var_name( long_var_name )
+        try:
+            var = getattr( self, var_name )
+            return var.ndim
+        except:
+            return 0
 
     #   get_var_rank()
     #-------------------------------------------------------------------
     def get_var_type(self, long_var_name):
 
-        #--------------------------------------------------------
-        # Notes: I think we should use the same type names that
-        #        NumPy "ndarrays" store as "dtype" because they
-        #        are unambiguous.  We assume here that all vars
-        #        are NumPy types with dtype defined. e.g.
-        #        uint8, int16, int32, float32, float64, etc.
-        #--------------------------------------------------------
-        var_name = self.get_var_name( long_var_name )  # (2/20/12)
-
+        #--------------------------------------------------------------
+        # Note:  This version is significantly faster than using
+        #        exec() as in the method below.  While get_var_type()
+        #        is seldom used within a time loop, it was tried
+        #        inside time_interpolation.py on 2/16/17 in an
+        #        effort to skip time interpolation for integer types.
+        #        Using this version, vs. the one below, reduced the
+        #        runtime with that experiment from 10.7 back to the
+        #        original runtime of 7.8 secs for Treynor test case.
+        #--------------------------------------------------------------
+        # Note:  numpy.dtype is not a string, so convert it.
+        #--------------------------------------------------------------
         try:
-            exec( "dtype = self." + var_name + ".dtype" )
+			var_name = self.get_var_name( long_var_name )
+			var = getattr( self, var_name )
+			return str( var.dtype )
         except:
-            dtype = 'unknown'
-        return str(dtype)       # (need str() here)
+            return 'unknown'
 
-        #----------------------------------------------------------------
-##        # This should also work.
-##        exec( "HAS_DTYPE = hasattr( self." + var_name + ", 'dtype')" )
-##        if (HAS_DTYPE):
-##            exec( "dtype = self." + var_name + ".dtype" )
-##        else:
-##            dtype = 'unknown'   ###############
-##        return dtype
-    
+        #--------------------------------------------
+        # Original, slower method that uses exec().
+        #--------------------------------------------
+#         try:
+#             exec( "dtype = self." + var_name + ".dtype" )
+#         except:
+#             dtype = 'unknown'
+#         return str(dtype)       # (need str() here)
+  
     #   get_var_type()
     #-------------------------------------------------------------------
     def get_var_itemsize(self, long_var_name):
 
-        var_name = self.get_var_name( long_var_name )  # (2/20/12)
-
+        #---------------------------------------------
+        # Note:  See Note for get_var_type() method.
+        #---------------------------------------------
         try:
-            exec( "itemsize = self." + var_name + ".itemsize" )
+            var_name = self.get_var_name( long_var_name )
+            var = getattr( self, var_name )
+            return var.itemsize
         except:
-            itemsize = -1
-        return itemsize
+            return -1
 
     #   get_var_itemsize()
     #-------------------------------------------------------------------
     def get_var_nbytes(self, long_var_name):
 
-        var_name = self.get_var_name( long_var_name )
-
+        #---------------------------------------------
+        # Note:  See Note for get_var_type() method.
+        #---------------------------------------------
         try:
-            exec( "nbytes = self." + var_name + ".nbytes" )
+            var_name = self.get_var_name( long_var_name )
+            var = getattr( self, var_name )
+            return var.nbytes
         except:
-            nbytes = -1
-        return nbytes
+            -1
 
     #   get_var_nbytes()
     #-------------------------------------------------------------------     
@@ -673,16 +593,10 @@ class BMI_component:
         # Note: The value returned by getattr() will have rank
         #       and data type that goes with long_var_name.
         #------------------------------------------------------- 
-        var_name = self.get_var_name( long_var_name )
-
         try:
+            var_name = self.get_var_name( long_var_name )
             return getattr(self, var_name)   ## (2/19/13)
-
-            #--------------------------------------------------            
-            # Return 0 as default if attribute doesn't exist.
-            #--------------------------------------------------
-            # return getattr(self, var_name, 0)
-            
+         
             #-----------------------------------
             # Using exec works, but is slower.
             #-----------------------------------
@@ -1475,9 +1389,52 @@ class BMI_component:
                 value    = words[1].strip()
                 var_type = words[2].strip()  # (e.g. 'double', 'int', 'string', etc.)
 
-                exec( "self." + var_name + " = value" )
+                setattr(self, var_name, value)
+                ##### exec( "self." + var_name + " = value" )
+
+        #---------------------
+        # Report for testing
+        #---------------------
+#         print '#### in_directory  = ' + self.in_directory
+#         print '#### out_directory = ' + self.out_directory
+#         print '#### site_prefix   = ' + self.site_prefix
+#         print '#### case_prefix   = ' + self.case_prefix
 
     #   read_path_info()
+    #-------------------------------------------------------------------
+    def getattr_TF(self, var_name, index):
+
+        #-----------------------------------------------------
+        # Wrote this to avoid use of (slower) exec(), as in:
+        #    exec( "var = self." + var_name )
+        # Sometimes var_name had an index (e.g. "Ks[0]")
+        #-----------------------------------------------------
+		if (index != -1):
+			var = getattr(self, var_name )
+			return var[ index ]
+		else:
+			return getattr(self, var_name)
+
+    #   getattr_TF()
+    #-------------------------------------------------------------------
+    def setattr_TF(self, var_name, value, index):
+
+        #-----------------------------------------------------
+        # Wrote this to avoid use of (slower) exec(), as in:
+        #    exec( "self." + var_name + " = value")
+        # Sometimes var_name had an index (e.g. "Ks[0]")
+		#-------------------------------------------------------
+		# NOTE: setattr( self, 'a[0]', 3)     -- DOESN'T WORK
+		#       g = getattr( self, 'a[0]' )   -- DOES WORK.
+		#       exec("self.a[0] = 3")         -- DOES WORK.
+		#-------------------------------------------------------
+		if (index != -1):
+			var = getattr( self, var_name )
+			var[ index ] = value
+		else: 
+			setattr(self, var_name, value)
+
+    #   setattr_TF()
     #-------------------------------------------------------------------
     def read_config_file(self):
 
@@ -1556,57 +1513,75 @@ class BMI_component:
                 # For debugging
                 # print 'var_name, value, var_type =', var_name, value, var_type
 
-                #------------------------------------------------
+                #################################################
                 # For layered variables (e.g. soil layers) call
                 # initialize_layered_vars().  (11/15/16)
-                #------------------------------------------------
+                #################################################
                 if (var_name == 'n_layers'):
                     self.n_layers = np.int32( value )  # (will be repeated below)
                     self.initialize_layer_vars()
 
-                #----------------------------------------------
+                #------------------------------------------------
                 # Does var_name end with an array subscript ?
                 # This is the case for soil layer variables.
-                #----------------------------------------------
+                # (e.g. Ks[0], Ks_type[0] in infil_green_ampt.)
+                #------------------------------------------------
                 p1 = var_name.rfind('[')
                 p2 = var_name.rfind(']')
                 if (p1 > 0) and (p2 > p1):
+                    SUBSCRIPT = True
                     var_base  = var_name[:p1]
                     subscript = var_name[p1:p2+1]
-                    var_name_file_str = var_base + '_file' + subscript
+                    index     = np.int32( subscript[1:-1] )   ## (2/17/17)
                 else:
-                    var_base = var_name
-                    var_name_file_str = var_name + '_file'
+                    SUBSCRIPT = False
+                    var_base  = var_name
+                    index     = -1    ## (2/17/17)
+                var_name_file_str = var_base + '_file'  ## (2/18/17)
 
                 #----------------------------------------------------------
                 # If previous variable ended with "_type", then assume
                 # its purpose was to set the data type for this variable.
                 #----------------------------------------------------------
+                # If var is a scalar, it will not be read from a file but
+                # still need to construct a null string filename for it.
+                # If var isn't a scalar, it will be read from a file, but
+                # can still try to initialize it here.
+                #----------------------------------------------------------
+                # Note: Some var names end with a subscript, e.g. "[0]".
+                #       While initialize_layer_vars() was called above,
+                #       setattr() can't handle the subscript, so we
+                #       need to use the method shown here.
+                #----------------------------------------------------------
                 if (last_var_name.startswith(var_base + '_type')):
-                    exec( "type_choice = self." + last_var_name )
+                    type_choice = self.getattr_TF((var_base + '_type'), index)
+
                     if (type_choice.lower() == 'scalar'):
-                        #--------------------
-                        # For Scalar option
-                        #--------------------
-                        exec( "self." + var_name_file_str + " = ''")
+						#----------------------------------------------
+						# Scalar var read from CFG will be set below.
+						# Set "var_file = ''" here.
+						#----------------------------------------------
+                        self.setattr_TF( (var_base + '_file'), '', index )
                         READ_SCALAR = True
                     elif (type_choice.lower() == 'time_series'):
                         #------------------------------------------
-                        # For Time Series option (read from file)
-                        #------------------------------------------
+                        # Time Series var will be read from file.
                         # dtype will default to 'float64'
-                        ## exec( 'self.' + var_name + '= self.initialize_scalar(0)' )
-
-                        exec( "self." + var_name + " = 0.0")  # (just a placeholder)
+                        # Initialize with a placeholder here.
+                        #------------------------------------------
+                        placeholder = self.initialize_scalar(0)
+                        self.setattr_TF( var_base, placeholder, index )
                         READ_FILENAME = True
                     else:
                         #--------------------------------------------------------
-                        # For Grid & Grid Sequence options (read from file)
+                        # Grid or Grid Sequence will be read from input file.
                         # Can't call initialize_grid(), don't know nx & ny yet.
+                        # Initialize with a scalar placeholder here.
+                        # Can't just do next line, because of possible index:
+                        #    setattr(self, var_name, 0.0)
                         #--------------------------------------------------------
-                        ### exec( 'self.' + var_name + '= self.initialize_grid(0)' )
-
-                        exec( "self." + var_name + " = 0.0")  # (just a placeholder)
+                        placeholder = self.initialize_scalar(0)
+                        self.setattr_TF( var_base, placeholder, index )
                         READ_FILENAME = True
 
                 #-----------------------------------           
@@ -1619,8 +1594,8 @@ class BMI_component:
                     # Save value of a double or float scalar
                     #-----------------------------------------
                     value = np.float64( value )   # (convert string to float64)
-                    exec( 'self.' + var_name + '= self.initialize_scalar( value )' )
-                    ### exec( "self." + var_name + " = value" )
+                    val2  = self.initialize_scalar( value )
+                    self.setattr_TF( var_base, val2, index )
 
                     #------------------------
                     # For testing (5/18/12)
@@ -1628,8 +1603,8 @@ class BMI_component:
 #                     print 'var_name =', var_name
 #                     print 'var_type =', var_type
 #                     print 'value    =', value
-#                     exec( 'dtype = self.' + var_name + '.dtype' )
-#                     print 'dtype    =', dtype
+#                     var = getattr( self, var_name )
+#                     print 'dtype    =', var.dtype
 #                     print '---------------------------------'
 
                 elif (var_type in ['long', 'int']):
@@ -1637,9 +1612,8 @@ class BMI_component:
                     # Save value of a short or long integer
                     #----------------------------------------
                     value = np.int32( value )  # (convert string to int32)
-                    dtype = 'int32'
-                    exec( 'self.' + var_name + '= self.initialize_scalar( value, dtype=dtype )' )
-                    ### exec( "self." + var_name + " = value" )
+                    val2  = self.initialize_scalar( value, dtype='int32' )
+                    self.setattr_TF( var_base, val2, index )
 
                 elif (var_type == 'string'):
                     #-----------------------------------------
@@ -1649,8 +1623,6 @@ class BMI_component:
                     # expand it here.  Need to use original "var_name"
                     # without appending "_file" until assignment.
                     #----------------------------------------------------
-                    # case_str = '<case_prefix>'
-                    # site_str = '<site_prefix>'
                     case_str = '[case_prefix]'
                     site_str = '[site_prefix]'
                     #---------------------------------
@@ -1666,28 +1638,53 @@ class BMI_component:
                     # If var_name starts with "SAVE_" and value is
                     # Yes or No, then convert to Python boolean.
                     #-----------------------------------------------
+                    SAVE_FLAG = False
                     if (var_name[:5] == 'SAVE_'):
-                        VALUE_SET = True
+                        SAVE_FLAG = True
                         if (s.lower() == 'yes'):
-                            exec( "self." + var_name + " = True" )
+                            setattr(self, var_name, True)
                         elif (s.lower() == 'no'):
-                            exec( "self." + var_name + " = False" )
+                            setattr(self, var_name, False)
                         else:
-                            VALUE_SET = False
-                    else:
-                        VALUE_SET = False
-                    #----------------------------------------------------------
-                    if not(VALUE_SET):
+                            ## SAVE_FLAG = False  ## (original)
+                            setattr(self, var_name, False)  ## (2/16/17)
+
+                    #--------------------------------------------
+                    # Process any string that isn't a SAVE_FLAG
+                    #--------------------------------------------
+                    if not(SAVE_FLAG):
                         if (READ_FILENAME):
-                            exec( "self." + var_name_file_str + " = value_str" )
+                            ## self.setattr_TF( self, var_name_file_str, value_str, index )
+                            self.setattr_TF( (var_base + '_file'), value_str, index )
                         elif (READ_SCALAR):
-                            ##############################################################
-                            # NOTE!  var_type = 'string', so not sure why this is here.
-                            ##############################################################
-                            ## exec( "self." + var_name + " = np.float64(value_str)")
-                            exec( "self." + var_name + " = value_str" ) ## (11/15/16)
+                            #-------------------------------------------------------
+                            # Variable must be a string and a scalar; perhaps some
+                            # kind of toggle.  It is also possible it is a number,
+                            # but was mis-tagged in the CFG file as "string".
+                            #-------------------------------------------------------
+                            self.setattr_TF( var_base, value_str, index )
                         else:
-                            exec( "self." + var_name + " = value_str" )
+                            #-------------------------------------------
+                            # A large number of variables end up here, 
+                            # e.g. all var_names ending in "_type",
+                            # and all output filenames.
+                            #-------------------------------------------------------
+                            # NOTE: For "layer vars" where var_name ends in a
+                            # subscript, we already called initialize_layer_vars()
+                            # above when we read "n_layers".
+                            #-------------------------------------------------------
+                            self.setattr_TF( var_base, value_str, index )
+                
+                    #------------------------
+                    # For testing (2/16/17)
+                    #------------------------
+#                     print 'var_name =', var_name
+#                     print 'var_type =', var_type
+#                     print 'value    =', value
+#                     var = getattr( self, var_name )
+#                     print 'dtype    =', var.dtype
+#                     print '---------------------------------'
+
                 else:
                     print 'ERROR in BMI_base.read_config_file().'
                     print '   Unsupported data type = ' + var_type + '.'
@@ -1699,8 +1696,6 @@ class BMI_component:
     #-------------------------------------------------------------------
     def initialize_config_vars(self):
    
-        # print '## At start of initialize_config_vars(): cfg_prefix =', self.cfg_prefix
-
         #-------------------------------------------------------------
         # Note: EMELI calls bmi.initialize() with full cfg_file, so
         #       at this point case_prefix is not known. So this part
@@ -1847,19 +1842,20 @@ class BMI_component:
 
         #-----------------------------------------------------------
         # (11/14/11) Call from a component's open_input_file() 
-        # method something like this:
+        #  method something like this:
         #   self.prepend_directory( ['slope_file', 'width_file'] ) 
         #-----------------------------------------------------------
+        #  e.g. self.slope_file = self.in_directory + self.slope_file
+        #-----------------------------------------------------------
         if (INPUT):
-            dir_part = " = self.in_directory + "
+            dir_str = self.in_directory
         else:
-            dir_part = " = self.out_directory + "
+            dir_str = self.out_directory
 
         for file_str in file_list:
-            self_part = "self." + file_str
-            exec( 'filename = ' + self_part )
+            filename = getattr(self, file_str, '')
             if (filename != ''):
-                exec( self_part + dir_part + self_part ) 
+                setattr(self, file_str, dir_str + filename)
 
     #   prepend_directory
     #-------------------------------------------------------------------
@@ -1899,7 +1895,12 @@ class BMI_component:
             self.cfg_directory = cfg_directory
             if (self.in_directory[0] == '.'):
                 self.in_directory = self.cfg_directory
-                
+            #--------------------------------------
+            # Added this forgotten bit on 2/14/17
+            #--------------------------------------
+            if (self.out_directory[0] == '.'):
+                self.out_directory = self.cfg_directory
+               
         #------------------------------------------------------
         # Expand path abbreviations: "." and "..", but NOT
         # "~" (11/5/13)
@@ -2034,10 +2035,26 @@ class BMI_component:
         # Note:  Vars must be initialized first, e.g. using either
         #        initialize_scalar() or initialize_grid() in BMI_base.
         #---------------------------------------------------------------
+        # See:  topoflow.framework.tests.test_framework.ref_test().
+        #---------------------------------------------------------------
         if (value is None):
             return
 
+        #------------------------------------------------------------
+        # Note:  Can only use the "is_scalar" method here if the
+        #        variable for var_name has already been initialized.
+        #        This should have happened in initialize() method.
+        #------------------------------------------------------------
+        # Next line may be safer, but it will fail if a scalar
+        # value is assigned to a grid.
+        #    if (np.ndim( value ) == 0):
+        #------------------------------------------------------------
+#         var_type = getattr( self, var_name + '_type' )
+#         print '#### var_name = ' + var_name
+#         print '#### var_type = ' + var_type
+
         if (self.is_scalar( var_name )):
+
             #----------------------------------------------------
             # Update the value of a scalar without breaking the
             # reference so other components will see it change.
@@ -2045,13 +2062,24 @@ class BMI_component:
             # See Notes for initialize_scalar() above.
             # This is needed for type "Time Series".
             #----------------------------------------------------
-            exec( 'self.' + var_name + '.fill( value )')
+            # np.ndarray.fill( var, value ) also works
+            #---------------------------------------------------------------
+            # setattr(self, var_name + '[True]', value)    -- DOESN'T WORK
+            # exec( 'self.' + var_name + '.fill( value )') -- WORKS
+            #--------------------------------------------------------------
+            var = getattr( self, var_name )
+            var[True] = value
+            ## var.fill( value )   # (also works)
         else:
             #----------------------------------------------
             # Update the value of a grid (2D, 3D) without
             # breaking the reference (or making a copy).
-            #----------------------------------------------
-            exec( 'self.' + var_name + '[:] = value')
+            #-----------------------------------------------------------
+            # setattr( self, var_name + '[:]', value )  -- DOESN'T WORK
+            # exec( 'self.' + var_name + '[:] = value') -- WORKS
+            #-----------------------------------------------------------
+            var = getattr( self, var_name )
+            var[:] = value
 
     #   update_var()
     #-------------------------------------------------------------------
@@ -2061,48 +2089,62 @@ class BMI_component:
 
         #------------------------------------------------
         # NB!  Case in var_name must be an exact match.
-        #-------------------------------------------------      
-        exec("n = np.ndim(self." + var_name + ")")       
+        #      Can always use np.ndim(), but can only
+        #      use var.ndim if var has type ndarray.
+        #------------------------------------------------
+        # Don't do this:
+        # n = getattr(self, var_name + '.ndim')
+        #    or this
+        # exec("n = np.ndim(self." + var_name + ")")   
+        #------------------------------------------------
+        try:
+            var = getattr( self, var_name )
+            n   = var.ndim
+        except:
+            n = 0  
         return (n == 0)
-    
+
     #   is_scalar()
     #-------------------------------------------------------------------
     def is_vector(self, var_name):
 
         #------------------------------------------------
         # NB!  Case in var_name must be an exact match.
+        #      Can always use np.ndim(), but can only
+        #      use var.ndim if var has type ndarray.
+        #------------------------------------------------ 
+        # Don't do this:
+        # n = getattr(self, var_name + '.ndim')
+        #    or this
+        # exec("n = np.ndim(self." + var_name + ")")   
         #------------------------------------------------     
-        exec("n = np.ndim(self." + var_name + ")")       
+        try:
+            ### n = getattr(self, var_name + '.ndim')
+            var = getattr( self, var_name )
+            n   = var.ndim
+        except:
+            n = 0  
         return (n == 1)
-    
+   
     #   is_vector()
     #-------------------------------------------------------------------
     def is_grid(self, var_name):
 
         #------------------------------------------------
         # NB!  Case in var_name must be an exact match.
+        #      Can always use np.ndim(), but can only
+        #      use var.ndim if var has type ndarray.
         #------------------------------------------------ 
-
-        #-------------------------------------------------
-        # (9/29/09) This might be causing a problem with
-        # the c++ bindings for this CCA component.
-        #-------------------------------------------------         
-##        exec("type_str = str(type(self." + var_name + "))")
-##        p1 = type_str.find("ndarray")
-##        p2 = type_str.find("float")
-##        if (p1 == -1) and (p2 == -1):
-##            print 'ERROR: type(' + var_name + ') =' + type_str
-##            return False
-        #-------------------------------------------------
-        # (9/29/09) This might be causing a problem with
-        # the c++ bindings for this CCA component.
-        #-------------------------------------------------        
-##        if ("ndarray" not in type_str) and \
-##           ("float" not in type_str):
-##            print 'ERROR: type(' + var_name + ') =' + type_str
-##            return False
-        #-------------------------------------------------------        
-        exec("n = np.ndim(self." + var_name + ")")
+        # Don't do this:
+        # n = getattr(self, var_name + '.ndim')
+        #    or this
+        # exec("n = np.ndim(self." + var_name + ")")   
+        #------------------------------------------------
+        try:
+            var = getattr( self, var_name )
+            n   = var.ndim
+        except:
+            n = 0  
         return (n == 2)
 
     #   is_grid()

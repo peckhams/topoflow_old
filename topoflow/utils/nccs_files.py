@@ -270,10 +270,24 @@ class nccs_file():
         
         #-------------------------------------
         # Open a new netCDF file for writing
-        #-------------------------------------   
+        #-----------------------------------------------------------------
+        # Format options are:  NETCDF3_CLASSIC, NETCDF3_64BIT_OFFSET,
+        # NETCDF3_64BIT_DATA, NETCDF4_CLASSIC, and NETCDF4
+        #-----------------------------------------------------------------
+        # NETCDF3_CLASSIC results in MUCH SMALLER filesizes than using
+        # NETCDF4_CLASSIC or NETCDF4.
+        #   NETCDF3_CLASSIC, June_20_67_2D-Q.nc, 813,312 bytes
+        #   NETCDF4_CLASSIC, June_20_67_2D-Q.nc, 5,030,256 bytes
+        # The 2nd one is 6.2 TIMES BIGGER.
+        #-----------------------------------------------------------------
+        # For more info see:  http://unidata.github.io/netcdf4-python/
+        #-----------------------------------------------------------------
+        # The "nccopy" utility can convert between these formats.
+        #----------------------------------------------------------------- 
         try:
+            format = 'NETCDF3_CLASSIC'
             ## format = 'NETCDF4'
-            format = 'NETCDF4_CLASSIC'
+            ## format = 'NETCDF4_CLASSIC'
             nccs_unit = nc.Dataset(file_name, mode='w', format=format)
             OK = True
         except:

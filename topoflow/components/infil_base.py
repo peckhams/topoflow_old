@@ -171,7 +171,7 @@ class infil_component( BMI_base.BMI_component):
         #-------------------------------------------------------------       
         self.set_constants()
         ## self.initialize_layer_vars()  # (5/11/10)
-        self.initialize_config_vars() 
+        self.initialize_config_vars()
         self.read_grid_info()
         self.initialize_basin_vars()  # (5/14/10)
         self.initialize_time_vars()
@@ -323,8 +323,17 @@ class infil_component( BMI_base.BMI_component):
 
             #--------------------------------------------------
             # Create array of indices.  See build_layered_var
-            #--------------------------------------------------
-            i = np.concatenate(([np.int32(0)], np.cumsum(self.nz_val).astype(int)))
+            #----------------------------------------------------------------
+            # For some reason, next line works on MacOS X, but not Windows.
+            # Using "astype()" instead works on both MacOS X and Windows,
+            # with an Anaconda Python distribution.  (2/19/17)
+            #----------------------------------------------------------------
+            # Since np.int32() is used in many places to convert type, is
+            # this problem somehow specific to np.concatenate() ??
+            #----------------------------------------------------------------
+            ## i = np.concatenate(([np.int32(0)], np.int32(np.cumsum(self.nz_val))) )    
+            ## i = np.concatenate(([np.int32(0)], np.cumsum(self.nz_val).astype(int)))
+            i = np.concatenate(([np.int32(0)], np.cumsum(self.nz_val).astype(np.int32)))
             for j in xrange(self.n_layers):
                 self.dz[ i[j]: i[j+1]-1 ] = self.dz_val[j]
 
@@ -372,49 +381,59 @@ class infil_component( BMI_base.BMI_component):
         #i[1] = self.nz_val[0]
         #i[2] = self.nz_val[0] + self.nz_val[1]
         #etc.
-        #----------------------------------------------
-        i = np.concatenate(([np.int32(0)], np.cumsum(self.nz_val).astype(int))) 
+		#----------------------------------------------------------------
+		# For some reason, next line works on MacOS X, but not Windows.
+		# Using "astype()" instead works on both MacOS X and Windows,
+		# with an Anaconda Python distribution.  (2/19/17)
+		#----------------------------------------------------------------
+		# Since np.int32() is used in many places to convert type, is
+		# this problem somehow specific to np.concatenate() ??
+		#----------------------------------------------------------------
+		## i = np.concatenate(([np.int32(0)], np.int32(np.cumsum(self.nz_val))) )    
+		## i = np.concatenate(([np.int32(0)], np.cumsum(self.nz_val).astype(int)))
+		i = np.concatenate(([np.int32(0)], np.cumsum(self.nz_val).astype(np.int32)))
+
         
         #----------------------------------------
         # Do all layers have a scalar parameter
         # value for this particular variable ??
         #----------------------------------------
-        nmax = np.int16(1)
-        for j in xrange(self.n_layers):
-            nj = var_list_for_layers[j].size
-            nmax = np.maximum( nmax, nj )
-        ALL_SCALARS = (nmax == 1)
+		nmax = np.int16(1)
+		for j in xrange(self.n_layers):
+			nj = var_list_for_layers[j].size
+			nmax = np.maximum( nmax, nj )
+		ALL_SCALARS = (nmax == 1)
         
         #--------------------------------------------------
         # Build either a 1D or 3D array for this variable
         #--------------------------------------------------
-        if (ALL_SCALARS):
-            #------------------------------------------
-            # All layers have a scalar value for this
-            # variable, so build a 1D array.
-            #------------------------------------------
-            var = np.zeros([self.nz], dtype='float64')
-            for j in xrange(self.n_layers):
-                var[i[j]: i[j + 1]] = var_list_for_layers[j]
-        else:
-            #------------------------------------------------
-            # One or more layers have a grid value for this
-            # variable, so build a 3D array or "data cube".    
-            #--------------------------------------------------------
-            # Note that all nz "levels" in a *given* layer can be
-            # initialized to a grid, but not yet to different grids
-            #--------------------------------------------------------
-            var = np.zeros([self.nz, self.ny, self.nx], dtype='float64')
-            for j in xrange(self.n_layers):
-                for k in xrange(i[j], i[j + 1]):
-                    var[k,:,:] = var_list_for_layers[j]
-                
-                #-------------------------------------------------------------
-                # Next line doesn't work if var_list_for_layers[j] is a grid
-                #-------------------------------------------------------------
-                #  var[*, *, i[j]:i[j+1]-1 ] = var_list_for_layersr[j]
+		if (ALL_SCALARS):
+			#------------------------------------------
+			# All layers have a scalar value for this
+			# variable, so build a 1D array.
+			#------------------------------------------
+			var = np.zeros([self.nz], dtype='float64')
+			for j in xrange(self.n_layers):
+				var[i[j]: i[j + 1]] = var_list_for_layers[j]
+		else:
+			#------------------------------------------------
+			# One or more layers have a grid value for this
+			# variable, so build a 3D array or "data cube".    
+			#--------------------------------------------------------
+			# Note that all nz "levels" in a *given* layer can be
+			# initialized to a grid, but not yet to different grids
+			#--------------------------------------------------------
+			var = np.zeros([self.nz, self.ny, self.nx], dtype='float64')
+			for j in xrange(self.n_layers):
+				for k in xrange(i[j], i[j + 1]):
+					var[k,:,:] = var_list_for_layers[j]
+		
+				#-------------------------------------------------------------
+				# Next line doesn't work if var_list_for_layers[j] is a grid
+				#-------------------------------------------------------------
+				#  var[*, *, i[j]:i[j+1]-1 ] = var_list_for_layersr[j]
 
-        return var
+		return var
 
     #   build_layered_var
     #-------------------------------------------------------------------

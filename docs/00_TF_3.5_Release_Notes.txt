@@ -1,6 +1,6 @@
 
 TopoFlow 3.5 Release Notes
-February 14, 2017
+February 19, 2017
 
 ===============================
   Enhancements & New Features
@@ -66,20 +66,32 @@ February 14, 2017
   but also includes a version that does use cfunits:
      topoflow/framework/emeli_with_cfunits.py
 
+* Ran basic, successful tests of the TF 3.5 package on Windows with an
+  Anaconda Python distribution.  One required change was the replacement of
+  "x.astype(np.int32)" with "np.int32(x)" to change the type of an array
+  to int32, within a call to np.concatenate. (In infil_base.py.) It is not
+  clear if a similar change will be needed anywhere else.
+  
 * Added a new infiltration process component (infil_beven.py).
   This hydrologic infiltration component implements the model introduced
   by Beven (1984) where saturated hydraulic conductivity, Ks, decreases
   exponentially with subsurface depth, z.
 
 * Note that CSDMS introduced some small changes to the Basic Model Interface
-  (BMI) in the past few years, which could be called BMI v2.  Most of these
-  have to do with functions that describe the computational grid used by
-  each variable in the model.  These new methods/functions are:
-      get_grid_type(), get_grid_rank(), get_grid_size(),
-      get_var_grid(), get_var_nbytes() and get_var_itemsize().
-  These are not yet implemented in this release.  Additional changes in
-  BMI v2 are: (1)  removal of the "get_attribute()" method, and
-  (2) addition of the "update_until()" method.
+  (BMI) in the past few years, which could be called BMI v2.  Two new methods
+  are:  get_var_nbytes() and get_var_itemsize(), which have both been
+  implemented for this release, in BMI_base.py.  Four other new BMI v2 methods
+  provide a new way to describe the computational grid used by each variable
+  in the model.  These new methods/functions are:
+      get_grid_type(), get_grid_rank(), get_grid_size(), and
+      get_var_grid().
+  These methods have not yet been implemented for this release.  These
+  four BMI v2 methods support regridding, which isn't needed for the TF 3.5
+  components.
+
+  Additional changes in BMI v2 are:
+      (1) removal of the "get_attribute()" method, and
+      (2) addition of the "update_until()" method.
 
 * Fixed some "array ordering" bugs in topoflow/utils/BMI_base.py:
     In get_grid_shape(),   ordering is now [nz, ny, nx].
@@ -96,6 +108,32 @@ February 14, 2017
 
 * Updated EMELI to remove references to the obsolete "port" concept.
 
+* Fixed bug where files were written to user's home directory when
+  out_directory = "." in the path info CFG file.
+
+* Fixed bugs in the Diversions component and added the "plane" test data
+  set in topoflow/examples/Test_Plane_Canal.
+
+* NetCDF output files now use NETCDF3_CLASSIC vs. NETCDF4_CLASSIC format.
+  As with previous versions, TF 3.5 uses the netCDF4 Python package to
+  write model output to NetCDF files.  This is done with the utilities:
+      topoflow/utils/ncts_files.py    (for NetCDF Time Series files)
+      topoflow/utils/ncgs_files.py    (for NetCDF Grid Stack  files)
+      topoflow/utils/ncps_files.py    (for NetCDF "Profile Series" files)
+      topoflow/utils/nccs_files.py    (for NetCDF "Cube Stack" files)
+  (This still seems to be the best overall Python package for NetCDF.)
+  TopoFlow output files from these utilities contain 0D, 2D, 1D or 3D in
+  their names, respectively.  The netCDF4 package can write NetCDF3 or
+  NetCDF4 formats, but the NetCDF4 files are typically MUCH bigger than
+  NetCDF3 files with the same data.  This results from "time" having an
+  "unlimited" dimension (since the number of time slices is typically not
+  known in advance).  NetCDF4 uses "chunking" in this case, but even
+  after adjusting the "chunksizes" keyword, filesizes for the Treynor
+  test data set created using the NETCDF4 or NETCDF4_CLASS formats were
+  found to be from 5 to 800+ times bigger than those created using the
+  NETCDF3_CLASSIC format.  Note that NetCDF3 files can be converted to
+  NetCDF4 files, if necessary, using the nccopy utility from UniData.
+
 ====================================
   Remaining Issues & Possible Bugs
 ====================================
@@ -104,25 +142,27 @@ February 14, 2017
 
 * Most of the component unit tests are broken or missing.
 
-* Calls to the obsolete "set_port_data()" method are commented out in 
-  evap_base.py, but are still not handled correctly.
+* In satzone_base.py, must have water table elevation < land surface
+  elevation (DEM) everywhere at start of a model run.
 
-* channels_base.py and topoflow_driver.py components used to call diversions.update(),
-  but these calls are now commented out.  (Diversion functionality may be broken.)
+* Need to add more detail to the README.md file in the package.
 
-* NetCDF writing utilities (LIST THEM) do not yet write CSN names to output files.
+* TF 3.5 writes "long names" from variables to NetCDF files, but these
+  names do not yet use the CF Standard Names nor the CSDMS Standard Names.
 
-* There is still a call to obsolete "set_grid_double" in satzone_base.py.
- 
-* There are still numerous calls to "idl_func" methods that should be updated.
+* Non-robust, hard-coded value for d_bankfull in channels_base.py.
 
-* Calls to self.cp.get_values_in_grid_double() and self.cp.set_values_in_grid_double()
-  are commented out in diversions_fraction_method.py component, but check that the
-  code still works.
+* There are still some calls to "idl_func" methods that should be updated.
 
 * Check that all issues in 00_PROBLEMS.txt have been included here.
 
-* Add more detail to the README.md file in the package.
+* Python exec() command is still used too much in model_output.py.
+
+* The update_water_balance() method in evap_base.py is commented out.
+  It has not been examined/tested for a long time.
+
+==============================================================================
+
 
 
 

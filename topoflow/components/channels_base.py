@@ -1,10 +1,13 @@
 
-## See "d_bankfull" in update_flow_depth()  ######## (2/21/13)
+## Problem:  See "d_bankfull" in update_flow_depth()  ######## (2/21/13)
 
-## See "(5/13/10)" for a temporary fix.
 #------------------------------------------------------------------------
-#  Copyright (c) 2001-2016, Scott D. Peckham
+#  Copyright (c) 2001-2017, Scott D. Peckham
 #
+#  Feb 2017.  Fixed bugs in initialize_diversion_vars() and
+#             update_diversions().  Thorough testing with the
+#             topoflow/examples/Test_Plane_Canal data set.
+#             Wrote new "update_most()" to skip area_grid.
 #  Sep 2014.  Wrote new update_diversions().
 #             New standard names and BMI updates and testing.
 #  Nov 2013.  Converted TopoFlow to a Python package.
@@ -51,9 +54,9 @@
 #          flow.  See channels_kinematic_wave.py,
 #          channels_diffusive_wave.py and channels_dynamic_wave.py.
 #-----------------------------------------------------------------------
-#  NOTES:  update_free_surface_slope() is called by the
-#          update_velocity() methods of channels_diffusive_wave.py
-#          and channels_dynamic_wave.py.
+#  NOTES:  update_free_surface_slope() is called before the
+#          update_velocity() method for DIFFUSIVE_WAVE and
+#          DYNAMIC_WAVE components.
 #-----------------------------------------------------------------------
 #
 #  class channels_component
@@ -67,6 +70,7 @@
 #      set_constants()
 #      initialize()
 #      update()
+#      update_most()               # (2/19/17)
 #      finalize()
 #      set_computed_input_vars()   # (5/11/10)
 #----------------------------------
@@ -158,29 +162,28 @@ class channels_component( BMI_base.BMI_component ):
         'land_surface_water__evaporation_volume_flux',     # (ET)
         'soil_surface_water__infiltration_volume_flux',    # (IN)
         'snowpack__melt_volume_flux',                      # (SM)
-        'water-liquid__mass-per-volume_density' ]           # (rho_H2O)
+        'water-liquid__mass-per-volume_density',           # (rho_H2O)
         #------------------------------------------------------------------
-#         'canals__count',                                   # n_canals
-#         'canals_entrance__x_coordinate',                   # canals_in_x
-#         'canals_entrance__y_coordinate',                   # canals_in_y
-#         'canals_entrance_water__volume_fraction',          # Q_canals_fraction
-#         'canals_exit__x_coordinate',                       # canals_out_x
-#         'canals_exit__y_coordinate',                       # canals_out_y
-#         'canals_exit_water__volume_flow_rate',             # Q_canals_out
-#         'sinks__count',                                    # n_sinks
-#         'sinks__x_coordinate',                             # sinks_x
-#         'sinks__y_coordinate',                             # sinks_y
-#         'sinks_water__volume_flow_rate',                   # Q_sinks
-#         'sources__count',                                  # n_sources
-#         'sources__x_coordinate',                           # sources_x
-#         'sources__y_coordinate',                           # sources_y
-#         'sources_water__volume_flow_rate' ]                # Q_sources
-        
-    #----------------------------------
-    # Maybe add these out_vars later.
-    #----------------------------------
-    #  ['time_sec', 'time_min' ]
-    
+        # These "diversion vars" were commented out before 2/14/17.
+        # These counts are needed even if Diversions is Disabled.
+        #------------------------------------------------------------------
+        'canals__count',                                   # n_canals
+        'sinks__count',                                    # n_sinks
+        'sources__count',                                  # n_sources
+        #------------------------------------------------------------------
+        'canals_entrance__x_coordinate',                   # canals_in_x
+        'canals_entrance__y_coordinate',                   # canals_in_y
+        'canals_entrance_water__volume_fraction',          # canals_Q_fraction
+        'canals_exit__x_coordinate',                       # canals_out_x
+        'canals_exit__y_coordinate',                       # canals_out_y
+        'canals_exit_water__volume_flow_rate',             # canals_out_Q
+        'sinks__x_coordinate',                             # sinks_x
+        'sinks__y_coordinate',                             # sinks_y
+        'sinks_water__volume_flow_rate',                   # sinks_Q
+        'sources__x_coordinate',                           # sources_x
+        'sources__y_coordinate',                           # sources_y
+        'sources_water__volume_flow_rate' ]                # sources_Q
+   
     _output_var_names = [
         'basin_outlet_water_flow__half_of_fanning_friction_factor',        # f_outlet
         'basin_outlet_water_x-section__mean_depth',                        # d_outlet
@@ -194,7 +197,9 @@ class channels_component( BMI_base.BMI_component ):
         'basin_outlet_water_x-section__volume_flow_rate',                  # Q_outlet
         'basin_outlet_water_x-section__volume_flux',                       # u_outlet
          #--------------------------------------------------
-        'canals_entrance_water__volume_flow_rate',                         # Q_canals_in 
+         # Needed by the Diversions component
+         #--------------------------------------------------         
+        'canals_entrance_water__volume_flow_rate',                         # canals_in_Q 
          #-------------------------------------------------- 
         'channel_bottom_surface__slope',                           # S_bed 
         'channel_bottom_water_flow__domain_max_of_log_law_roughness_length',  # z0val_max
@@ -258,7 +263,7 @@ class channels_component( BMI_base.BMI_component ):
         'basin_outlet_water_x-section__time_max_of_volume_flow_rate':'Q_peak',
         'basin_outlet_water_x-section__time_max_of_volume_flux':     'u_peak',
         #--------------------------------------------------------------------------
-        'canals_entrance_water__volume_flow_rate':                 'Q_canals_in', 
+        'canals_entrance_water__volume_flow_rate':                 'canals_in_Q', 
         #--------------------------------------------------------------------------    
         'channel_bottom_surface__slope':                           'S_bed',
         'channel_bottom_water_flow__domain_max_of_log_law_roughness_length': 'z0val_max',
@@ -300,18 +305,18 @@ class channels_component( BMI_base.BMI_component ):
         'canals__count':                          'n_canals',
         'canals_entrance__x_coordinate':          'canals_in_x',
         'canals_entrance__y_coordinate':          'canals_in_y',
-        'canals_entrance_water__volume_fraction': 'Q_canals_fraction',
+        'canals_entrance_water__volume_fraction': 'canals_Q_fraction',
         'canals_exit__x_coordinate':              'canals_out_x',
         'canals_exit__y_coordinate':              'canals_out_y',
-        'canals_exit_water__volume_flow_rate':    'Q_canals_out',
+        'canals_exit_water__volume_flow_rate':    'canals_out_Q',
         'sinks__count':                           'n_sinks',
         'sinks__x_coordinate':                    'sinks_x',
         'sinks__y_coordinate':                    'sinks_y',
-        'sinks_water__volume_flow_rate':          'Q_sinks',
+        'sinks_water__volume_flow_rate':          'sinks_Q',
         'sources__count':                         'n_sources',
         'sources__x_coordinate':                  'sources_x',
         'sources__y_coordinate':                  'sources_y',
-        'sources_water__volume_flow_rate':        'Q_sources' }
+        'sources_water__volume_flow_rate':        'sources_Q' }
 
 
     #------------------------------------------------
@@ -537,7 +542,8 @@ class channels_component( BMI_base.BMI_component ):
         #------------------------------------------------------
         # Must now do this before read_input_files (11/11/16) 
         #------------------------------------------------------
-        print 'CHANNELS calling initialize_d8_vars()...'
+        ## print 'CHANNELS calling initialize_d8_vars()...'
+        print 'Calling initialize_d8_vars()...'
         self.initialize_d8_vars()  # (depend on D8 flow grid)
     
         #---------------------------------------------
@@ -548,7 +554,8 @@ class channels_component( BMI_base.BMI_component ):
         #---------------------------------------------
         # print 'CHANNELS calling open_input_files()...'
         self.open_input_files()
-        print 'CHANNELS calling read_input_files()...'
+        ## print 'CHANNELS calling read_input_files()...'
+        print 'Calling read_input_files()...'
         self.read_input_files()
 
         #-----------------------
@@ -556,20 +563,9 @@ class channels_component( BMI_base.BMI_component ):
         #-----------------------
         ## print 'CHANNELS calling initialize_d8_vars()...'
         ## self.initialize_d8_vars()  # (depend on D8 flow grid)
-        print 'CHANNELS calling initialize_computed_vars()...'
+        ## print 'CHANNELS calling initialize_computed_vars()...'
+        print 'Calling initialize_computed_vars()...'
         self.initialize_computed_vars()
-
-        #--------------------------------------------------
-        # (5/12/10) I think this is obsolete now.
-        #--------------------------------------------------
-        # Make sure self.Q_ts_file is not NULL (12/22/05)
-        
-        # This is only output file that is set by default
-        # and is still NULL if user hasn't opened the
-        # output var dialog for the channel process.
-        #--------------------------------------------------
-##        if (self.SAVE_Q_PIXELS and (self.Q_ts_file == '')):    
-##            self.Q_ts_file = (self.case_prefix + '_0D-Q.txt')       
 
         self.open_output_files()
         self.status = 'initialized'  # (OpenMI 2.0 convention) 
@@ -781,7 +777,10 @@ class channels_component( BMI_base.BMI_component ):
         # the new "d8_base.py", but are not needed when
         # using the older "tf_d8_base.py".      
         #---------------------------------------------------
-        self.d8.update(self.time, SILENT=False, REPORT=True)
+        # Note:  update_most() skips update_area_grid().
+        #---------------------------------------------------
+        ## self.d8.update(self.time, SILENT=False, REPORT=True)
+        self.d8.update_most(self.time, SILENT=False, REPORT=True)
 
         #----------------------------------------------------------- 
         # Note: This is also needed, but is not done by default in
@@ -883,6 +882,7 @@ class channels_component( BMI_base.BMI_component ):
         ### S_bed = (S_bed / self.sinu)     #*************
         self.slope = (self.slope / self.sinu)
         self.S_bed  = self.slope
+        self.S_free = self.S_bed.copy()    ## (2/19/17)
         ###################################################
         ###################################################
         
@@ -965,7 +965,7 @@ class channels_component( BMI_base.BMI_component ):
         ## print 'P_wet.min() =', self.P_wet.min()
         ## print 'width.min() =', self.width.min()
        
-        ## self.initialize_diversion_vars()    # (9/22/14)
+        self.initialize_diversion_vars()    # (9/22/14)  #############################
         self.initialize_outlet_values()
         self.initialize_peak_values()
         self.initialize_min_and_max_values()  ## (2/3/13)
@@ -983,43 +983,66 @@ class channels_component( BMI_base.BMI_component ):
     #-------------------------------------------------------------
     def initialize_diversion_vars(self):
 
-        #-----------------------------------------
-        # Compute source IDs from xy coordinates
-        #-----------------------------------------
-        source_rows     = np.int32( self.sources_y / self.ny )
-        source_cols     = np.int32( self.sources_x / self.nx )
-        self.source_IDs = (source_rows, source_cols)
-        ## self.source_IDs = (source_rows * self.nx) + source_cols
-   
-        #---------------------------------------
-        # Compute sink IDs from xy coordinates
-        #---------------------------------------
-        sink_rows     = np.int32( self.sinks_y / self.ny )
-        sink_cols     = np.int32( self.sinks_x / self.nx )
-        self.sink_IDs = (sink_rows, sink_cols)
-        ## self.sink_IDs = (sink_rows * self.nx) + sink_cols
-        
-        #-------------------------------------------------
-        # Compute canal entrance IDs from xy coordinates
-        #-------------------------------------------------
-        canal_in_rows     = np.int32( self.canals_in_y / self.ny )
-        canal_in_cols     = np.int32( self.canals_in_x / self.nx )
-        self.canal_in_IDs = (canal_in_rows, canal_in_cols)
-        ## self.canal_in_IDs = (canal_in_rows * self.nx) + canal_in_cols
-        
-        #---------------------------------------------
-        # Compute canal exit IDs from xy coordinates
-        #---------------------------------------------
-        canal_out_rows     = np.int32( self.canals_out_y / self.ny )
-        canal_out_cols     = np.int32( self.canals_out_x / self.nx )
-        self.canal_out_IDs = (canal_out_rows, canal_out_cols)
-        ## self.canal_out_IDs = (canal_out_rows * self.nx) + canal_out_cols
+        #----------------------------------------------------------
+        # Note:  The "IDs" here are 2-tuples with (rows,cols),
+        #        the same as returned from np.where.  This is
+        #        different from the long-integer, calendar-style
+        #        ID, given by:  ID = (row * nx) + col.
+        #----------------------------------------------------------
+        # Note:  We don't pass cols and rows directly between
+        #        components, since these depend on the internal
+        #        representation (e.g. grid) of that component.
+        #        That's why we pass x and y values instead.
+        #----------------------------------------------------------
+        # Note:  Fixed a bug on (2/15/17):  nx,ny -> dx,dy.
+        #----------------------------------------------------------
 
         #--------------------------------------------------
         # This will be computed from Q_canal_fraction and
         # self.Q and then passed back to Diversions
         #--------------------------------------------------
-        self.Q_canals_in = np.array( self.n_sources, dtype='float64' )
+        if (self.n_canals == 0):
+            #--------------------------------------------------
+            # To avoid problems with time interpolation, etc.
+            #--------------------------------------------------
+            self.canals_in_Q = np.zeros( 1, dtype='float64' )
+        else:
+            self.canals_in_Q = np.zeros( self.n_canals, dtype='float64' )
+        ## print 'In channels_base.py:  n_canals = ' + str(self.n_canals)
+        ##### return  ########## for testing
+
+        #-----------------------------------------
+        # Compute source IDs from xy coordinates
+        #-----------------------------------------
+        source_rows     = np.int32( self.sources_y / self.dy )
+        source_cols     = np.int32( self.sources_x / self.dx )
+        self.source_IDs = (source_rows, source_cols)
+   
+        #---------------------------------------
+        # Compute sink IDs from xy coordinates
+        #---------------------------------------
+        sink_rows     = np.int32( self.sinks_y / self.dy )
+        sink_cols     = np.int32( self.sinks_x / self.dx )
+        self.sink_IDs = (sink_rows, sink_cols)
+        
+        #-------------------------------------------------
+        # Compute canal entrance IDs from xy coordinates
+        #-------------------------------------------------
+        canal_in_rows     = np.int32( self.canals_in_y / self.dy )
+        canal_in_cols     = np.int32( self.canals_in_x / self.dx )
+        self.canal_in_IDs = (canal_in_rows, canal_in_cols)
+
+        #---------------------------------------------
+        # Compute canal exit IDs from xy coordinates
+        #---------------------------------------------
+        canal_out_rows     = np.int32( self.canals_out_y / self.dy )
+        canal_out_cols     = np.int32( self.canals_out_x / self.dx )
+        self.canal_out_IDs = (canal_out_rows, canal_out_cols)
+
+#         print '##### canal_out_cols '
+#         print canal_out_cols
+#         print '##### canal_out_rows '
+#         print canal_out_rows
 
     #   initialize_diversion_vars()
     #-------------------------------------------------------------------
@@ -1202,15 +1225,15 @@ class channels_component( BMI_base.BMI_component ):
         # Note: The Channel component requests the following input
         #       vars from the Diversions component by including
         #       them in its "get_input_vars()":
-        #       (1) Q_sources, Q_sources_x, Q_sources_y
-        #       (2) Q_sinks,   Q_sinks_x, Q_sinks_y
-        #       (3) Q_canals_out, Q_canals_out_x, Q_canals_out_y
-        #       (4) Q_canals_fraction, Q_canals_in_x, Q_canals_in_y.
+        #       (1) sources_Q, sources_x, sources_y
+        #       (2) sinks_Q,   sinks_x, sinks_y
+        #       (3) canals_out_Q, canals_out_x, canals_out_y
+        #       (4) canals_Q_fraction, canals_in_x, canals_in_y.
         
         #       source_IDs are computed from (x,y) coordinates during
         #       initialize().
         #
-        #       Diversions component needs to get Q_canals_in from the
+        #       Diversions component needs to get canals_in_Q from the
         #       Channel component.
         #--------------------------------------------------------------
         # Note: This *must* be called after update_discharge() and
@@ -1231,56 +1254,51 @@ class channels_component( BMI_base.BMI_component ):
         # will flow *into* that grid cell and increase flow volume.
         #-------------------------------------------------------------- 
 
-        #-------------------------------------------------------------         
-        # This is not fully tested but runs.  However, the Diversion
-        # vars are still computed even when Diversions component is
-        # disabled. So it slows things down somewhat.
-        #-------------------------------------------------------------              
-        return
-        ########################
-        ########################
-        
         #----------------------------------------            
         # Update Q and vol due to point sources
         #----------------------------------------
-        ## if (hasattr(self, 'source_IDs')): 
         if (self.n_sources > 0): 
-			self.Q[ self.source_IDs ]   += self.Q_sources
-			self.vol[ self.source_IDs ] += (self.Q_sources * self.dt)
+			self.Q[ self.source_IDs ]   += self.sources_Q
+			self.vol[ self.source_IDs ] += (self.sources_Q * self.dt)
 
         #--------------------------------------            
         # Update Q and vol due to point sinks
         #--------------------------------------
-        ## if (hasattr(self, 'sink_IDs')):
         if (self.n_sinks > 0): 
-			self.Q[ self.sink_IDs ]   -= self.Q_sinks
-			self.vol[ self.sink_IDs ] -= (self.Q_sinks * self.dt)
+			self.Q[ self.sink_IDs ]   -= self.sinks_Q
+			self.vol[ self.sink_IDs ] -= (self.sinks_Q * self.dt)
  
-        #---------------------------------------            
-        # Update Q and vol due to point canals
-        #---------------------------------------    
-        ## if (hasattr(self, 'canal_in_IDs')):
-        if (self.n_canals > 0):   
+        #---------------------------------            
+        # Update Q and vol due to canals
+        #---------------------------------    
+        if (self.n_canals > 0):
 			#-----------------------------------------------------------------
 			# Q grid was just modified.  Apply the canal diversion fractions
 			# to compute the volume flow rate into upstream ends of canals.
 			#-----------------------------------------------------------------
-			Q_canals_in = self.Q_canals_fraction * self.Q[ self.canal_in_IDs ]
-			self.Q_canals_in = Q_canals_in
+			canals_in_Q = self.canals_Q_fraction * self.Q[ self.canal_in_IDs ]
+			self.canals_in_Q = canals_in_Q   ####### (2/15/17, needed ?)
 
 			#----------------------------------------------------        
 			# Update Q and vol due to losses at canal entrances
 			#----------------------------------------------------
-			self.Q[ self.canal_in_IDs ]   -= Q_canals_in
-			self.vol[ self.canal_in_IDs ] -= (Q_canals_in * self.dt)        
+			self.Q[ self.canal_in_IDs ]   -= canals_in_Q
+			self.vol[ self.canal_in_IDs ] -= (canals_in_Q * self.dt)        
 
 			#-------------------------------------------------       
 			# Update Q and vol due to gains at canal exits.
 			# Diversions component accounts for travel time.
 			#-------------------------------------------------        
-			self.Q[ self.canal_out_IDs ]   += self.Q_canals_out
-			self.vol[ self.canal_out_IDs ] += (self.Q_canals_out * self.dt)    
-        
+			self.Q[ self.canal_out_IDs ]   += self.canals_out_Q
+			self.vol[ self.canal_out_IDs ] += (self.canals_out_Q * self.dt)    
+
+# 			print '###### time = ' + str(self.time)
+# 			print '###### canals_out_Q = '
+# 			print self.canals_out_Q
+# 			print '###### self.Q[ canal_out_IDs ] = '
+# 			print self.Q[ self.canal_out_IDs ]
+# 			print ' '
+
     #   update_diversions()
     #-------------------------------------------------------------------
     def update_flow_volume(self):
@@ -1392,7 +1410,8 @@ class channels_component( BMI_base.BMI_component ):
         width = self.width  ###
         angle = self.angle
         SCALAR_ANGLES = (np.size(angle) == 1)
-        
+        SCALAR_WIDTHS = (np.size(width) == 1)  
+     
         #------------------------------------------------------
         # (2/18/10) New code to deal with case where the flow
         #           depth exceeds a bankfull depth.
@@ -1403,7 +1422,8 @@ class channels_component( BMI_base.BMI_component ):
         d_bankfull = 4.0  # [meters]
         ################################
         wb = (self.d > d_bankfull)  # (array of True or False)
-        self.width[ wb ]  = self.d8.dw[ wb ]
+        if not(SCALAR_WIDTHS):
+            self.width[ wb ]  = self.d8.dw[ wb ]
         if not(SCALAR_ANGLES):
             self.angle[ wb ] = 0.0
      
@@ -1419,7 +1439,8 @@ class channels_component( BMI_base.BMI_component ):
         #------------------------------------------------------            
         top_width = width + (2.0 * d * np.sin(self.angle))
         wb = (top_width > self.d8.dw)  # (array of True or False)
-        self.width[ wb ] = self.d8.dw[ wb ]
+        if not(SCALAR_WIDTHS):
+            self.width[ wb ] = self.d8.dw[ wb ]
         if not(SCALAR_ANGLES):
             self.angle[ wb ] = 0.0
                     
@@ -1659,8 +1680,11 @@ class channels_component( BMI_base.BMI_component ):
 		# This makes f=0 and du=0 where (d <= 0)
 		#-----------------------------------------
         if (self.MANNING):
-            n2 = self.nval ** np.float64(2)  
-            self.f[ wg ] = self.g * (n2[wg] / (self.d[wg] ** self.one_third))
+            n2 = self.nval ** np.float64(2)
+            if (np.ndim(n2) == 0): 
+                self.f[ wg ] = self.g * (n2 / (self.d[wg] ** self.one_third))
+            else:
+                self.f[ wg ] = self.g * (n2[wg] / (self.d[wg] ** self.one_third))
             self.f[ wb ] = np.float64(0)
  
         #---------------------------------
@@ -2079,6 +2103,9 @@ class channels_component( BMI_base.BMI_component ):
         # self.sinu_file  = self.in_directory + self.sinu_file
         # self.d0_file    = self.in_directory + self.d0_file
 
+        #----------------------------------------------------------
+        # If (var_type == 'Scalar'), these units are set to None.
+        #----------------------------------------------------------
         #self.code_unit = model_input.open_file(self.code_type,  self.code_file)
         self.slope_unit = model_input.open_file(self.slope_type, self.slope_file)
         if (self.MANNING):
@@ -2089,8 +2116,6 @@ class channels_component( BMI_base.BMI_component ):
         self.angle_unit = model_input.open_file(self.angle_type, self.angle_file)
         self.sinu_unit  = model_input.open_file(self.sinu_type,  self.sinu_file)
         self.d0_unit    = model_input.open_file(self.d0_type,    self.d0_file)
-
-        # os.chdir( start_dir )
 
     #   open_input_files()
     #-------------------------------------------------------------------  
@@ -2109,6 +2134,11 @@ class channels_component( BMI_base.BMI_component ):
         # If EOF is reached, model_input.read_next() does not
         # change the value of the scalar or grid.
         #-------------------------------------------------------
+#         print '#### slope_type = ' + self.slope_type
+#         print '#### nval_type  = ' + self.nval_type
+#         print '#### slope_file = ' + self.slope_file
+#         print '#### nval_file  = ' + self.nval_file
+
         slope = model_input.read_next(self.slope_unit, self.slope_type, rti)
         if (slope is not None):
             self.update_var( 'slope', slope )
@@ -2651,15 +2681,21 @@ class channels_component( BMI_base.BMI_component ):
         #-----------------------------------
         # Are there any "bad" pixels ?
         # If not, return with no messages.
-        #-----------------------------------  
-        wb = np.where(np.logical_or((self.slope <= 0.0), \
-                              np.logical_not(np.isfinite(self.slope))))
-        nbad = np.size(wb[0])
-        print 'size(slope) =', np.size(self.slope)
-        print 'size(wb) =', nbad
+        #-----------------------------------
+        wz = np.where( self.slope == 0.0 )
+        wn = np.where( self.slope < 0.0 )
+        wi = np.where( np.logical_not(np.isfinite( self.slope )) )  # (e.g. NaN)
+        nz = np.size( wz[0] )
+        nn = np.size( wn[0] )
+        ni = np.size( wi[0] )
+        nbad = (nz + nn + ni)
+
+#         wb = np.where(np.logical_or((self.slope <= 0.0), \
+#                               np.logical_not(np.isfinite(self.slope))))
+#         nbad = np.size(wb[0])
         
         wg = np.where(np.invert(np.logical_or((self.slope <= 0.0), \
-                                     np.logical_not(np.isfinite(self.slope)))))
+                      np.logical_not(np.isfinite(self.slope)))))
         ngood = np.size(wg[0])
         if (nbad == 0) or (ngood == 0):
             return
@@ -2668,17 +2704,26 @@ class channels_component( BMI_base.BMI_component ):
         # Find smallest positive value in slope grid
         # and replace the "bad" values with smin.
         #---------------------------------------------
-        print '-------------------------------------------------'
-        print 'WARNING: Zero or negative slopes found.'
-        print '         Replacing them with smallest slope.'
-        print '         Use "Profile smoothing tool" instead.'
+        print '------------------------------------------------------'
+        print 'WARNING:  Found grid cells with invalid slope.'
+        print '  ' + str(nz) + ' grid cells have slope = 0.'
+        print '  ' + str(nn) + ' grid cells have slope < 0.'
+        print '  ' + str(ni) + ' grid cells have slope of NaN or Inf.'
+        print '  For Kinematic Wave routing, these grid cells would'
+        print '  have an invalid flow velocity.  Replacing them with'
+        print '  smallest positive slope as work-around.'
         S_min = self.slope[wg].min()
         S_max = self.slope[wg].max()
-        print '         min(S) = ' + str(S_min)
-        print '         max(S) = ' + str(S_max)
-        print '-------------------------------------------------'
+        print '    min(S) = ' + str(S_min)
+        print '    max(S) = ' + str(S_max)
+        print '  Recommend using "Profile smoothing tool" instead'
+        print '  to create new DEM with nonzero slopes.'
+        print '------------------------------------------------------'
         print ' '
-        self.slope[wb] = S_min
+
+        if (nz > 0): self.slope[wz] = S_min
+        if (nn > 0): self.slope[wn] = S_min
+        if (ni > 0): self.slope[wi] = S_min
         
         #--------------------------------
         # Convert data type to double ?

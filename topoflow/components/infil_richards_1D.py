@@ -12,14 +12,15 @@ changes (e.g. discontinuities) in hydraulic conductivity.
 See: Smith, R.E. (2002) Infiltration Theory for Hydrologic Applications,
 Water Resources Monograph 15, AGU.
 """
-## Copyright (c) 2001-2016, Scott D. Peckham
+## Copyright (c) 2001-2017, Scott D. Peckham
 ##
-## January 2013   (Revised handling of input/output names).
-## October 2012   (CSDMS Standard Names and BMI)
-## January 2009  (converted from IDL)
+## Feb. 2017  (
+## Jan. 2013  (Revised handling of input/output names).
+## Oct. 2012  (CSDMS Standard Names and BMI)
+## Jan. 2009  (converted from IDL)
 ## May, August 2009
 ## May 2010  (changes to unit_test() and read_cfg_file()
-## June 2010 (Bug fix: Added qH_list and eta_list in
+## June 2010 (Bug fix: Added qH_val and eta_val in
 ##            set_computed_input_vars(). Unit test. )
 ## November 2010 (New approach to BCs and update_theta().)
 
@@ -379,23 +380,23 @@ class infil_component(infil_base.infil_component):
         # (type 'np.ndarray'), according to its "Ks_type".
         # Actual variable arrays built with build_layered_var.
         #---------------------------------------------------------
-        # (5/19/10) We need Ks_list vs Ks here, since we use
+        # (5/19/10) We need Ks_val vs Ks here, since we use
         # these to build one big, 3D Ks array.
         #---------------------------------------------------------     
-        self.Ks_list  = list( np.zeros(n_layers, dtype='float64') )
-        self.Ki_list  = list( np.zeros(n_layers, dtype='float64') )
-        self.qs_list  = list( np.zeros(n_layers, dtype='float64') )
-        self.qi_list  = list( np.zeros(n_layers, dtype='float64') )
-        self.qr_list  = list( np.zeros(n_layers, dtype='float64') )
-        self.pB_list  = list( np.zeros(n_layers, dtype='float64') )
-        self.pA_list  = list( np.zeros(n_layers, dtype='float64') )
-        self.lam_list = list( np.zeros(n_layers, dtype='float64') )
-        self.c_list   = list( np.zeros(n_layers, dtype='float64') )
+        self.Ks_val  = list( np.zeros(n_layers, dtype='float64') )
+        self.Ki_val  = list( np.zeros(n_layers, dtype='float64') )
+        self.qs_val  = list( np.zeros(n_layers, dtype='float64') )
+        self.qi_val  = list( np.zeros(n_layers, dtype='float64') )
+        self.qr_val  = list( np.zeros(n_layers, dtype='float64') )
+        self.pB_val  = list( np.zeros(n_layers, dtype='float64') )
+        self.pA_val  = list( np.zeros(n_layers, dtype='float64') )
+        self.lam_val = list( np.zeros(n_layers, dtype='float64') )
+        self.c_val   = list( np.zeros(n_layers, dtype='float64') )
         #------------------------------------------------
         # Note:  These two are computed from the others
         #------------------------------------------------
-        self.eta_list = list( np.zeros(n_layers, dtype='float64') )
-        self.qH_list  = list( np.zeros(n_layers, dtype='float64') )
+        self.eta_val = list( np.zeros(n_layers, dtype='float64') )
+        self.qH_val  = list( np.zeros(n_layers, dtype='float64') )
        
     #   initialize_layer_vars()
     #-------------------------------------------------------------------
@@ -412,7 +413,7 @@ class infil_component(infil_base.infil_component):
         # Depending on lambda, eta values will scalars or grids.
         #------------------------------------------------------------
         for j in xrange(self.n_layers):
-            self.eta_list[j] = np.float64(2) + (np.float64(3) * self.lam_list[j])
+            self.eta_val[j] = np.float64(2) + (np.float64(3) * self.lam_val[j])
                              
         #--------------------------------------------------------------
         # Compute a qH value for each soil layer from other values
@@ -420,10 +421,10 @@ class infil_component(infil_base.infil_component):
         # or grids, depending on the args to Theta_TBC().
         #-------------------------------------------------------------
         for j in xrange(self.n_layers):
-            self.qH_list[j] = Theta_TBC( self.psi_hygro, \
-                                         self.qs_list[j], self.qr_list[j], \
-                                         self.pB_list[j], self.pA_list[j], \
-                                         self.c_list[j],  self.lam_list[j] )
+            self.qH_val[j] = Theta_TBC( self.psi_hygro, \
+                                         self.qs_val[j], self.qr_val[j], \
+                                         self.pB_val[j], self.pA_val[j], \
+                                         self.c_val[j],  self.lam_val[j] )
 
         #---------------------------------------------------------
         # Make sure that all "save_dts" are larger or equal to
@@ -450,15 +451,15 @@ class infil_component(infil_base.infil_component):
                          self.is_scalar('SM'),
                          self.is_scalar('ET'),  #########
                          #----------------------------------
-                         self.is_scalar('Ks_list[0]'),
-                         self.is_scalar('Ki_list[0]'),
-                         self.is_scalar('qs_list[0]'),
-                         self.is_scalar('qi_list[0]'),
-                         self.is_scalar('qr_list[0]'),
-                         self.is_scalar('pB_list[0]'),
-                         self.is_scalar('pA_list[0]'),
-                         self.is_scalar('c_list[0]'),
-                         self.is_scalar('lam_list[0]')])
+                         self.is_scalar('Ks_val[0]'),
+                         self.is_scalar('Ki_val[0]'),
+                         self.is_scalar('qs_val[0]'),
+                         self.is_scalar('qi_val[0]'),
+                         self.is_scalar('qr_val[0]'),
+                         self.is_scalar('pB_val[0]'),
+                         self.is_scalar('pA_val[0]'),
+                         self.is_scalar('c_val[0]'),
+                         self.is_scalar('lam_val[0]')])
 
         self.ALL_SCALARS = np.all(are_scalars)
         
@@ -497,21 +498,21 @@ class infil_component(infil_base.infil_component):
         #--------------------------------------------------------
         # (3/12/08) Same code should work if (self.n_layers eq 1)
         #--------------------------------------------------------
-        self.Ks  = self.build_layered_var( self.Ks_list )
-        self.Ki  = self.build_layered_var( self.Ki_list )
-        self.qs  = self.build_layered_var( self.qs_list )
-        self.qi  = self.build_layered_var (self.qi_list )
-        self.qr  = self.build_layered_var( self.qr_list )
-        self.pB  = self.build_layered_var( self.pB_list )
-        self.pA  = self.build_layered_var( self.pA_list )
-        self.lam = self.build_layered_var( self.lam_list )
-        self.c   = self.build_layered_var( self.c_list )
+        self.Ks  = self.build_layered_var( self.Ks_val )
+        self.Ki  = self.build_layered_var( self.Ki_val )
+        self.qs  = self.build_layered_var( self.qs_val )
+        self.qi  = self.build_layered_var (self.qi_val )
+        self.qr  = self.build_layered_var( self.qr_val )
+        self.pB  = self.build_layered_var( self.pB_val )
+        self.pA  = self.build_layered_var( self.pA_val )
+        self.lam = self.build_layered_var( self.lam_val )
+        self.c   = self.build_layered_var( self.c_val )
         #--------------------------------------------------
-        # Note:  eta_list and qH_list are computed from
+        # Note:  eta_val and qH_val are computed from
         #        the others in set_computed_input_vars().      
         #--------------------------------------------------
-        self.eta = self.build_layered_var( self.eta_list )
-        self.qH  = self.build_layered_var( self.qH_list )
+        self.eta = self.build_layered_var( self.eta_val )
+        self.qH  = self.build_layered_var( self.qH_val )
 
         #--------------
         # For testing
@@ -699,15 +700,15 @@ class infil_component(infil_base.infil_component):
         print '====================================================='
         for k in xrange(self.n_layers):
 
-##            print 'Ks[k]  =', self.Ks_list[k]
-##            print 'Ki[k]  =', self.Ki_list[k]    
-##            print 'qs[k]  =', self.qs_list[k]
-##            print 'qi[k]  =', self.qi_list[k]
-##            print 'qr[k]  =', self.qr_list[k]
-##            print 'pB[k]  =', self.pB_list[k]
-##            print 'pA[k]  =', self.pA_list[k]
-##            print 'lam[k] =', self.lam_list[k]
-##            print 'c[k]   =', self.c_list[k]
+##            print 'Ks[k]  =', self.Ks_val[k]
+##            print 'Ki[k]  =', self.Ki_val[k]    
+##            print 'qs[k]  =', self.qs_val[k]
+##            print 'qi[k]  =', self.qi_val[k]
+##            print 'qr[k]  =', self.qr_val[k]
+##            print 'pB[k]  =', self.pB_val[k]
+##            print 'pA[k]  =', self.pA_val[k]
+##            print 'lam[k] =', self.lam_val[k]
+##            print 'c[k]   =', self.c_val[k]
 ##            print ' '
 ##            print 'psi_hygro =', self.psi_hygro, ' [m]'
 ##            print 'psi_field =', self.psi_field, ' [m]'
@@ -722,9 +723,9 @@ class infil_component(infil_base.infil_component):
             # requires theta_res as an argument.
             #-------------------------------------------------
 ##            psi_res   = self.psi_hygro
-##            theta_sat = self.qs_list[k]
-##            psi_B     = self.pB_list[k]
-##            lam       = self.lam_list[k]
+##            theta_sat = self.qs_val[k]
+##            psi_B     = self.pB_val[k]
+##            lam       = self.lam_val[k]
 ##            #--------------------------------------
 ##            # Note:  Both psi's < 0, so ratio > 0
 ##            #--------------------------------------
@@ -733,33 +734,33 @@ class infil_component(infil_base.infil_component):
             #--------------------------------------------
             # If we trust theta_r, then do this instead
             #--------------------------------------------
-            theta_res = self.qr_list[k]
+            theta_res = self.qr_val[k]
 
             theta_hygro = Theta_TBC( self.psi_hygro,
-                                     self.qs_list[k],
-                                     self.qr_list[k],
-                                     self.pB_list[k],
-                                     self.pA_list[k],
-                                     self.c_list[k],
-                                     self.lam_list[k] )
+                                     self.qs_val[k],
+                                     self.qr_val[k],
+                                     self.pB_val[k],
+                                     self.pA_val[k],
+                                     self.c_val[k],
+                                     self.lam_val[k] )
             
             theta_init = Theta_TBC( self.psi_field,
-                                    self.qs_list[k],
+                                    self.qs_val[k],
                                     theta_res,         #######
-                                    self.pB_list[k],
-                                    self.pA_list[k],
-                                    self.c_list[k],
-                                    self.lam_list[k] )
+                                    self.pB_val[k],
+                                    self.pA_val[k],
+                                    self.c_val[k],
+                                    self.lam_val[k] )
 
             K_init = K_of_Theta_TBC( theta_init,       #######
-                                     self.Ks_list[k],
-                                     self.qs_list[k],
+                                     self.Ks_val[k],
+                                     self.qs_val[k],
                                      theta_res,        #######
-                                     self.lam_list[k] )
+                                     self.lam_val[k] )
 
-            theta_r = self.qr_list[k]
-            theta_i = self.qi_list[k]
-            K_i     = self.Ki_list[k]
+            theta_r = self.qr_val[k]
+            theta_i = self.qi_val[k]
+            K_i     = self.Ki_val[k]
             print 'Suggested initial values for layer', k+1, ':'
             ## print '   theta_r =', theta_res,  'vs.', theta_r
             print '   For theta_r =', theta_r
@@ -1893,31 +1894,31 @@ class infil_component(infil_base.infil_component):
 
         for j in xrange(self.n_layers):        
             Ks_val = model_input.read_next(self.Ks_unit[j], self.Ks_type[j], rti)
-            if (Ks_val is not None): self.Ks_list[j] = Ks_val
+            if (Ks_val is not None): self.Ks_val[j] = Ks_val
 
             Ki_val = model_input.read_next(self.Ki_unit[j], self.Ki_type[j], rti)
-            if (Ki_val is not None): self.Ki_list[j]  = Ki_val
+            if (Ki_val is not None): self.Ki_val[j]  = Ki_val
 
             qs_val = model_input.read_next(self.qs_unit[j], self.qs_type[j], rti)
-            if (qs_val is not None): self.qs_list[j]  = qs_val
+            if (qs_val is not None): self.qs_val[j]  = qs_val
 
             qi_val = model_input.read_next(self.qi_unit[j], self.qi_type[j], rti)
-            if (qi_val is not None): self.qi_list[j]  = qi_val
+            if (qi_val is not None): self.qi_val[j]  = qi_val
             
             qr_val = model_input.read_next(self.qr_unit[j], self.qr_type[j], rti)
-            if (qr_val is not None): self.qr_list[j]  = qr_val
+            if (qr_val is not None): self.qr_val[j]  = qr_val
 
             pB_val = model_input.read_next(self.pB_unit[j], self.pB_type[j], rti)
-            if (pB_val is not None): self.pB_list[j]  = pB_val
+            if (pB_val is not None): self.pB_val[j]  = pB_val
 
             pA_val = model_input.read_next(self.pA_unit[j], self.pA_type[j], rti)
-            if (pA_val is not None): self.pA_list[j]  = pA_val
+            if (pA_val is not None): self.pA_val[j]  = pA_val
 
             lam_val = model_input.read_next(self.lam_unit[j], self.lam_type[j], rti)
-            if (lam_val is not None): self.lam_list[j]  = lam_val
+            if (lam_val is not None): self.lam_val[j]  = lam_val
 
             c_val = model_input.read_next(self.c_unit[j], self.c_type[j], rti)
-            if (c_val is not None): self.c_list[j]  = c_val
+            if (c_val is not None): self.c_val[j]  = c_val
 
             #---------------------------------------------------------
             # If we read a lambda value from a file, then we need to
@@ -1925,15 +1926,15 @@ class infil_component(infil_base.infil_component):
             #---------------------------------------------------------
             #### if not(self.lam_unit[j].closed):  ############
             if (self.lam_type[j] == 1) or (self.lam_type[j] == 3):
-                self.eta_list[j] = np.float64(2) + (np.float64(3) * self.lam_list[j])
+                self.eta_val[j] = np.float64(2) + (np.float64(3) * self.lam_val[j])
                                  
             #-----------------------------------------
             # Update qH, given by Theta_TBC function
             #-----------------------------------------
-            self.qH_list[j] = Theta_TBC( self.psi_hygro, \
-                                         self.qs_list[j], self.qr_list[j], \
-                                         self.pB_list[j], self.pA_list[j], \
-                                         self.c_list[j],  self.lam_list[j] )
+            self.qH_val[j] = Theta_TBC( self.psi_hygro, \
+                                         self.qs_val[j], self.qr_val[j], \
+                                         self.pB_val[j], self.pA_val[j], \
+                                         self.c_val[j],  self.lam_val[j] )
 
     #   read_input_files()       
     #-------------------------------------------------------------------  
