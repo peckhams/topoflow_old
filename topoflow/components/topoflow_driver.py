@@ -1,8 +1,5 @@
 
-###### 
-###### channels_base.py called diversions.update() COMMENTED OUT !!!!!
-
-## Copyright (c) 2001-2014, Scott D. Peckham
+## Copyright (c) 2001-2017, Scott D. Peckham
 ##
 ## Jan 2013. Revised handling of input/output names.
 ##
@@ -175,16 +172,6 @@ class topoflow_driver( BMI_base.BMI_component ):
 ##        'meteorology:model__time_step',
 ##        'satzone:model__time_step',
 ##        'snow:model__time_step' ]
-
-        ###################################################################
-        #### Bolton comments, 5/12/2012  ---
-        ####          Not sure what to do with these missing /unknow vars
- 	    ####          cp.get_status()
-        ####          save_pixels_dt@channels    'model__save_pixels_flag' ? 
-        ####          MANNING@channels           'model__manning_flag' ?
-        ####          LAW_OF_WALL@channels       'model__wall_law_flag ?
-        ####          RICHARDS@infiltration      'model__richards_flag' ?
-        ###################################################################
 
     _output_var_names = [
         'model__time_step' ]   # dt
@@ -458,13 +445,8 @@ class topoflow_driver( BMI_base.BMI_component ):
     def initialize(self, cfg_file=None, mode="nondriver",
                    SILENT=False):
 
-        #------------------------------------------------------
-        # Note:  If using as a CCA component, then we need to
-        #        call "get_cca_ports()" before calling this
-        #        "initialize()" method in the component's CCA
-        #        Impl file.
-        #------------------------------------------------------
         if not(SILENT):
+            print ' '
             print 'TopoFlow component: Initializing...'
         
         self.status     = 'initializing'  # (OpenMI 2.0 convention)
@@ -498,15 +480,7 @@ class topoflow_driver( BMI_base.BMI_component ):
         #-----------------------
         self.initialize_time_vars()  # (uses cp.dt from above)
         self.initialize_stop_vars()   #### (do this with CFG file ?)
-                          
-        #### self.nz = self.ip.get_scalar_long('nz')   #######
 
-        #------------------------------------
-        # Check if output options are valid
-        #------------------------------------
-##        outlet_IDs, n_outlets, outlet_ID, OK = \
-##            Check_Output_Options(grid_vars, rv, cv, sv, ev, iv, gv, nx, ny)
-      
         #---------------------
         # Open the logfile ?      *** (Append or overwrite ??)
         #---------------------
@@ -527,8 +501,7 @@ class topoflow_driver( BMI_base.BMI_component ):
         self.status = 'initialized'
         
     #   initialize()        
-    #-------------------------------------------------------------            
-    ## def update(self, dt=-1.0, time_seconds=None):
+    #-------------------------------------------------------------
     def update(self, dt=-1.0):
 
         #--------------------------------------------------
