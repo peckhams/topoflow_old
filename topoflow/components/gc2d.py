@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-## Copyright (c) 2009, Scott D. Peckham
+## Copyright (c) 2009-2017, Scott D. Peckham
 ## Original Matlab version of GC2D, Mark Kessler
 ## GC2D first converted to Python/NumPy in 2009 by Eric Hutton
 
@@ -24,6 +24,10 @@
 #        Fixed calls to "mean()", "nonzero()", "ravel()",
 #        abs() vs. absolute(), max(A,B) vs. maximum(A,B), etc.
 #
+# NOTE:  (2/23/17) Fixed bug within filter2d() function, where
+#        order of arguments to convolve() had to be reversed.
+#        Also fixed cause of "invalid division" error in the
+#        basal_shear_stress() function.
 ################################################################
 
 import numpy as np
