@@ -20,13 +20,13 @@
 #        a bug fix and other changes to the code.
 #        Compare to update_vars_OLD().
 #
-# NOTE:  Check that all "numpy" function calls include "numpy.".
+# NOTE:  Check that all "numpy" function calls include "np.".
 #        Fixed calls to "mean()", "nonzero()", "ravel()",
 #        abs() vs. absolute(), max(A,B) vs. maximum(A,B), etc.
 #
 ################################################################
 
-import numpy
+import numpy as np
 import time
 import sys
 import logging
@@ -102,9 +102,9 @@ def run_model(t_max=10.0, DEM_file='Animas_200.mat', SILENT=False):
     #------------------
     # Initialize vars
     #------------------
-    t           = numpy.float64(0)
-    conserveIce = numpy.float64(0)  # (total ice mass ??)
-    meltrate    = numpy.zeros( (ny, nx), dtype='Float64' )
+    t           = np.float64(0)
+    conserveIce = np.float64(0)  # (total ice mass ??)
+    meltrate    = np.zeros( (ny, nx), dtype='Float64' )
   
 ##    fd_watch = {}
 ##    fd_watch['thick']  = open( 'thickness_py.bin' , 'wb' )
@@ -166,62 +166,62 @@ class BoundaryCond:   # (enumeration)
 class Parameters:    # (structure)
 
     # Constants
-    g        = numpy.float64(9.81)                 # gravitional acceleration  [m/s**2]
-    rhoI     = numpy.float64(917)                  # density of ice    [kg/m**3]
-    rhoW     = numpy.float64(1000)                 # density of water  [kg/m**3]
-    day      = numpy.float64(0.00274)              # length of a day in years  [years]
+    g        = np.float64(9.81)                 # gravitional acceleration  [m/s**2]
+    rhoI     = np.float64(917)                  # density of ice    [kg/m**3]
+    rhoW     = np.float64(1000)                 # density of water  [kg/m**3]
+    day      = np.float64(0.00274)              # length of a day in years  [years]
 
     # Time
-    t         = numpy.float64(0)                   # set time to zero
-    tMax      = numpy.float64(100000)              # maximum simulation time in years
-    dtMax     = numpy.float64(0.4 * 365*day)       # maximum timestep in years
+    t         = np.float64(0)                   # set time to zero
+    tMax      = np.float64(100000)              # maximum simulation time in years
+    dtMax     = np.float64(0.4 * 365*day)       # maximum timestep in years
     dtDefault = dtMax                              # timestep if VARIABLE_DT_TOGGLE==0
     
-    sec_per_year = numpy.float64(3600) * 24 * 365  # (SDP, 9/30/09)
+    sec_per_year = np.float64(3600) * 24 * 365  # (SDP, 9/30/09)
     
     # Glacier Properties
-    MinGlacThick = numpy.float64(1)
+    MinGlacThick = np.float64(1)
 
     # Ice Deformation
-    glensA = numpy.float64( (6.8e-15)*3.15e7/(1e9) )    # Patterson, 1994; MacGregor, 2000
-    ## glensA = numpy.float64( 6.8 * 3.15 * 1e-17)
+    glensA = np.float64( (6.8e-15)*3.15e7/(1e9) )    # Patterson, 1994; MacGregor, 2000
+    ## glensA = np.float64( 6.8 * 3.15 * 1e-17)
     
     # Attractor Sliding -- only if ICESLIDE_TOGGLE==1 (generally used)
-    UsChar   = numpy.float64(10)
-    taubChar = numpy.float64(100000)
+    UsChar   = np.float64(10)
+    taubChar = np.float64(100000)
 
     # Standard Sliding -- used if ICESLIDE_TOGGLE==2 (generally not used)
-    B                 = numpy.float64(0.0012)     # m/(Pa*yr) -- MacGregor, 2000
-    DepthToWaterTable = numpy.float64(20)         # distance from ice surface to water table
-    MaxFloatFraction  = numpy.float64(80)         # limits water level in ice
-    Hpeff             = numpy.float64(20)         # effective pressure (meters of water)
+    B                 = np.float64(0.0012)     # m/(Pa*yr) -- MacGregor, 2000
+    DepthToWaterTable = np.float64(20)         # distance from ice surface to water table
+    MaxFloatFraction  = np.float64(80)         # limits water level in ice
+    Hpeff             = np.float64(20)         # effective pressure (meters of water)
     
     # Mass Balance
-    initELA         = numpy.float64(3350)         # (valley glaciers, try 3500 ice sheets)
-    ELAStepSize     = numpy.float64(-50)
-    ELAStepInterval = numpy.float64(500)
-    gradBz          = numpy.float64(0.01)
-    maxBz           = numpy.float64(2)
-    tmin            = numpy.float64(200)          # Years, spin-up time
+    initELA         = np.float64(3350)         # (valley glaciers, try 3500 ice sheets)
+    ELAStepSize     = np.float64(-50)
+    ELAStepInterval = np.float64(500)
+    gradBz          = np.float64(0.01)
+    maxBz           = np.float64(2)
+    tmin            = np.float64(200)          # Years, spin-up time
   
     # Avalanching
-    angleOfRepose = numpy.float64(30)
-    avalanchFreq  = numpy.float64(3)              # average number per year
+    angleOfRepose = np.float64(30)
+    avalanchFreq  = np.float64(3)              # average number per year
 
     # Calving
-    seaLevel    = numpy.float64(-100)             # meters
-    calvingCoef = numpy.float64(2)                # year^-1
+    seaLevel    = np.float64(-100)             # meters
+    calvingCoef = np.float64(2)                # year^-1
 
     # Thermal
-    c      = numpy.float64(2060)                  # specific heat capacity (J/(kg*K))
-    Qg     = numpy.float64(0.05 * 3.15e7)         # Geothermal heat flux (W/m^2)*seconds/year = (J/year)/(m^2)
-    gradTz = numpy.float64(-0.0255)               # Geothermal Gradient
+    c      = np.float64(2060)                  # specific heat capacity (J/(kg*K))
+    Qg     = np.float64(0.05 * 3.15e7)         # Geothermal heat flux (W/m^2)*seconds/year = (J/year)/(m^2)
+    gradTz = np.float64(-0.0255)               # Geothermal Gradient
 
     # Only for Ice Sheets ???
-    Hbound    = numpy.float64(2000)
-    Elev0     = numpy.float64(0)           # reference elevation
-    To        = numpy.float64(2.6)         # temperature at Elev0
-    lapseRate = numpy.float64(-0.0065)     # degrees per meter
+    Hbound    = np.float64(2000)
+    Elev0     = np.float64(0)           # reference elevation
+    To        = np.float64(2.6)         # temperature at Elev0
+    lapseRate = np.float64(-0.0065)     # degrees per meter
     
 #   class Parameters
 #-------------------------------------------------------------------------------------------------- 
@@ -314,7 +314,7 @@ def compress_grid( H , Zb , COMPRESS_TOGGLE=False , RESTART_TOGGLE=0,
             Tm_FullSpace = Tm.copy()
 
         #[indrw,indcl] = find(H ~= 0);
-        indrw, indcl = numpy.where( H != 0 )
+        indrw, indcl = np.where( H != 0 )
 
         mxrw, mxcl = Zb.shape
 
@@ -326,8 +326,8 @@ def compress_grid( H , Zb , COMPRESS_TOGGLE=False , RESTART_TOGGLE=0,
         H  = H [ mnrw:mxrw , mncl:mxcl ]
         Zb = Zb[ mnrw:mxrw , mncl:mxcl ]
         ## Zi = Zb + max( H, 0 )
-        ## Zi = Zb + numpy.choose( H<0 , (H,0) )
-        Zi = Zb + numpy.maximum(H, 0)
+        ## Zi = Zb + np.choose( H<0 , (H,0) )
+        Zi = Zb + np.maximum(H, 0)
 
         if (THERMAL_TOGGLE):
             Ts = Ts[ mnrw:mxrw , mncl:mxcl ]
@@ -341,8 +341,8 @@ def compress_grid( H , Zb , COMPRESS_TOGGLE=False , RESTART_TOGGLE=0,
         COMPRESSED_FLAG   = 1
     else:
         ## Zi = Zb + max( H, 0 ) # included for restarts
-        ## Zi = Zb + numpy.choose( H<0 , (H,0) )
-        Zi = Zb + numpy.maximum(H, 0)
+        ## Zi = Zb + np.choose( H<0 , (H,0) )
+        Zi = Zb + np.maximum(H, 0)
         compression_ratio = 1.
         COMPRESSED_FLAG   = 0
 
@@ -350,16 +350,27 @@ def compress_grid( H , Zb , COMPRESS_TOGGLE=False , RESTART_TOGGLE=0,
 
 #   compress_grid()
 #-------------------------------------------------------------------------------------------------- 
-def filter2d( b , x , shape='same' ):
+def filter2d( b, x, shape='same' ):
    
-    return scipy.signal.convolve( b , x , mode=shape )
+    #------------------------------------------------------
+    # Note: in1 = b must be a larger array than in2 = x,
+    #       and both must have same number of dimensions,
+    #       according to docs .  But in all of the calls,
+    #       the 3x3 filter is provided as the first, and
+    #       smaller argument.  So reversed the order of
+    #       the arguments, as shown. (2/23/17)  This one
+    #       change allowed the "ice component" test in
+    #       TF 3.5 to work.
+    #------------------------------------------------------
+    ### return scipy.signal.convolve( b, x, mode=shape )
+    return scipy.signal.convolve( x, b, mode=shape )
 
 #   filter2d()
 #-------------------------------------------------------------------------------------------------- 
 def add_halo( x ):
 
-    x_ext = numpy.concatenate( ( x[:,0,numpy.newaxis] , x     , x[:,-1,numpy.newaxis] ) , axis=1 )
-    x_ext = numpy.concatenate( ( [x_ext[0,:]]         , x_ext , [x_ext[-1,:]]         ) )
+    x_ext = np.concatenate( ( x[:,0,np.newaxis] , x     , x[:,-1,np.newaxis] ) , axis=1 )
+    x_ext = np.concatenate( ( [x_ext[0,:]]         , x_ext , [x_ext[-1,:]]         ) )
 
     return x_ext
 
@@ -392,53 +403,53 @@ def set_bc( H , Zb , Zi ,
 
     # WESTERN BOUNDARY CONDITION
     if WEST_BC_TOGGLE == BoundaryCond.SURF_ELEV_BOUND:          # Constant Ice Surface Height
-        ZiBound    = numpy.mean(Zb[:,0]) + Hbound
+        ZiBound    = np.mean(Zb[:,0]) + Hbound
         H_ext[:,0] = ZiBound - Zb_ext[:,0]
     elif WEST_BC_TOGGLE == BoundaryCond.CONST_FLUX_BOUND:       # Constant Ice Flux B.C.
         pass
     elif WEST_BC_TOGGLE == BoundaryCond.SURF_SLOPE_BOUND:       # Constant Ice Surface Slope
         Zi_ext[:,0] = 2*Zi_ext[:,1] - Zi_ext[:,2]
         H_ext [:,0] = Zi_ext[:,0] - Zb_ext[:,0]
-        H_ext [:,0] = numpy.maximum( H_ext[:,0], 0 )
+        H_ext [:,0] = np.maximum( H_ext[:,0], 0 )
     elif WEST_BC_TOGGLE == BoundaryCond.ICE_FREE_BOUND:         # Ice Free Boundary
         H_ext[:,0] = 0
 
     # EASTERN BOUNDARY CONDITION
     if EAST_BC_TOGGLE == BoundaryCond.SURF_ELEV_BOUND:          # Constant Ice Surface Height
-        ZiBound     = numpy.mean(Zb[:,-1]) + Hbound
+        ZiBound     = np.mean(Zb[:,-1]) + Hbound
         H_ext[:,-1] = ZiBound - Zb_ext[:,-1]
     elif EAST_BC_TOGGLE == BoundaryCond.CONST_FLUX_BOUND:       # Constant Ice Flux B.C.
         pass
     elif EAST_BC_TOGGLE == BoundaryCond.SURF_SLOPE_BOUND:       # Constant Ice Surface Slope
         Zi_ext[:,-1] = 2*Zi_ext[:,-2] - Zi_ext[:,-3]
         H_ext [:,-1] = Zi_ext[:,-1] - Zb_ext[:,-1]
-        H_ext [:,-1] = numpy.maximum( H_ext[:,-1], 0)
+        H_ext [:,-1] = np.maximum( H_ext[:,-1], 0)
     elif EAST_BC_TOGGLE == BoundaryCond.ICE_FREE_BOUND:         # Ice Free Boundary
         H_ext[:,-1] = 0
             
     # SOUTHERN BOUNDARY CONDITION
     if SOUTH_BC_TOGGLE == BoundaryCond.SURF_ELEV_BOUND:         # Constant Ice Surface Height
-        ZiBound    = numpy.mean(Zb[0,:]) + Hbound
+        ZiBound    = np.mean(Zb[0,:]) + Hbound
         H_ext[0,:] = ZiBound - Zb_ext[0,:]
     elif SOUTH_BC_TOGGLE == BoundaryCond.CONST_FLUX_BOUND:      # Constant Ice Flux B.C.
         pass
     elif SOUTH_BC_TOGGLE == BoundaryCond.SURF_SLOPE_BOUND:      # Constant Ice Surface Slope
         Zi_ext[0,:] = 2*Zi_ext[1,:] - Zi_ext[2,:]
         H_ext [0,:] = Zi_ext[0,:] - Zb_ext[0,:]
-        H_ext [0,:] = numpy.maximum( H_ext[0,:], 0 )
+        H_ext [0,:] = np.maximum( H_ext[0,:], 0 )
     elif SOUTH_BC_TOGGLE == BoundaryCond.ICE_FREE_BOUND:        # Ice Free Boundary
         H_ext[0,:] = 0
             
     # NORTHERN BOUNDARY CONDITION
     if NORTH_BC_TOGGLE == BoundaryCond.SURF_ELEV_BOUND:         # Constant Ice Surface Height
-        ZiBound     = numpy.mean(Zb[-1,:]) + Hbound
+        ZiBound     = np.mean(Zb[-1,:]) + Hbound
         H_ext[-1,:] = ZiBound - Zb_ext[-1,:]
     elif NORTH_BC_TOGGLE == BoundaryCond.CONST_FLUX_BOUND:      # Constant Ice Flux B.C.
         pass
     elif NORTH_BC_TOGGLE == BoundaryCond.SURF_SLOPE_BOUND:      # Constant Ice Surface Slope
         Zi_ext[-1,:] = 2*Zi_ext[-2,:] - Zi_ext[-3,:]
         H_ext [-1,:] = Zi_ext[-1,:] - Zb_ext[-1,:]
-        H_ext [-1,:] = numpy.maximum( H_ext[-1,:], 0 )
+        H_ext [-1,:] = np.maximum( H_ext[-1,:], 0 )
     elif NORTH_BC_TOGGLE == BoundaryCond.ICE_FREE_BOUND:        # Ice Free Boundary
         H_ext[-1,:] = 0
         
@@ -490,15 +501,29 @@ def basal_shear_stress( H_ext , Zi_ext , dx=1. , dy=1. ,
     taubyX = ( taubyY_ext[:-1,:-1] + taubyY_ext[:-1,1:] +
                taubyY_ext[1: ,:-1] + taubyY_ext[1: ,1:] ) / 4.
             
-    taubX  = numpy.sqrt( taubxX**2 + taubyX**2 )
-    taubY  = numpy.sqrt( taubxY**2 + taubyY**2 )
+    taubX  = np.sqrt( taubxX**2 + taubyX**2 )
+    taubY  = np.sqrt( taubxY**2 + taubyY**2 )
 
-    taubX  = numpy.choose( HX>0 , (0,taubX) )
-    taubY  = numpy.choose( HY>0 , (0,taubY) )
+    taubX  = np.choose( HX>0 , (0,taubX) )
+    taubY  = np.choose( HY>0 , (0,taubY) )
 
     # Fill in zero values with 1 for use in division
-    xcmpnt = numpy.choose( numpy.abs(taubX)<1e-5 , ( taubxX / taubX , 0. ) )
-    ycmpnt = numpy.choose( numpy.abs(taubY)<1e-5 , ( taubyY / taubY , 0. ) )
+#     xcmpnt = np.choose( np.abs(taubX)<1e-5 , ( taubxX / taubX , 0. ) )
+#     ycmpnt = np.choose( np.abs(taubY)<1e-5 , ( taubyY / taubY , 0. ) )
+
+    #--------------------------------------------------------
+    # Rewrote last block to avoid error message:
+    # "RuntimeWarning: invalid value encountered in divide"
+    # SDP (2/23/17)
+    #--------------------------------------------------------
+    xcmpnt = np.zeros( taubxX.shape, dtype=taubxX.dtype )
+    ycmpnt = np.zeros( taubyY.shape, dtype=taubyY.dtype )
+    w1 = np.where( np.abs(taubX) >= 1e-5 )
+    w2 = np.where( np.abs(taubY) >= 1e-5 )
+    if (w1[0].size > 0):
+        xcmpnt[ w1 ] = taubxX[ w1 ] / taubX[ w1 ]
+    if (w2[0].size > 0):
+        ycmpnt[ w2 ] = taubyY[ w2 ] / taubY[ w2 ]
 
     return ( ( xcmpnt , ycmpnt ) , ( taubX , taubY ) , ( HX , HY ) )
 
@@ -514,7 +539,7 @@ def iceflow( taubX , taubY , HX , HY , xcmpnt , ycmpnt ,
              MinGlacThick = Parameters.MinGlacThick,
              lapseRate    = Parameters.lapseRate ):    # (value for ice sheets ???)
 ##             MinGlacThick = 1.0,
-##             lapseRate = numpy.float64(-0.0065)):    # (value for ice sheets ???)
+##             lapseRate = np.float64(-0.0065)):    # (value for ice sheets ???)
 
     #--------------------------------------------
     # CALCULATE ICE VELOCITY DUE TO DEFORMATION
@@ -526,15 +551,15 @@ def iceflow( taubX , taubY , HX , HY , xcmpnt , ycmpnt ,
         #        such as: lapseRate (added above), eHs, eTs, eTm, To,
         #        H_ext, Ts_ext and Tm_ext. (SDP, 9/21/09)
         ##################################################################        
-        A_ext = numpy.zeros(H_ext.shape , dtype='Float64' )
-        ind   = numpy.nonzero( numpy.ravel(H_ext) >= MinGlacThick )
+        A_ext = np.zeros(H_ext.shape , dtype='Float64' )
+        ind   = np.nonzero( np.ravel(H_ext) >= MinGlacThick )
 
         Ts_ext = To + lapseRate*( Zi_ext - Elev0 )
 
         
         #A_ext(ind) = interp3( eHs, eTs, eTm, eA, H_ext(ind), Ts_ext(ind), Tm_ext(ind) ) ;
         try:
-            numpy.put( A_ext , ind , interpolate.interp3d( eHs , eTs , eTm )( numpy.take(H_ext,ind) , numpy.take(Ts_ext,ind) , numpy.take(Tm_ext,ind) ) )
+            np.put( A_ext , ind , interpolate.interp3d( eHs , eTs , eTm )( np.take(H_ext,ind) , np.take(Ts_ext,ind) , np.take(Tm_ext,ind) ) )
         except:
             logging.error( "NaN in A, likely H_node exceeds H_glens limits" )
             return -1
@@ -547,11 +572,11 @@ def iceflow( taubX , taubY , HX , HY , xcmpnt , ycmpnt ,
         AY = glensA
 
     # Here's the guts of calculating the depth averaged velocity
-    UdxX = numpy.abs( .4 * AX * taubX*taubX*taubX * HX ) * xcmpnt
-    UdyY = numpy.abs( .4 * AY * taubY*taubY*taubY * HY ) * ycmpnt
+    UdxX = np.abs( .4 * AX * taubX*taubX*taubX * HX ) * xcmpnt
+    UdyY = np.abs( .4 * AY * taubY*taubY*taubY * HY ) * ycmpnt
 
-    #UdxX = numpy.fix(UdxX*1e6)*1e-6
-    #UdyY = numpy.fix(UdyY*1e6)*1e-6
+    #UdxX = np.fix(UdxX*1e6)*1e-6
+    #UdyY = np.fix(UdyY*1e6)*1e-6
 
     return ( UdxX , UdyY )
 
@@ -567,10 +592,10 @@ def ice_sliding( taubX , taubY , xcmpnt , ycmpnt ,
     # CALCULATE SLIDING VELOCITY
     #------------------------------        
     # Here's the guts of calculating the sliding velocity 
-    UsxX = numpy.choose( numpy.abs(taubX)<1e-5 , ( UsChar * numpy.exp(1 - taubChar / taubX) * xcmpnt ,
-                                                   UsChar * numpy.exp(1 - taubChar        ) * xcmpnt ) )
-    UsyY = numpy.choose( numpy.abs(taubY)<1e-5 , ( UsChar * numpy.exp(1 - taubChar / taubY) * ycmpnt , 
-                                                   UsChar * numpy.exp(1 - taubChar        ) * ycmpnt ) )
+    UsxX = np.choose( np.abs(taubX)<1e-5 , ( UsChar * np.exp(1 - taubChar / taubX) * xcmpnt ,
+                                                   UsChar * np.exp(1 - taubChar        ) * xcmpnt ) )
+    UsyY = np.choose( np.abs(taubY)<1e-5 , ( UsChar * np.exp(1 - taubChar / taubY) * ycmpnt , 
+                                                   UsChar * np.exp(1 - taubChar        ) * ycmpnt ) )
 
     if (THERMAL_TOGGLE and FREEZEON_TOGGLE):
         
@@ -579,7 +604,7 @@ def ice_sliding( taubX , taubY , xcmpnt , ycmpnt ,
         #        such as:  Tb_ext, Zb_ext, seaLevel.  (SDP, 9/21/09)
         ################################################################## 
         ## notFrozen  = (Tb_ext > -.5) or (Zb_ext < seaLevel)
-        notFrozen  = numpy.logical_or( Tb_ext > -0.5, Zb_ext < seaLevel )
+        notFrozen  = np.logical_or( Tb_ext > -0.5, Zb_ext < seaLevel )
         notFrozenX = ( notFrozen[1:-1, :-1] + notFrozen[1:-1,1:  ] ) / 2.
         notFrozenY = ( notFrozen[ :-1,1:-1] + notFrozen[1:  ,1:-1] ) / 2.
 
@@ -608,42 +633,42 @@ def avalanche( H , angleOfRepose=Parameters.angleOfRepose ):
     # less then or near the angle of repose
     #---------------------------------------------------------            
     ny, nx = Zb.shape
-    dHRepose = dx * numpy.tan(angleOfRepose * numpy.pi / 180.)
-    Ho       = numpy.maximum( H, 0 )
+    dHRepose = dx * np.tan(angleOfRepose * np.pi / 180.)
+    Ho       = np.maximum( H, 0 )
       
     while True:
-        dZidx_down        = numpy.zeros( (ny,nx) , dtype='Float64' )
-        dZidx_up          = numpy.zeros( (ny,nx) , dtype='Float64' )
-        dZidx_down[:,1:]  = numpy.choose( Zi[:,1:]  < Zi[:,:-1] , ( Zi[:,1:]  - Zi[:,:-1] , 0 ) )
-        dZidx_up  [:,:-1] = numpy.choose( Zi[:,:-1] < Zi[:,1:]  , ( Zi[:,:-1] - Zi[:,1:]  , 0 ) )
-        dZidx             = numpy.choose( dZidx_up > dZidx_down , ( dZidx_down , dZidx_up ) )
+        dZidx_down        = np.zeros( (ny,nx) , dtype='Float64' )
+        dZidx_up          = np.zeros( (ny,nx) , dtype='Float64' )
+        dZidx_down[:,1:]  = np.choose( Zi[:,1:]  < Zi[:,:-1] , ( Zi[:,1:]  - Zi[:,:-1] , 0 ) )
+        dZidx_up  [:,:-1] = np.choose( Zi[:,:-1] < Zi[:,1:]  , ( Zi[:,:-1] - Zi[:,1:]  , 0 ) )
+        dZidx             = np.choose( dZidx_up > dZidx_down , ( dZidx_down , dZidx_up ) )
 
-        dZidy_left         = numpy.zeros( (ny,nx) , dtype='Float64' )
-        dZidy_right        = numpy.zeros( (ny,nx) , dtype='Float64' )
-        dZidy_left [1:,:]  = numpy.choose( Zi[1:,:] < Zi[:-1,:] , ( Zi[1:,:] - Zi[:-1,:] , 0 ) )
-        dZidy_right[:-1,:] = numpy.choose( Zi[:-1,:] < Zi[1:,:] , ( Zi[:-1,:] - Zi[1:,:] , 0 ) )
-        dZidy              = numpy.choose( dZidy_left > dZidy_right , ( dZidy_right , dZidy_left ) )
+        dZidy_left         = np.zeros( (ny,nx) , dtype='Float64' )
+        dZidy_right        = np.zeros( (ny,nx) , dtype='Float64' )
+        dZidy_left [1:,:]  = np.choose( Zi[1:,:] < Zi[:-1,:] , ( Zi[1:,:] - Zi[:-1,:] , 0 ) )
+        dZidy_right[:-1,:] = np.choose( Zi[:-1,:] < Zi[1:,:] , ( Zi[:-1,:] - Zi[1:,:] , 0 ) )
+        dZidy              = np.choose( dZidy_left > dZidy_right , ( dZidy_right , dZidy_left ) )
 
-        grad  = numpy.sqrt( dZidx**2 + dZidy**2 )
+        grad  = np.sqrt( dZidx**2 + dZidy**2 )
         gradT = dZidy_left + dZidy_right + dZidx_down + dZidx_up
-        gradT = numpy.choose( gradT == 0, (gradT,1) )
-        grad  = numpy.choose( Ho < 0.1, (grad ,0) )
+        gradT = np.choose( gradT == 0, (gradT,1) )
+        grad  = np.choose( Ho < 0.1, (grad ,0) )
 
         mxGrad = grad.max()
 
         if (mxGrad <= 1.1*dHRepose):
             break
 
-        delH = numpy.choose( grad < dHRepose , ( ( grad - dHRepose)/3. , 0 ) )
+        delH = np.choose( grad < dHRepose , ( ( grad - dHRepose)/3. , 0 ) )
 
         Htmp = Ho.copy()
-        Ho   = numpy.choose( Htmp<delH , ( Htmp-delH , 0 ) )
+        Ho   = np.choose( Htmp<delH , ( Htmp-delH , 0 ) )
         delH = Htmp - Ho
 
-        delHdn = numpy.zeros( (ny,nx) , dtype='Float64' )
-        delHup = numpy.zeros( (ny,nx) , dtype='Float64' )
-        delHlt = numpy.zeros( (ny,nx) , dtype='Float64' )
-        delHrt = numpy.zeros( (ny,nx) , dtype='Float64' )
+        delHdn = np.zeros( (ny,nx) , dtype='Float64' )
+        delHup = np.zeros( (ny,nx) , dtype='Float64' )
+        delHlt = np.zeros( (ny,nx) , dtype='Float64' )
+        delHrt = np.zeros( (ny,nx) , dtype='Float64' )
 
         delHup[:,1:  ] = delH[:, :-1] * dZidx_up  [:, :-1]  / gradT[:, :-1]
         delHdn[:, :-1] = delH[:,1:  ] * dZidx_down[:,1:  ]  / gradT[:,1:  ]
@@ -651,12 +676,12 @@ def avalanche( H , angleOfRepose=Parameters.angleOfRepose ):
         delHlt[ :-1,:] = delH[1:  ,:] * dZidy_left [1:  ,:] / gradT[1:  ,:]
 
         Ho = Ho + delHdn + delHup + delHlt + delHrt
-        Ho = numpy.maximum( Ho, 0 )
+        Ho = np.maximum( Ho, 0 )
 
         Zi = Zb + Ho
             
     #H = Ho + (H<0).*H ;
-    H = Ho + numpy.choose( H<0 , (0,H) )    ### DOUBLE-CHECK THIS
+    H = Ho + np.choose( H<0 , (0,H) )    ### DOUBLE-CHECK THIS
 
     return H
         
@@ -685,8 +710,8 @@ def calve( H , dt , CALVING_TOGGLE=True ):
     while (dtTot > 0):
         # Find the calving front, aka the wet glacier margin
         G = H > 1
-        W = numpy.logical_and( G==0 , Zb <= seaLevel )
-        filt = numpy.array( [[0,1,0],[1,1,1],[0,1,0]] , dtype='Float64' )
+        W = np.logical_and( G==0 , Zb <= seaLevel )
+        filt = np.array( [[0,1,0],[1,1,1],[0,1,0]] , dtype='Float64' )
         Wfilt = filter2d( filt , W )
         Wfilt[:,(0,-1)] = Wfilt[:,(2,-3)]
         Wfilt[(0,-1),:] = Wfilt[(2,-3),:]
@@ -697,10 +722,10 @@ def calve( H , dt , CALVING_TOGGLE=True ):
         if (indWGM.size > 0):
             ## WDmarg = seaLevel - Zb.flatten()[indWGM]
             WDmarg = seaLevel - Zb.flat[indWGM]
-            WDmarg = numpy.maximum( WDmarg, 0 )
+            WDmarg = np.maximum( WDmarg, 0 )
             ind    = (WDmarg != 0).nonzero()
-            indWGM = numpy.take( indWGM , ind )
-            WDmarg = numpy.take( WDmarg , ind )
+            indWGM = np.take( indWGM , ind )
+            WDmarg = np.take( WDmarg , ind )
 
             #WDmarg = max( 0, seaLevel - Zb(indWGM) ) ;
             #ind = find( WDmarg == 0 ) ;
@@ -711,7 +736,7 @@ def calve( H , dt , CALVING_TOGGLE=True ):
         if (indWGM.size > 0):
             # ice thickness in calving cells
             Hmarg = H.flatten()[indWGM]
-            Hmarg = numpy.choose( Hmarg<WDmarg/0.917 , (Hmarg,WDmarg/0.917) )
+            Hmarg = np.choose( Hmarg<WDmarg/0.917 , (Hmarg,WDmarg/0.917) )
                 
             # A new timestep is calculated such that the calving rate times the 
             # timesstep does not exceed the total contents of any calving cell.
@@ -794,7 +819,7 @@ def mass_balance( Zi, t,
         ELA = initELA
         #Bxy = min( maxBz , gradBz * ( Zi - ELA ) )
         Bxy = gradBz * ( Zi - ELA )
-        Bxy = numpy.choose( Bxy > maxBz , (Bxy, maxBz) )
+        Bxy = np.choose( Bxy > maxBz , (Bxy, maxBz) )
             
     elif (MASS_BALANCE_TOGGLE == MassBalance.ELA_LOWERING):
         # ELA changing with time experiment
@@ -802,10 +827,10 @@ def mass_balance( Zi, t,
         # ELAStepSize = -10 ;       # positive/negative values raise/lower ELA
         # ELAStepInterval = 500 ;
                 
-        ## ELA = initELA + ELAStepSize * max( 0 , numpy.floor( (t-tmin)/ELAStepInterval ) )
-        ELA = initELA + ELAStepSize * numpy.maximum(0, (t-tmin)/ELAStepInterval )  # (SDP, 12/4/09)
+        ## ELA = initELA + ELAStepSize * max( 0 , np.floor( (t-tmin)/ELAStepInterval ) )
+        ELA = initELA + ELAStepSize * np.maximum(0, (t-tmin)/ELAStepInterval )  # (SDP, 12/4/09)
         Bxy = gradBz * ( Zi - ELA )
-        Bxy = numpy.choose( Bxy > maxBz , (Bxy, maxBz) )
+        Bxy = np.choose( Bxy > maxBz , (Bxy, maxBz) )
 
         #----------------
         # For debugging
@@ -818,15 +843,15 @@ def mass_balance( Zi, t,
     elif (MASS_BALANCE_TOGGLE == MassBalance.ELA_LOWERING2):
         # ELA changing with time experiment
             
-        tau      = numpy.float64(25)          # intrinsic timescale of ice dynamics 
-        tmin     = numpy.float64(0)           # time to begin ELA modification
-        initELA  = numpy.float64(4200)        # initial ELA
-        stepSize = numpy.float64(-10)         # positive/negative values raise/lower ELA
-        dELAdt   = numpy.float64(-0.1) 
+        tau      = np.float64(25)          # intrinsic timescale of ice dynamics 
+        tmin     = np.float64(0)           # time to begin ELA modification
+        initELA  = np.float64(4200)        # initial ELA
+        stepSize = np.float64(-10)         # positive/negative values raise/lower ELA
+        dELAdt   = np.float64(-0.1) 
                 
-        ELA = initELA + stepSize * max( 0, numpy.floor( (t-tmin) / (8*tau) ) )
+        ELA = initELA + stepSize * max( 0, np.floor( (t-tmin) / (8*tau) ) )
         Bxy = gradBz * ( Zi - ELA )
-        Bxy = numpy.choose( Bxy > maxBz , (Bxy, maxBz) )
+        Bxy = np.choose( Bxy > maxBz , (Bxy, maxBz) )
             
     elif (MASS_BALANCE_TOGGLE == MassBalance.EXTERNAL_FUNC):
         # external mass balance function
@@ -845,17 +870,17 @@ def mass_balance( Zi, t,
         # ELA time series
         ELA = interpolate.interp1d( trecord , ELArecord )( t )
         Bxy = gradBz * ( Zi - ELA )
-        Bxy = numpy.choose( Bxy > maxBz , (Bxy, maxBz) )
+        Bxy = np.choose( Bxy > maxBz , (Bxy, maxBz) )
 
     elif (MASS_BALANCE_TOGGLE == MassBalance.BALANCE_FILE):
         # external mass balance file
         Bxy = load_dem_var( DEM_file, 'Bxy' )
-        ind = numpy.nonzero( numpy.ravel(numpy.abs(Bxy)==min(numpy.abs(Bxy))) )
-        ELA = numpy.mean( numpy.take( numpy.ravel(Zi) , ind ) )
+        ind = np.nonzero( np.ravel(np.abs(Bxy)==min(np.abs(Bxy))) )
+        ELA = np.mean( np.take( np.ravel(Zi) , ind ) )
 
     elif (MASS_BALANCE_TOGGLE == MassBalance.ZERO_BALANCE):
         ELA = 0
-        Bxy = numpy.zeros( Zb.shape , dtype='Float64' )
+        Bxy = np.zeros( Zb.shape , dtype='Float64' )
                 
     else:
         logging.error( "Unrecognized Mass Balance" )
@@ -884,13 +909,13 @@ def mass_conservation( H_ext , UxX , UyY , HX , HY , dZidxX , dZidyY ,
     # Ensure that no ice is drawn from the rock
     # CLASS = H_ext >= MinGlacThick
     #--------------------------------------------
-    CLASS = numpy.choose( H_ext >= MinGlacThick , (0.,1.) )
+    CLASS = np.choose( H_ext >= MinGlacThick , (0.,1.) )
             
-    DCLASSx = ( CLASS[1:-1,1:  ] - CLASS[1:-1, :-1] ) * numpy.sign( dZidxX )
-    DCLASSy = ( CLASS[1:  ,1:-1] - CLASS[ :-1,1:-1] ) * numpy.sign( dZidyY )
+    DCLASSx = ( CLASS[1:-1,1:  ] - CLASS[1:-1, :-1] ) * np.sign( dZidxX )
+    DCLASSy = ( CLASS[1:  ,1:-1] - CLASS[ :-1,1:-1] ) * np.sign( dZidyY )
             
-    UxX = numpy.choose( numpy.abs(DCLASSx+1)<1e-5 , (UxX,0.) )
-    UyY = numpy.choose( numpy.abs(DCLASSy+1)<1e-5 , (UyY,0.) )
+    UxX = np.choose( np.abs(DCLASSx+1)<1e-5 , (UxX,0.) )
+    UyY = np.choose( np.abs(DCLASSy+1)<1e-5 , (UyY,0.) )
 
     # Calculate both components of the ice flux
     qxX = UxX * HX
@@ -920,10 +945,10 @@ def load_dem( DEM_file ):
     # Assume DEM_file is in MatLab format
     vars = scipy.io.loadmat( DEM_file )
 
-    cellsize = numpy.float64(vars['cellsize'])
-    easting  = numpy.float64(vars['easting'])
-    northing = numpy.float64(vars['northing'])
-    topo     = numpy.float64(vars['topo'])
+    cellsize = np.float64(vars['cellsize'])
+    easting  = np.float64(vars['easting'])
+    northing = np.float64(vars['northing'])
+    topo     = np.float64(vars['topo'])
 
     ny, nx = topo.shape
 
@@ -978,18 +1003,23 @@ def get_timestep( H, Zi_ext, Zi , dHdt, Bxy,
     
     # include ice changes by precip and melt
     dHdtTot = dHdt + Bxy
-    adHdt   = numpy.abs(dHdtTot)
-            
+    adHdt   = np.abs(dHdtTot)
+       
+#     print '#### Zi_ext.size  = ', Zi_ext.size
+#     print '#### Zi_ext.shape = ', Zi_ext.shape
+#     print '#### Zi_ext.min() = ', Zi_ext.min()
+#     print '#### Zi_ext.max() = ', Zi_ext.max()
+
     # something like standard deviation of 3x3 cell areas around each cell
-    filt   = numpy.ones( (3,3) , dtype='Float64' ) / 9.
+    filt   = np.ones( (3,3) , dtype='Float64' ) / 9.
     ZiMean = filter2d( filt , Zi_ext , 'valid' )
-    dHmax  = numpy.sqrt( filter2d( filt, (ZiMean - Zi)**2 ) )
+    dHmax  = np.sqrt( filter2d( filt, (ZiMean - Zi)**2 ) )
             
     # only consider cells with ice thickness > 10 m
     isGlac = (H > 10.)
             
     # find limiting timestep for each considered cell
-    ind = ( numpy.logical_and( numpy.logical_and( adHdt!=0 , dHmax!=0 ) , isGlac!=0 ) ).flatten().nonzero()
+    ind = ( np.logical_and( np.logical_and( adHdt!=0 , dHmax!=0 ) , isGlac!=0 ) ).flatten().nonzero()
 
     if (ind[0].size > 0):
         dtLimits = dHmax.flatten()[ ind ] / adHdt.flatten()[ ind ]
@@ -1012,7 +1042,7 @@ def get_timestep( H, Zi_ext, Zi , dHdt, Bxy,
         #if dt.size==0:
         dt = dtDefault
 
-    #dt = numpy.fix(dt*1e6)*1e-6
+    #dt = np.fix(dt*1e6)*1e-6
 
     return dt
 
@@ -1027,15 +1057,15 @@ def get_timestep( H, Zi_ext, Zi , dHdt, Bxy,
 ##   # timeSteps(numTimeSteps) = dt ;
 ##            
 ##   # increase in ice thicknesses due to precip
-##   Bxy_pos  = numpy.choose( Bxy>0 , (0,Bxy) )
+##   Bxy_pos  = np.choose( Bxy>0 , (0,Bxy) )
 ##   H       += Bxy_pos * dt
 ##            
 ##   # change ice thicknesses due to ice motion
 ##   H       += dHdt * dt
 ##            
 ##   # decrease in ice thicknesses due to melt
-##   Bxy_neg  =   numpy.choose( Bxy<0 , (0,Bxy))
-##   Bxy_neg  = - numpy.choose( H<-Bxy_neg , (-Bxy_neg,H) )
+##   Bxy_neg  =   np.choose( Bxy<0 , (0,Bxy))
+##   Bxy_neg  = - np.choose( H<-Bxy_neg , (-Bxy_neg,H) )
 ##   H       += Bxy_neg * dt
 ##   
 ##   # record ice addition or removal by climate
@@ -1047,9 +1077,9 @@ def get_timestep( H, Zi_ext, Zi , dHdt, Bxy,
 ##            qxX[:,0].sum(axis=0).sum() - qxX[:,-1].sum(axis=0).sum()
 ##   conserveIce = conserveIce + dt * qbound / dx
 ##            
-##   Zi = Zb + numpy.choose( H<0 , (H,0) )
+##   Zi = Zb + np.choose( H<0 , (H,0) )
 ##        
-##   if numpy.isnan(Zi).any():
+##   if np.isnan(Zi).any():
 ##      #save workspacedump
 ##      logging.error( "NaN in ice thickness" )
 ##      return -1
@@ -1074,7 +1104,7 @@ def update_vars( H , Zb , Zi , Bxy , qxX , qyY , dHdt ,
     #--------------------------------------------            
     # Increase in ice thicknesses due to precip
     #--------------------------------------------
-    Bxy_pos  = numpy.maximum(0, Bxy)  # (SDP)
+    Bxy_pos  = np.maximum(0, Bxy)  # (SDP)
     H       += Bxy_pos * dt
 
     #--------------------------------------------           
@@ -1088,12 +1118,12 @@ def update_vars( H , Zb , Zi , Bxy , qxX , qyY , dHdt ,
     # but dH in one timestep can't exceed H.
     # BUG FIX: Added dt in dH part.
     #---------------------------------------------------------
-    # Bxy_neg  =   numpy.choose( Bxy<0 , (0,Bxy))
-    # Bxy_neg  = - numpy.choose( H<-Bxy_neg , (-Bxy_neg,H) )
+    # Bxy_neg  =   np.choose( Bxy<0 , (0,Bxy))
+    # Bxy_neg  = - np.choose( H<-Bxy_neg , (-Bxy_neg,H) )
     # H       += Bxy_neg * dt
     #---------------------------------------------------------
-    Bxy_neg  = numpy.minimum(0, Bxy)
-    Bxy_neg  = numpy.maximum(-H/dt, Bxy_neg)
+    Bxy_neg  = np.minimum(0, Bxy)
+    Bxy_neg  = np.maximum(-H/dt, Bxy_neg)
     dH_melt  = Bxy_neg * dt
     H       += dH_melt   # (add a negative quantity)
 
@@ -1109,7 +1139,7 @@ def update_vars( H , Zb , Zi , Bxy , qxX , qyY , dHdt ,
     density_ratio = (Parameters.rhoI / Parameters.rhoW)
     meltrate      = -(dH_melt / dt) * density_ratio
     meltrate      = (meltrate / Parameters.sec_per_year)  # [m/yr] -> [m/s]
-    meltrate      = numpy.maximum(meltrate, 0, meltrate)
+    meltrate      = np.maximum(meltrate, 0, meltrate)
     #######################################################################
 
     #--------------------------------------------   
@@ -1134,11 +1164,11 @@ def update_vars( H , Zb , Zi , Bxy , qxX , qyY , dHdt ,
     #--------------------------------------------------
     # QUESTION:  Can H be < 0 anywhere at this point?
     #--------------------------------------------------
-    dz = numpy.maximum(H, 0)
+    dz = np.maximum(H, 0)
     Zi = Zb + dz
-    ## Zi = Zb + numpy.choose( H<0 , (H,0) )
+    ## Zi = Zb + np.choose( H<0 , (H,0) )
        
-    if numpy.isnan(Zi).any():
+    if np.isnan(Zi).any():
       # save workspace dump
       logging.error( "NaN in ice thickness" )
       return -1
@@ -1149,7 +1179,7 @@ def update_vars( H , Zb , Zi , Bxy , qxX , qyY , dHdt ,
 #-------------------------------------------------------------------------------------------------- 
 def print_watch_point( fd , x ):
    
-    y = numpy.double( x )
+    y = np.double( x )
     y.tofile( fd )    # (SDP. 10/24/11.  Untested, unused to avoid fwrite.)
     # fwrite( fd , y.size , y )
     # fd.flush()
@@ -1157,9 +1187,14 @@ def print_watch_point( fd , x ):
 #  print_watch_point()
 #-------------------------------------------------------------------------------------------------- 
 def update( t , H , Zb , dx , dy , meltrate, conserveIce,
-            COMPRESS_TOGGLE=None, ICEFLOW_TOGGLE=None,
-            ICESLIDE_TOGGLE=None, VARIABLE_DT_TOGGLE=None,
-            dtDefault=None, dtMax=None, SILENT=False):
+            COMPRESS_TOGGLE='None', ICEFLOW_TOGGLE='None',
+            ICESLIDE_TOGGLE='None', VARIABLE_DT_TOGGLE='None',
+            dtDefault='None', dtMax='None', SILENT=False):
+
+# def update( t , H , Zb , dx , dy , meltrate, conserveIce,
+#             COMPRESS_TOGGLE=None, ICEFLOW_TOGGLE=None,
+#             ICESLIDE_TOGGLE=None, VARIABLE_DT_TOGGLE=None,
+#             dtDefault=None, dtMax=None, SILENT=False):
 ##            COMPRESS_TOGGLE    = Toggles.COMPRESS_TOGGLE,
 ##            ICEFLOW_TOGGLE     = Toggles.ICEFLOW_TOGGLE,
 ##            ICESLIDE_TOGGLE    = Toggles.ICESLIDE_TOGGLE,
@@ -1175,18 +1210,31 @@ def update( t , H , Zb , dx , dy , meltrate, conserveIce,
     #  to the arguments of the update() function will always
     #  use the original values in Toggles and Parameters.
     #--------------------------------------------------------------
-    if (COMPRESS_TOGGLE == None):
+    if (COMPRESS_TOGGLE == 'None'):
         COMPRESS_TOGGLE = Toggles.COMPRESS_TOGGLE
-    if (ICEFLOW_TOGGLE == None):
+    if (ICEFLOW_TOGGLE == 'None'):
         ICEFLOW_TOGGLE = Toggles.ICEFLOW_TOGGLE
-    if (ICESLIDE_TOGGLE == None):
+    if (ICESLIDE_TOGGLE == 'None'):
         ICESLIDE_TOGGLE = Toggles.ICESLIDE_TOGGLE
-    if (VARIABLE_DT_TOGGLE == None):
+    if (VARIABLE_DT_TOGGLE == 'None'):
         VARIABLE_DT_TOGGLE = Toggles.VARIABLE_DT_TOGGLE
-    if (dtDefault == None):
+    if (dtDefault ==' None'):
         dtDefault = Parameters.dtDefault
-    if (dtMax == None):
+    if (dtMax ==' None'):
         dtMax = Parameters.dtMax
+    #--------------------------------------------------------------
+#     if (COMPRESS_TOGGLE == None):
+#         COMPRESS_TOGGLE = Toggles.COMPRESS_TOGGLE
+#     if (ICEFLOW_TOGGLE == None):
+#         ICEFLOW_TOGGLE = Toggles.ICEFLOW_TOGGLE
+#     if (ICESLIDE_TOGGLE == None):
+#         ICESLIDE_TOGGLE = Toggles.ICESLIDE_TOGGLE
+#     if (VARIABLE_DT_TOGGLE == None):
+#         VARIABLE_DT_TOGGLE = Toggles.VARIABLE_DT_TOGGLE
+#     if (dtDefault == None):
+#         dtDefault = Parameters.dtDefault
+#     if (dtMax == None):
+#         dtMax = Parameters.dtMax
         
     #-----------------------------------------------------------
     # COMPRESS - ONLY SIMULATE SUB-RECTANGLE THAT CONTAINS ICE
@@ -1210,8 +1258,8 @@ def update( t , H , Zb , dx , dy , meltrate, conserveIce,
     if (ICEFLOW_TOGGLE):
         ( UdxX , UdyY ) = iceflow( taubX , taubY , HX , HY , xcmpnt , ycmpnt )
     else:
-        UdxX = numpy.zeros( xcmpnt.shape , dtype='Float64' )    #### INEFFICIENT TO HAVE INSIDE LOOP
-        UdyY = numpy.zeros( ycmpnt.shape , dtype='Float64' )
+        UdxX = np.zeros( xcmpnt.shape , dtype='Float64' )    #### INEFFICIENT TO HAVE INSIDE LOOP
+        UdyY = np.zeros( ycmpnt.shape , dtype='Float64' )
 
     #-----------------------------------------------------------
     # CALCULATE SLIDING VELOCITY
@@ -1219,8 +1267,8 @@ def update( t , H , Zb , dx , dy , meltrate, conserveIce,
     if (ICESLIDE_TOGGLE):
         ( UsxX , UsyY ) = ice_sliding( taubX , taubY , xcmpnt , ycmpnt )
     else:
-        UsxX = numpy.zeros( xcmpnt.shape , dtype='Float64' )     #### INEFFICIENT TO HAVE INSIDE LOOP
-        UsyY = numpy.zeros( ycmpnt.shape , dtype='Float64' )
+        UsxX = np.zeros( xcmpnt.shape , dtype='Float64' )     #### INEFFICIENT TO HAVE INSIDE LOOP
+        UsyY = np.zeros( ycmpnt.shape , dtype='Float64' )
 
     #-----------------------------------------------------------
     # Sum all contributions to ice motion
@@ -1281,8 +1329,8 @@ def init_valley_glacier( DEM_file='Animas_200.mat', dx_sim=200 ): #, mask_file=N
     # Resample DEM at new node spacing
     # Now done in "init_valley_glacier" and "init_ice_sheet"
     #---------------------------------------------------------
-    dx = numpy.float64(dx_sim)  # set a new dx
-    dy = numpy.float64(dx_sim)
+    dx = np.float64(dx_sim)  # set a new dx
+    dy = np.float64(dx_sim)
     if (cellsize != dx):
         ( topo , easting , northing, cellsize) = resample_dem( topo, dx, dy, cellsize )
         
@@ -1295,7 +1343,7 @@ def init_valley_glacier( DEM_file='Animas_200.mat', dx_sim=200 ): #, mask_file=N
 ##  	  watershed_mask = load_mask( mask_file )	 ########  There is no "load_mask()" function here.  #########
 ##    except:
 ##  	  # Use the whole grid if no watershed mask is available
-##  	  watershed_mask = numpy.ones( topo.shape , dtype='Float64' )
+##  	  watershed_mask = np.ones( topo.shape , dtype='Float64' )
 ##    
 ##  	 ## logging.warning( 'No watershed mask found; using the whole grid for AAR and eroded flux calculations.' )
 ##    
@@ -1310,13 +1358,13 @@ def init_valley_glacier( DEM_file='Animas_200.mat', dx_sim=200 ): #, mask_file=N
 ##    try:
 ##    	initELA
 ##    except NameError:
-    Parameters.initELA = numpy.float64(3350)
-    Parameters.maxBz   = numpy.float64(2)
-    Parameters.gradBz  = numpy.float64(1./100.)
+    Parameters.initELA = np.float64(3350)
+    Parameters.maxBz   = np.float64(2)
+    Parameters.gradBz  = np.float64(1./100.)
         
-##        initELA = numpy.float64(3350)   ############### Need to return or store these.
-##        maxBz   = numpy.float64(2)
-##        gradBz  = numpy.float64(1./100.)
+##        initELA = np.float64(3350)   ############### Need to return or store these.
+##        maxBz   = np.float64(2)
+##        gradBz  = np.float64(1./100.)
 
     return ( topo, easting, northing, cellsize, dx, dy )
 
@@ -1332,8 +1380,8 @@ def init_ice_sheet( DEM_file='Baffin200d', dx_sim=2000 ):
     # Resample DEM at new node spacing
     # Now done in "init_valley_glacier" and "init_ice_sheet"
     #---------------------------------------------------------
-    dx  = numpy.float64(dx_sim)  # set a new dx
-    dy  = numpy.float64(dx_sim)
+    dx  = np.float64(dx_sim)  # set a new dx
+    dy  = np.float64(dx_sim)
     if (cellsize != dx):
         ( topo , easting , northing, cellsize) = resample_dem( topo, dx, dy, cellsize )
 
@@ -1342,23 +1390,23 @@ def init_ice_sheet( DEM_file='Baffin200d', dx_sim=2000 ):
     #          yet, so this is not finished.
     ######################################################
     
-#     Parameters.UsChar   = numpy.float64(50)
-#     Parameters.taubChar = numpy.float64(50000)
+#     Parameters.UsChar   = np.float64(50)
+#     Parameters.taubChar = np.float64(50000)
         
     # Calving
     Parameters.seaLevel = -100 ;    # meters
     Parameters.calvingCoef = 10 ;   # 1/year
                 
     # Mass Balance
-    Parameters.initELA   = numpy.float64(300)
-    Parameters.maxBz     = numpy.float64(0.5)
-    Parameters.gradBz    = numpy.float64(1./2000)
+    Parameters.initELA   = np.float64(300)
+    Parameters.maxBz     = np.float64(0.5)
+    Parameters.gradBz    = np.float64(1./2000)
                 
-    Parameters.Hbound    = numpy.float64(2000)
+    Parameters.Hbound    = np.float64(2000)
  
-    Parameters.Elev0     = numpy.float64(0)           # reference elevation
-    Parameters.To        = numpy.float64(2.6)         # temperature at Elev0
-    Parameters.lapseRate = numpy.float64(-0.0065)     # degrees per meter
+    Parameters.Elev0     = np.float64(0)           # reference elevation
+    Parameters.To        = np.float64(2.6)         # temperature at Elev0
+    Parameters.lapseRate = np.float64(-0.0065)     # degrees per meter
                    
     Toggles.COMPRESS_TOGGLE         = 0
     Toggles.GENERIC_ICE_TOGGLE      = 0
@@ -1396,25 +1444,25 @@ def resample_dem( topo, dx, dy, cellsize ):
     print ' '
 
     ny, nx = topo.shape
-    xOld = numpy.arange(nx-1) * cellsize
-    yOld = numpy.arange(ny-1) * cellsize
+    xOld = np.arange(nx-1) * cellsize
+    yOld = np.arange(ny-1) * cellsize
 
     #xOld = (0:nx-1)*cellsize ;
     #yOld = (0:ny-1)*cellsize ;
 
-    XOld,YOld = numpy.meshgrid( xOld , yOld )
+    XOld,YOld = np.meshgrid( xOld , yOld )
         
     #if rem(max(xOld),dx) == 0 and rem(max(yOld),dy) == 0:
     if (max(xOld) % dx == 0) and (max(yOld) % dy == 0):
        nx_New = max(xOld)/dx + 1
        ny_New = max(yOld)/dy + 1
     else:
-       nx_New = numpy.ceil( xOld[-1] / dx )
-       ny_New = numpy.ceil( yOld[-1] / dy )
+       nx_New = np.ceil( xOld[-1] / dx )
+       ny_New = np.ceil( yOld[-1] / dy )
             
-    x = numpy.arange(nx_New) * dx
-    y = numpy.arange(ny_New) * dy
-    X,Y = numpy.meshgrid( x , y )
+    x = np.arange(nx_New) * dx
+    y = np.arange(ny_New) * dy
+    X,Y = np.meshgrid( x , y )
        
     topo     = interpolate.interp2d( XOld , YOld , topo , kind='linear' )( X , Y )
     #topo     = interpolate.interp2d( XOld , YOld , topo, X, Y ) ;
@@ -1434,8 +1482,8 @@ def init_ice_surface(Zb, ZiBound, Hbound, dx):
     # is on the left side of the simulation.
     # Need to check code; better to rotate DEM prior to use.
     #---------------------------------------------------------   
-    ZiBound  = numpy.mean(Zb[:,0]) + Hbound
-    H        = numpy.zeros(Zb.shape, dtype='Float64' )
+    ZiBound  = np.mean(Zb[:,0]) + Hbound
+    H        = np.zeros(Zb.shape, dtype='Float64' )
     ny, nx = Zb.shape
     #----------------------------------
     taub      = 200000
@@ -1452,7 +1500,7 @@ def init_ice_surface(Zb, ZiBound, Hbound, dx):
     for i in range(ny):
     
         mZb   = Zb[i,:]
-        slope = -numpy.diff(mZb) / dx
+        slope = -np.diff(mZb) / dx
 
         #-------------------------------------------            
         # Search starts in front of the terminus
@@ -1464,11 +1512,11 @@ def init_ice_surface(Zb, ZiBound, Hbound, dx):
             #------------------------        
             # Backwater calculation
             #------------------------
-            mH = numpy.zeros(mZb.shape, dtype='Float64' )
+            mH = np.zeros(mZb.shape, dtype='Float64' )
             for j in range(jterm-1,-1,-1):
                 term1  = ( -slope[j]/2. - (mH[j+1]/dx) )**2
                 term2  = -(2./dx) * ( slope[j] * mH[j+1] - beta )
-                deltaH = -slope[j]*dx/2. - mH[j+1] + dx * numpy.sqrt(term1+term2)
+                deltaH = -slope[j]*dx/2. - mH[j+1] + dx * np.sqrt(term1+term2)
                 mH[j]  = mH[j+1] + deltaH
 
             #------------------------------------------------                
@@ -1495,8 +1543,8 @@ def init_ice_surface(Zb, ZiBound, Hbound, dx):
     Zi = Zb + H
                    
     ny, nx = Zb.shape
-    filt    = numpy.ones( (3,3) , dtype='Float64' ) / 9
-    ZiBig   = numpy.zeros( (ny+2,nx+2) , dtype='Float64' )
+    filt    = np.ones( (3,3) , dtype='Float64' ) / 9
+    ZiBig   = np.zeros( (ny+2,nx+2) , dtype='Float64' )
     ZiBig[1:-1,1:-1] = Zi
     
     for i in range(10):
@@ -1597,12 +1645,12 @@ def load_state( DEM_file='Animas_200.mat',
     # (Add this to "load_dem()" function instead.
     #-------------------------------------------------
     ny, nx = topo.shape
-    #if !exist('easting') : easting  = numpy.arange( nx )
-    #if !exist('northing'): northing = numpy.arange( ny )
+    #if !exist('easting') : easting  = np.arange( nx )
+    #if !exist('northing'): northing = np.arange( ny )
     try:              easting
-    except NameError: easting  = numpy.arange( nx )
+    except NameError: easting  = np.arange( nx )
     try:              northing
-    except NameError: northing = numpy.arange( ny )
+    except NameError: northing = np.arange( ny )
 
     #---------------------------------------------------------
     # Resample DEM at new node spacing
@@ -1620,9 +1668,9 @@ def load_state( DEM_file='Animas_200.mat',
     #--------------------------------------
     # Has ice depth, H, been defined yet?
     #--------------------------------------
-    #if !exist('H'): H = numpy.zeros(Zb.shape)
+    #if !exist('H'): H = np.zeros(Zb.shape)
     try: H
-    except NameError: H = numpy.zeros( Zb.shape , dtype='Float64' )
+    except NameError: H = np.zeros( Zb.shape , dtype='Float64' )
 
     #--------------------------------------
     # Free surface = bed elev + ice depth
@@ -1642,9 +1690,9 @@ def load_state( DEM_file='Animas_200.mat',
     # Define X and Y grids (for plotting option?)
     #----------------------------------------------
     ny, nx = Zb.shape
-    x   = numpy.arange( nx ) * dx
-    y   = numpy.arange( ny ) * dy
-    X,Y = numpy.meshgrid( x , y )
+    x   = np.arange( nx ) * dx
+    y   = np.arange( ny ) * dy
+    X,Y = np.meshgrid( x , y )
     
     #---------------------------------------------
     # Use these to track that ice is conserved ?
@@ -1739,8 +1787,8 @@ def load_state( DEM_file='Animas_200.mat',
 ##        #load( DEM_file ) ;
 ##        ( topo , easting , northing , cellsize ) = load_dem( DEM_file )
 ##
-##        dx = numpy.float64(200)  # set a new dx
-##        dy = numpy.float64(dx)
+##        dx = np.float64(200)  # set a new dx
+##        dy = np.float64(dx)
 ##            
 ##        # AAR and eroded volume watershed mask
 ##        mask_file = 'watershed_mask'
@@ -1749,7 +1797,7 @@ def load_state( DEM_file='Animas_200.mat',
 ##           #load( mask_file );
 ##           watershed_mask = load_mask( mask_file )
 ##        except:
-##           watershed_mask = numpy.ones( topo.shape , dtype='Float64' )
+##           watershed_mask = np.ones( topo.shape , dtype='Float64' )
 ##           # Use the whole grid if no watershed mask is available
 ##           msg  = 'No watershed mask found; using the whole grid '
 ##           msg += 'for AAR and eroded flux calculations.'
@@ -1765,9 +1813,9 @@ def load_state( DEM_file='Animas_200.mat',
 ##
 ##        try: initELA
 ##        except NameError:
-##           initELA = numpy.float64(3350)
-##           maxBz   = numpy.float64(2)
-##           gradBz  = numpy.float64(1./100.)
+##           initELA = np.float64(3350)
+##           maxBz   = np.float64(2)
+##           gradBz  = np.float64(1./100.)
 ##
 ##     elif INIT_COND_TOGGLE==2:    # Ice sheets
 ##
@@ -1777,25 +1825,25 @@ def load_state( DEM_file='Animas_200.mat',
 ##        #load( DEM_file ) ;
 ##        ( topo , easting , northing ) = load_dem( DEM_file )
 ##                        
-##        dx       = numpy.float64(2000)  # set a new dx
+##        dx       = np.float64(2000)  # set a new dx
 ##        dy       = dx 
 ##            
-##        UsChar   = numpy.float64(100)
-##        taubChar = numpy.float64(50000)
+##        UsChar   = np.float64(100)
+##        taubChar = np.float64(50000)
 ##            
 ##        #load( DEM_file, 'Bxy' ) ;
 ##        Bxy = load_dem_var( DEM_file , 'Bxy' )
 ##            
 ##        # Mass Balance
-##        initELA   = numpy.float64(3500)
-##        maxBz     = numpy.float64(0)
-##        gradBz    = numpy.float64(1./100)
+##        initELA   = np.float64(3500)
+##        maxBz     = np.float64(0)
+##        gradBz    = np.float64(1./100)
 ##            
-##        Hbound    = numpy.float64(2000)
+##        Hbound    = np.float64(2000)
 ##            
-##        Elev0     = numpy.float64(0)           # reference elevation
-##        To        = numpy.float64(-30)         # temperature at Elev0
-##        lapseRate = numpy.float64(-0.0065)     # degrees per meter
+##        Elev0     = np.float64(0)           # reference elevation
+##        To        = np.float64(-30)         # temperature at Elev0
+##        lapseRate = np.float64(-0.0065)     # degrees per meter
 ##               
 ##        COMPRESS_TOGGLE         = 0
 ##        GENERIC_ICE_TOGGLE      = 0
@@ -1823,39 +1871,39 @@ def load_state( DEM_file='Animas_200.mat',
 ##        dy = dx
 ##         
 ##     ny, nx = topo.shape
-##     #if !exist('easting') : easting  = numpy.arange( nx )
-##     #if !exist('northing'): northing = numpy.arange( ny )
+##     #if !exist('easting') : easting  = np.arange( nx )
+##     #if !exist('northing'): northing = np.arange( ny )
 ##
 ##     try:              easting
-##     except NameError: easting  = numpy.arange( nx )
+##     except NameError: easting  = np.arange( nx )
 ##     try:              northing
-##     except NameError: northing = numpy.arange( ny )
+##     except NameError: northing = np.arange( ny )
 ##     
 ##                
 ##     # resample DEM at new node spacing
 ##     if cellsize != dx:
 ##            
 ##        ny, nx = topo.shape
-##        xOld = numpy.arange(nx-1)*cellsize
-##        yOld = numpy.arange(ny-1)*cellsize
+##        xOld = np.arange(nx-1)*cellsize
+##        yOld = np.arange(ny-1)*cellsize
 ##
 ##        #xOld = (0:nx-1)*cellsize ;
 ##        #yOld = (0:ny-1)*cellsize ;
 ##
-##        XOld,YOld = numpy.meshgrid( xOld , yOld )
+##        XOld,YOld = np.meshgrid( xOld , yOld )
 ##            
 ##        #if rem(max(xOld),dx) == 0 and rem(max(yOld),dy) == 0:
 ##        if max(xOld) % dx == 0 and max(yOld) % dy == 0:
 ##           nx_New = max(xOld)/dx + 1
 ##           ny_New = max(yOld)/dy + 1
 ##        else:
-##           nx_New = numpy.ceil( xOld[-1] / dx )
-##           ny_New = numpy.ceil( yOld[-1] / dy )
+##           nx_New = np.ceil( xOld[-1] / dx )
+##           ny_New = np.ceil( yOld[-1] / dy )
 ##                
-##        x = numpy.arange(nx_New) * dx
-##        y = numpy.arange(ny_New) * dy
+##        x = np.arange(nx_New) * dx
+##        y = np.arange(ny_New) * dy
 ##
-##        X,Y = numpy.meshgrid( x , y )
+##        X,Y = np.meshgrid( x , y )
 ##           
 ##        topo     = interpolate.interp2d( XOld , YOld , topo , kind='linear' )( X , Y )
 ##        #topo     = interpolate.interp2d( XOld , YOld , topo, X, Y ) ;
@@ -1868,17 +1916,17 @@ def load_state( DEM_file='Animas_200.mat',
 ##     Zb     = topo.copy()
 ##     initZb = Zb.copy()
 ##
-##     #if !exist('H'): H = numpy.zeros(Zb.shape)
+##     #if !exist('H'): H = np.zeros(Zb.shape)
 ##     try: H
-##     except NameError: H = numpy.zeros( Zb.shape , dtype='Float64' )
+##     except NameError: H = np.zeros( Zb.shape , dtype='Float64' )
 ##
 ##     Zi     = H + Zb
 ##     #clear topo
 ##        
 ##     ny, nx = Zb.shape
-##     x   = numpy.arange( nx ) * dx
-##     y   = numpy.arange( ny ) * dy
-##     X,Y = numpy.meshgrid( x , y )
+##     x   = np.arange( nx ) * dx
+##     y   = np.arange( ny ) * dy
+##     X,Y = np.meshgrid( x , y )
 ##
 ##     # Create a generic ice surface
 ##     if GENERIC_ICE_TOGGLE:
@@ -1887,9 +1935,9 @@ def load_state( DEM_file='Animas_200.mat',
 ##        # ice boundary is on the left side of the simulation
 ##        # need to check code; better to rotate DEM prior to use
 ##            
-##        ZiBound = numpy.mean(Zb[:,0]) + Hbound
+##        ZiBound = np.mean(Zb[:,0]) + Hbound
 ##        taub    = 200000
-##        H       = numpy.zeros(Zb.shape, dtype='Float64' )
+##        H       = np.zeros(Zb.shape, dtype='Float64' )
 ##        ny, nx = Zb.shape
 ##        beta    = taub/(rhoI*g)
 ##        jtermlast = nx-2
@@ -1902,7 +1950,7 @@ def load_state( DEM_file='Animas_200.mat',
 ##        for i in range(ny):
 ##        
 ##           mZb   = Zb[i,:]
-##           slope = -numpy.diff(mZb)/dx
+##           slope = -np.diff(mZb)/dx
 ##                
 ##           # search starts in front of the terminus
 ##           # of the adjacent row that was just found  
@@ -1910,12 +1958,12 @@ def load_state( DEM_file='Animas_200.mat',
 ##           while jterm > 0:
 ##            
 ##              # backwater calculation
-##              mH = numpy.zeros(mZb.shape, dtype='Float64' )
+##              mH = np.zeros(mZb.shape, dtype='Float64' )
 ##              for j in range(jterm-1,-1,-1):
 ##        
 ##                 term1  = ( -slope[j]/2. - (mH[j+1]/dx) )**2
 ##                 term2  = -(2./dx) * ( slope[j] * mH[j+1] - beta )
-##                 deltaH = -slope[j]*dx/2. - mH[j+1] + dx * numpy.sqrt(term1+term2)
+##                 deltaH = -slope[j]*dx/2. - mH[j+1] + dx * np.sqrt(term1+term2)
 ##                 mH[j]  = mH[j+1] + deltaH
 ##                    
 ##              # the following ensures that the search for
@@ -1939,8 +1987,8 @@ def load_state( DEM_file='Animas_200.mat',
 ##        Zi = Zb + H
 ##                       
 ##        ny,nx = Zb.shape
-##        filt    = numpy.ones( (3,3) , dtype='Float64' ) / 9
-##        ZiBig   = numpy.zeros( (ny+2,nx+2) , dtype='Float64' )
+##        filt    = np.ones( (3,3) , dtype='Float64' ) / 9
+##        ZiBig   = np.zeros( (ny+2,nx+2) , dtype='Float64' )
 ##        ZiBig[1:-1,1:-1] = Zi
 ##        
 ##        for i in range(10):
@@ -1972,7 +2020,7 @@ def load_state( DEM_file='Animas_200.mat',
 ##    fd_watch = {}
 ##    fd_watch['thick']  = open( 'thickness_py.bin' , 'wb' )
 ##
-##    conserveIce = numpy.float64(0.)
+##    conserveIce = np.float64(0.)
 ##    counter = 0
 ##    # tic = time.time()
 ##
@@ -2000,8 +2048,8 @@ def load_state( DEM_file='Animas_200.mat',
 ##        if ICEFLOW_TOGGLE:
 ##            ( UdxX , UdyY ) = iceflow( taubX , taubY , HX , HY , xcmpnt , ycmpnt )
 ##        else:
-##            UdxX = numpy.zeros( xcmpnt.shape , dtype='Float64' )
-##            UdyY = numpy.zeros( ycmpnt.shape , dtype='Float64' )
+##            UdxX = np.zeros( xcmpnt.shape , dtype='Float64' )
+##            UdyY = np.zeros( ycmpnt.shape , dtype='Float64' )
 ##
 ##        #-----------------------------------------------------------
 ##        # CALCULATE SLIDING VELOCITY
@@ -2009,8 +2057,8 @@ def load_state( DEM_file='Animas_200.mat',
 ##        if ICESLIDE_TOGGLE:
 ##            ( UsxX , UsyY ) = ice_sliding( taubX , taubY , xcmpnt , ycmpnt )
 ##        else:
-##            UsxX = numpy.zeros( xcmpnt.shape , dtype='Float64' )
-##            UsyY = numpy.zeros( ycmpnt.shape , dtype='Float64' )
+##            UsxX = np.zeros( xcmpnt.shape , dtype='Float64' )
+##            UsyY = np.zeros( ycmpnt.shape , dtype='Float64' )
 ##
 ##        #-----------------------------------------------------------
 ##        # Sum all contributions to ice motion
