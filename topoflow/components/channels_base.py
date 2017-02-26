@@ -611,10 +611,14 @@ class channels_component( BMI_base.BMI_component ):
         if (DEBUG): print '#### Calling update_flow_depth()...'
         self.update_flow_depth()
         #-----------------------------------------------------------------
-        if not(self.DYNAMIC_WAVE):
-            if (DEBUG): print '#### Calling update_trapezoid_Rh()...'
-            self.update_trapezoid_Rh()
-            # print 'Rhmin, Rhmax =', self.Rh.min(), self.Rh.max()a
+        if (DEBUG): print '#### Calling update_trapezoid_Rh()...'
+        self.update_trapezoid_Rh()
+        # print 'Rhmin, Rhmax =', self.Rh.min(), self.Rh.max()a
+        #-----------------------------------------------------------------
+#         if not(self.DYNAMIC_WAVE):
+#             if (DEBUG): print '#### Calling update_trapezoid_Rh()...'
+#             self.update_trapezoid_Rh()
+#             # print 'Rhmin, Rhmax =', self.Rh.min(), self.Rh.max()a
         #-----------------------------------------------------------------
         # (9/9/14) Moved this here from update_velocity() methods.
         #-----------------------------------------------------------------        
@@ -1419,13 +1423,15 @@ class channels_component( BMI_base.BMI_component ):
         #
         #           CHANGE Manning's n here, too?
         #------------------------------------------------------
-        d_bankfull = 4.0  # [meters]
-        ################################
-        wb = (self.d > d_bankfull)  # (array of True or False)
-        if not(SCALAR_WIDTHS):
-            self.width[ wb ]  = self.d8.dw[ wb ]
-        if not(SCALAR_ANGLES):
-            self.angle[ wb ] = 0.0
+        # (2/25/17) Commented out since arbitrary.
+        #------------------------------------------------------
+#         d_bankfull = 4.0  # [meters]
+#         ################################
+#         wb = (self.d > d_bankfull)  # (array of True or False)
+#         if not(SCALAR_WIDTHS):
+#             self.width[ wb ]  = self.d8.dw[ wb ]
+#         if not(SCALAR_ANGLES):
+#             self.angle[ wb ] = 0.0
      
 #         w_overbank = np.where( d > d_bankfull )
 #         n_overbank = np.size( w_overbank[0] )
@@ -1436,8 +1442,11 @@ class channels_component( BMI_base.BMI_component ):
         #------------------------------------------------------
         # (2/18/10) New code to deal with case where the top
         #           width exceeds the grid cell width, dw.
-        #------------------------------------------------------            
-        top_width = width + (2.0 * d * np.sin(self.angle))
+        #------------------------------------------------------
+        # (2/25/17) Bug fix. sin(t) -> tan(t) in top_width.            
+        # top_width = width + (2.0 * d * np.sin(self.angle))
+        #------------------------------------------------------  
+        top_width = width + (2.0 * d * np.tan(self.angle))
         wb = (top_width > self.d8.dw)  # (array of True or False)
         if not(SCALAR_WIDTHS):
             self.width[ wb ] = self.d8.dw[ wb ]
@@ -1532,7 +1541,18 @@ class channels_component( BMI_base.BMI_component ):
         #-----------------------------------------------------------
         delta_d     = (self.d - self.d[self.d8.parent_IDs])
         self.S_free[:] = self.S_bed + (delta_d / self.d8.ds)
-        
+
+        #--------------        
+        # For testing
+        #---------------------------------------------------------
+        # Note: del_S takes both signs, but abs(del_S) is small.
+        #---------------------------------------------------------
+#         del_S = (self.S_free - self.S_bed)
+#         print 'S_free:    min, max:', self.S_free.min(), self.S_free.max()
+#         print 'S_bed:     min, max:', self.S_bed.min(),  self.S_bed.max()
+#         print '(Sf - Sb): min, max:', del_S.min(),  del_S.max()
+#         print '==========================================================='
+
         #--------------------------------------------
         # Don't do this; negative slopes are needed
         # to decelerate flow in dynamic wave case
@@ -1553,9 +1573,9 @@ class channels_component( BMI_base.BMI_component ):
         if (self.KINEMATIC_WAVE):
         	slope = self.S_bed
         else:
-            slope = self.S_free
+            slope = np.abs( self.S_free )   # (Avoid tau < 0.)
         self.tau[:] = self.rho_H2O * self.g * self.d * slope
-               
+   
     #   update_shear_stress()
     #-------------------------------------------------------------------
     def update_shear_speed(self):
