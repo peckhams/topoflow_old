@@ -122,7 +122,7 @@ def TF_Build_Date():
     #---------------------------------------------------------
     # Notes:  Update this whenever a new version is released
     #---------------------------------------------------------
-    return '2/20/17'
+    return '2/26/17'  ## (3.5, for GPF paper)
     ## return '11/16/16'
     ## return '9/22/14'  ## (3.4)
 

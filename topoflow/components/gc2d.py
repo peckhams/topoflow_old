@@ -520,14 +520,25 @@ def basal_shear_stress( H_ext , Zi_ext , dx=1. , dy=1. ,
     # "RuntimeWarning: invalid value encountered in divide"
     # SDP (2/23/17)
     #--------------------------------------------------------
+    # Boolean array subscripting shown here works even if
+    # all array elements are True or False.
+    #--------------------------------------------------------
     xcmpnt = np.zeros( taubxX.shape, dtype=taubxX.dtype )
     ycmpnt = np.zeros( taubyY.shape, dtype=taubyY.dtype )
-    w1 = np.where( np.abs(taubX) >= 1e-5 )
-    w2 = np.where( np.abs(taubY) >= 1e-5 )
-    if (w1[0].size > 0):
-        xcmpnt[ w1 ] = taubxX[ w1 ] / taubX[ w1 ]
-    if (w2[0].size > 0):
-        ycmpnt[ w2 ] = taubyY[ w2 ] / taubY[ w2 ]
+    w1 = ( np.abs(taubX) >= 1e-5 )   # (Boolean array)
+    w2 = np.invert( w1 )             # (Boolean array)
+    xcmpnt[ w1 ] = taubxX[ w1 ] / taubX[ w1 ]
+    ycmpnt[ w2 ] = taubyY[ w2 ] / taubY[ w2 ]
+
+    #-------------------
+    # Another approach
+    #-------------------
+#     w1 = np.where( np.abs(taubX) >= 1e-5 )
+#     w2 = np.where( np.abs(taubY) >= 1e-5 )
+#     if (w1[0].size > 0):
+#         xcmpnt[ w1 ] = taubxX[ w1 ] / taubX[ w1 ]
+#     if (w2[0].size > 0):
+#         ycmpnt[ w2 ] = taubyY[ w2 ] / taubY[ w2 ]
 
     return ( ( xcmpnt , ycmpnt ) , ( taubX , taubY ) , ( HX , HY ) )
 

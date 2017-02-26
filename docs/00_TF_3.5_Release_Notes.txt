@@ -1,11 +1,12 @@
 
 TopoFlow 3.5 Release Notes
-February 21, 2017
+February 26, 2017
 
 ===============================
   Enhancements & New Features
 ===============================
-* Improved installation instructions (in docs folder).
+* Improved installation instructions.  See "How_to_Install_TopoFlow_3.5.pdf"
+  in the "docs" folder.
 
 * Added "__main__.py" in the "topoflow" package folder which allows
   TopoFlow model runs to be launched at a terminal prompt with a
@@ -48,6 +49,7 @@ February 21, 2017
   component.   Using these new methods ensures that references to numpy
   arrays, including "0d arrays", are preserved and properly updated and
   this results in shorter runtimes.  See comments in the code for details.
+  These new commands are not yet used throughout the code.
 
 * Improved the output printed to the console at the end of a TopoFlow
   model run by the component "topoflow_driver.py".  Note that any component
@@ -65,6 +67,11 @@ February 21, 2017
      topoflow/framework/emeli.py
   but also includes a version that does use cfunits:
      topoflow/framework/emeli_with_cfunits.py
+
+* Performed basic testing of every TopoFlow component with the Treynor
+  example data set.  CFG files, model output files and complete console
+  output for a set of 12 tests are provided in:
+     topoflow/examples/Treynor_Iowa_30m/00_Output_Files
 
 * Ran basic, successful tests of the TF 3.5 package on Windows with an
   Anaconda Python distribution.  One required change was the replacement of
@@ -103,16 +110,20 @@ February 21, 2017
 * Removed "feature" where the midpoint of a DEM was used for the basin
   outlet in the absence of an outlet_file: [case_prefix]_outlets.txt.
   This resulted in strange behavior and very small discharge values.
+  TopoFlow will no longer run without a valid "outlet_file".
 
 * Removed numerous, obsolete code blocks that had been commented out.
 
 * Updated EMELI to remove references to the obsolete "port" concept.
+  See: topoflow/framework/emeli.py.
 
 * Fixed bug where files were written to user's home directory when
   out_directory = "." in the path info CFG file.
 
 * Fixed bugs in the Diversions component and added the "plane" test data
-  set in topoflow/examples/Test_Plane_Canal.
+  set in topoflow/examples/Test_Plane_Canal.  Ran a series of successful
+  tests described in: "00_README_Test_Plan_Canal.txt". Also see the
+  movies in the 00_Movies folder.
 
 * NetCDF output files now use NETCDF3_CLASSIC vs. NETCDF4_CLASSIC format.
   As with previous versions, TF 3.5 uses the netCDF4 Python package to
@@ -134,37 +145,46 @@ February 21, 2017
   NETCDF3_CLASSIC format.  Note that NetCDF3 files can be converted to
   NetCDF4 files, if necessary, using the nccopy utility from UniData.
 
-====================================
-  Remaining Issues & Possible Bugs
-====================================
+* Fixed a bug in topoflow/componenets/gc2d.py, a component that can
+  model the dynamics of valley glaciers.  The bug was in the filter2d()
+  function, where the order of arguments to convolve() had to be reversed.
+  Also fixed cause of "invalid division" error in the basal_shear_stress()
+  function.
+
+* Implemented a new version of the "update_velocity()" method in:
+     topoflow/components/channels_dynamic_wave.py.  For details, see:
+  "Peckham_2017_Routing_Notes.pdf" in the "docs" folder.  The dynamic
+  wave component for D8 channel routing should be used with caution as it
+  is susceptible to subtle numerical stability issues.
+
+=================================
+  Known Issues & Possible Bugs
+=================================
 
 * Many components & utilities do not have "triple quote" help strings.
 
-* Most of the component unit tests are broken or missing.
+* Most of the component unit tests (in "tests" folders) are broken or missing.
+  (However, all components were tested for Treynor data set: see above.)
 
 * In satzone_base.py, must have water table elevation < land surface
   elevation (DEM) everywhere at start of a model run.
 
-* Need to add more detail to the README.md file in the package.
+* Should add more detail to the README.md file in the package.  However,
+  there is now a lot of documentation in the "docs" folder.
 
 * TF 3.5 writes "long names" from variables to NetCDF files, but these
   names do not yet use the CF Standard Names nor the CSDMS Standard Names.
 
-* Non-robust, hard-coded value for d_bankfull in channels_base.py.
-
 * There are still some calls to "idl_func" methods that should be updated.
-
-* Check that all issues in 00_PROBLEMS.txt have been included here.
+  These are holdovers from the initial conversion from IDL to Python using
+  I2PY.
 
 * Python exec() command is still used too much in model_output.py.
 
-* The update_water_balance() method in evap_base.py is commented out.
+* The update_water_balance() method is commented out in:
+     topoflow/components/evap_base.py.
   It has not been examined/tested for a long time.
 
-* There is an unidentified problem with the component:
-      topoflow/components/channels_dynamic_wave.py
-  It may be a problem with the mathematical model, a bug, or a numerical
-  instability.
 
 
 
