@@ -193,13 +193,13 @@ examples_dir  = examples_dir  + os.sep
 SILENT = False
 if not(SILENT):
 	# print ' '
-	print 'Paths for this package:'
-	print 'framework_dir =', framework_dir
-	print 'parent_dir    =', parent_dir
-	print 'examples_dir  =', examples_dir
-	print '__file__      =', __file__
-	print '__name__      =', __name__
-	print ' '
+	print('Paths for this package:')
+	print('framework_dir =', framework_dir)
+	print('parent_dir    =', parent_dir)
+	print('examples_dir  =', examples_dir)
+	print('__file__      =', __file__)
+	print('__name__      =', __name__)
+	print(' ')
 
 #--------------------------------------
 # Save the full paths in a dictionary
@@ -351,9 +351,9 @@ class framework():
         ########
     
         if not(SILENT):
-            print 'Reading info from comp_repo_file:'
-            print '    ' + comp_repo_file
-            print ' '
+            print('Reading info from comp_repo_file:')
+            print('    ' + comp_repo_file)
+            print(' ')
         
         #-------------------------------------------
         # Read all component info from an XML file
@@ -369,11 +369,11 @@ class framework():
         C_elements = dom.firstChild.getElementsByTagName("component") 
         n_comps    = len(C_elements)
         if (n_comps == 0):
-            print '########################################'
-            print ' ERROR: Component repository XML file'
-            print '        has no "component" tags.'
-            print '########################################'
-            print ' '
+            print('########################################')
+            print(' ERROR: Component repository XML file')
+            print('        has no "component" tags.')
+            print('########################################')
+            print(' ')
             return
             
         #------------------------------------------------------
@@ -484,8 +484,8 @@ class framework():
         #-----------------------------------------------------
 
         if not(SILENT):
-            print 'Reading info from provider_file:'
-            print '    ' + self.provider_file
+            print('Reading info from provider_file:')
+            print('    ' + self.provider_file)
 
         self.provider_list = []
         self.comp_set_list = []
@@ -517,12 +517,12 @@ class framework():
         # Is comp_name in repo_list ?
         #------------------------------
         if (comp_name not in self.repo_list):
-            print '#########################################'
-            print ' ERROR: There is no component named:'
-            print '    ' + comp_name
-            print ' in the component repository.'
-            print '#########################################'
-            print ' '
+            print('#########################################')
+            print(' ERROR: There is no component named:')
+            print('    ' + comp_name)
+            print(' in the component repository.')
+            print('#########################################')
+            print(' ')
             return False
         else:
             return True
@@ -705,7 +705,7 @@ class framework():
         # Final message
         #----------------
         if not(SILENT):
-            print 'Instantiated component:', comp_name
+            print('Instantiated component:', comp_name)
             ## print '        of comp_type:', comp_type
 
     #   instantiate()
@@ -743,7 +743,7 @@ class framework():
         # Final message
         #----------------
         if not(SILENT):
-            print 'Removed component:', comp_name
+            print('Removed component:', comp_name)
             
     #   remove()
     #-------------------------------------------------------------------
@@ -751,9 +751,9 @@ class framework():
                  long_var_name, REPORT=False ):
 
         if (REPORT):
-            print 'Connecting user: ' + user_name
-            print '    to provider: ' + provider_name
-            print '    for the variable: ' + long_var_name
+            print('Connecting user: ' + user_name)
+            print('    to provider: ' + provider_name)
+            print('    for the variable: ' + long_var_name)
 
         #---------------------------------------------
         # Get a reference to long_var_name from the
@@ -1076,11 +1076,11 @@ class framework():
         #---------------------------------------------
         status = bmi.get_status()
         if (status == 'failed'):
-            print '================================================'
-            print 'ERROR: Model run aborted.'
-            print '  Update failed on component: ' + comp_name + '.'
-            print '================================================'
-            print ' '
+            print('================================================')
+            print('ERROR: Model run aborted.')
+            print('  Update failed on component: ' + comp_name + '.')
+            print('================================================')
+            print(' ')
             self.DONE = True
     
     #   update()
@@ -1145,7 +1145,7 @@ class framework():
         #       is an unordered dictionary.
         #--------------------------------------------------
         if not(hasattr(self, 'provider_list')):
-            print 'Providers not yet read from provider_file.'
+            print('Providers not yet read from provider_file.')
             return
         
         for comp_name in self.provider_list:
@@ -1163,7 +1163,7 @@ class framework():
         #       is an unordered dictionary.
         #--------------------------------------------------
         if not(hasattr(self, 'provider_list')):
-            print 'Providers not yet read from provider_file.'
+            print('Providers not yet read from provider_file.')
             return
         
         for comp_name in self.provider_list:
@@ -1180,7 +1180,7 @@ class framework():
         #       is an unordered dictionary.
         #--------------------------------------------------
         if not(hasattr(self, 'provider_list')):
-            print 'Providers not yet read from provider_file.'
+            print('Providers not yet read from provider_file.')
             return
         
         for comp_name in self.provider_list:
@@ -1203,7 +1203,7 @@ class framework():
         #       is an unordered dictionary.
         #--------------------------------------------------
         if not(hasattr(self, 'provider_list')):
-            print 'Providers not yet read from provider_file.'
+            print('Providers not yet read from provider_file.')
             return
         
         for comp_name in self.provider_list:
@@ -1244,10 +1244,10 @@ class framework():
         DEBUG = True
         ## DEBUG = False
         if (cfg_prefix == None):
-            print 'ERROR: The "cfg_prefix" argument is required.'
+            print('ERROR: The "cfg_prefix" argument is required.')
             return
         if (cfg_directory == None):
-            print 'ERROR: The "cfg_directory" argument is required.'
+            print('ERROR: The "cfg_directory" argument is required.')
             return
         
         #--------------------------------------------------
@@ -1329,8 +1329,8 @@ class framework():
         #---------------------------------------
         driver = self.comp_set[ driver_comp_name ]
         driver.mode = 'driver'
-        print 'Driver component name =', driver_comp_name
-        print ' '
+        print('Driver component name =', driver_comp_name)
+        print(' ')
         
         #-----------------------------------
         # Initialize all time-related vars
@@ -1541,14 +1541,14 @@ class framework():
         dt_array = np.zeros( n_comps )
         dt_units = np.zeros( n_comps, dtype='|S30')   ###
         k = 0
-        print 'Original component time step sizes ='
+        print('Original component time step sizes =')
         for comp_name in self.provider_list:    
             bmi      = self.comp_set[ comp_name ]
             dt       = bmi.get_time_step()
             units    = bmi.get_time_units()
             unit_str = '[' + units + ']'
             ## print 'units =', units
-            print '    ' + comp_name + ' = ', dt, unit_str 
+            print('    ' + comp_name + ' = ', dt, unit_str) 
             dt_array[ k ] = dt
             dt_units[ k ] = units
             k += 1 
@@ -1556,8 +1556,8 @@ class framework():
         #-----------------------------------------
         # Convert all time step units to seconds
         #-----------------------------------------
-        print 'Converting all time step units to seconds...'
-        for k in xrange( n_comps ):
+        print('Converting all time step units to seconds...')
+        for k in range( n_comps ):
             dt    = dt_array[ k ]
             units = dt_units[ k ]
             dt = self.convert_time_units( dt, units )
@@ -1573,8 +1573,8 @@ class framework():
         dt_min = dt_array.min()
         self.dt = dt_min        # (framework timestep)
         dt_min_name = self.provider_list[ dt_array.argmin() ]
-        print 'Component with smallest time step is:', dt_min_name
-        print ' '
+        print('Component with smallest time step is:', dt_min_name)
+        print(' ')
 
         #----------------------------------------------
         # This is not used with new method. (4/13/13)
@@ -1673,14 +1673,14 @@ class framework():
         self.all_input_var_names.sort()
         self.all_output_var_names.sort()
         if (REPORT):
-            print 'Input variables required by this comp_set:'
+            print('Input variables required by this comp_set:')
             for name in self.all_input_var_names:
-                print '    ' + name
-            print ' '
-            print 'Output variables provided by this comp_set:'
+                print('    ' + name)
+            print(' ')
+            print('Output variables provided by this comp_set:')
             for name in self.all_output_var_names:
-                print '    ' + name
-            print ' '
+                print('    ' + name)
+            print(' ')
 
         #--------------------------------------------------- 
         # Make list of output_vars actually used by others
@@ -1715,17 +1715,17 @@ class framework():
                 provider_list = self.var_providers[ long_var_name ]
                 n_providers   = len( provider_list )
                 if (n_providers > 1):
-                    print '========================================'
-                    print ' WARNING: Found multiple providers in'
-                    print '          comp_set for long_var_name:'
-                    print '            ' + long_var_name
-                    print ' Providers are:', provider_list
+                    print('========================================')
+                    print(' WARNING: Found multiple providers in')
+                    print('          comp_set for long_var_name:')
+                    print('            ' + long_var_name)
+                    print(' Providers are:', provider_list)
                     OK = False
             else:
-                print '========================================'
-                print ' WARNING: Found no providers in this'
-                print '          comp_set for long_var_name:'
-                print '            ' + long_var_name
+                print('========================================')
+                print(' WARNING: Found no providers in this')
+                print('          comp_set for long_var_name:')
+                print('            ' + long_var_name)
                 ### print,'          requested by: ' + ??????
                 OK = False
 
@@ -1802,7 +1802,7 @@ class framework():
             #-------------------------------------------
             cfg_file = self.get_cfg_filename( bmi )
             self.initialize( provider_name, cfg_file )
-            print 'Initialized component: ' + provider_name + '.'
+            print('Initialized component: ' + provider_name + '.')
             ## print 'Initialized component of type: ' + provider_name + '.'
             ## print 'Initialized: ' + comp_name + '.'
 
@@ -1937,9 +1937,9 @@ class framework():
             #------------------
             REPORT = False
             if (REPORT):
-                print 'user: ' + user_name
-                print '    just obtained var:  ' + long_var_name
-                print '    from provider: ' + provider_name
+                print('user: ' + user_name)
+                print('    just obtained var:  ' + long_var_name)
+                print('    from provider: ' + provider_name)
            
     #   get_required_vars()
     #-------------------------------------------------------------------

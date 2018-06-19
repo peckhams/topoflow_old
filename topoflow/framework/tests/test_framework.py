@@ -252,7 +252,7 @@ def ref_test():
     #-----------------------------------------------------
     class comp2():
         def print_x(self):
-            print 'After c1.update(), c2.x =', self.x
+            print('After c1.update(), c2.x =', self.x)
         #-------------------------------------------------
         def set_values(self, var_name, scalar):
             setattr( self, var_name, scalar )
@@ -291,7 +291,7 @@ def ref_test():
 #     cmd = "setattr(self, 'x[True]', random.random() )"
 #     print '0d array update test.  Command: ' + cmd
 
-    for k in xrange(3):
+    for k in range(3):
         c1.update()
         c2.print_x()
     
@@ -312,17 +312,17 @@ def framework_test1():
     f.cfg_prefix = 'June_20_67'
     
     f.read_repository( SILENT=False )  
-    print 'Components in repository:'
+    print('Components in repository:')
     for comp_name in f.repo_list:
-        print '   ' + comp_name
-    print ' '
+        print('   ' + comp_name)
+    print(' ')
 
     tf_comp_info = f.comp_info[ 'topoflow_driver' ]  
-    print 'Checking some info for "topoflow_driver":'
-    print '    comp_name  =', tf_comp_info.comp_name
-    print '    model_name =', tf_comp_info.model_name
-    print '    uses_ports =', tf_comp_info.uses_ports
-    print ' '
+    print('Checking some info for "topoflow_driver":')
+    print('    comp_name  =', tf_comp_info.comp_name)
+    print('    model_name =', tf_comp_info.model_name)
+    print('    uses_ports =', tf_comp_info.uses_ports)
+    print(' ')
 
     #--------------------------------------------
     # Instantiate a complete set of components.
@@ -341,9 +341,9 @@ def framework_test1():
                  'topoflow_driver' ]
     for comp_name in comp_list:
         f.instantiate( comp_name, SILENT=False )
-    print ' '
-    print 'ALL_PYTHON =', f.ALL_PYTHON
-    print ' '
+    print(' ')
+    print('ALL_PYTHON =', f.ALL_PYTHON)
+    print(' ')
 
     #------------------------------------------
     # Check if all uses ports have a provider
@@ -394,16 +394,16 @@ def framework_test1():
     ## cfg_file = None
     ## f.initialize( 'meteorology', cfg_file )
     f.initialize( 'meteorology' )
-    print 'Initialized component of type: meteorology.'
+    print('Initialized component of type: meteorology.')
     ## f.initialize( 'snow', cfg_file)
     f.initialize( 'snow' )
-    print 'Initialized component of type: snow.'   
-    print ' '
+    print('Initialized component of type: snow.')   
+    print(' ')
 
     #--------------------------------------------
     # Copy references from Meteorology to Snow.
     #--------------------------------------------
-    print 'Copying references from Meteorology to Snow component...'
+    print('Copying references from Meteorology to Snow component...')
     provider_name = 'meteorology'
     user_name     = 'snow'
     var_name_list = ['atmosphere_bottom_air__temperature',
@@ -418,7 +418,7 @@ def framework_test1():
     #--------------------------------------------
     # Copy references from Snow to Meteorology.
     #--------------------------------------------
-    print 'Copying references from Snow to Meteorology component...'
+    print('Copying references from Snow to Meteorology component...')
     provider_name = 'snow'
     user_name     = 'meteorology'
     var_name_list = [ 'snowpack__depth',
@@ -434,19 +434,19 @@ def framework_test1():
     #---------------------------------------
     snow_comp = f.comp_set['snow']
     met_comp  = f.comp_set['meteorology']
-    print ' '
-    print 'From meteorology, snow got: density of water =', \
-          snow_comp.rho_H2O
+    print(' ')
+    print('From meteorology, snow got: density of water =', \
+          snow_comp.rho_H2O)
           ### snow_comp.met_vars.rho_H2O
-    print 'From snow, meteorology got: density of snow  =', \
-          met_comp.rho_snow
+    print('From snow, meteorology got: density of snow  =', \
+          met_comp.rho_snow)
           ### met_comp.snow_vars.rho_snow
     
     #----------------
     # Final message
     #----------------
-    print 'Finished with framework_test1.'
-    print ' '
+    print('Finished with framework_test1.')
+    print(' ')
     
 #   framework_test1()
 #-----------------------------------------------------------------------
@@ -465,10 +465,10 @@ def framework_test2():
     f.cfg_directory = examples_dir + 'Treynor_Iowa/'
     f.cfg_prefix = 'June_20_67'  # (needed by initialize())
         
-    print 'Components in repository:'
+    print('Components in repository:')
     for comp_name in f.repo_list:
-        print '   ' + comp_name
-    print ' '
+        print('   ' + comp_name)
+    print(' ')
  
     #-----------------------------------------------------
     # Set self.comp_set_list and self.provider_list
@@ -503,7 +503,7 @@ def framework_test2():
     # Call update() for each provider, in order.
     # Don't worry about reconciling time steps yet.
     #------------------------------------------------
-    print ' '
+    print(' ')
     # f.update_all()  # (not ordered)
 
 ##    for k in xrange(10):
@@ -523,8 +523,8 @@ def framework_test2():
     #----------------
     # Final message
     #----------------
-    print 'Finished with framework_test2.'
-    print ' '
+    print('Finished with framework_test2.')
+    print(' ')
 
 #   framework_test2()
 #-----------------------------------------------------------------------
