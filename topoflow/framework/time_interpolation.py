@@ -182,7 +182,7 @@ class time_interpolator():
         self.provider_comp_list   = comp_names
         self.vars_provided        = vars_provided
         self.interpolation_method = method
-        print('Time interpolation method =', method)
+        print('Time interpolation method = %s' % method)
         print(' ')
         
     #   __init__()

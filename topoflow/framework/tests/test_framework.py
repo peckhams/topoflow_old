@@ -252,7 +252,7 @@ def ref_test():
     #-----------------------------------------------------
     class comp2():
         def print_x(self):
-            print('After c1.update(), c2.x =', self.x)
+            print('After c1.update(), c2.x = %s' % self.x)
         #-------------------------------------------------
         def set_values(self, var_name, scalar):
             setattr( self, var_name, scalar )
@@ -319,9 +319,9 @@ def framework_test1():
 
     tf_comp_info = f.comp_info[ 'topoflow_driver' ]  
     print('Checking some info for "topoflow_driver":')
-    print('    comp_name  =', tf_comp_info.comp_name)
-    print('    model_name =', tf_comp_info.model_name)
-    print('    uses_ports =', tf_comp_info.uses_ports)
+    print('    comp_name  = %s' % tf_comp_info.comp_name)
+    print('    model_name = %s' % tf_comp_info.model_name)
+    print('    uses_ports = %s' % tf_comp_info.uses_ports)
     print(' ')
 
     #--------------------------------------------
@@ -342,7 +342,7 @@ def framework_test1():
     for comp_name in comp_list:
         f.instantiate( comp_name, SILENT=False )
     print(' ')
-    print('ALL_PYTHON =', f.ALL_PYTHON)
+    print('ALL_PYTHON = %s' % f.ALL_PYTHON)
     print(' ')
 
     #------------------------------------------
@@ -435,10 +435,10 @@ def framework_test1():
     snow_comp = f.comp_set['snow']
     met_comp  = f.comp_set['meteorology']
     print(' ')
-    print('From meteorology, snow got: density of water =', \
+    print('From meteorology, snow got: density of water = %s' % \
           snow_comp.rho_H2O)
           ### snow_comp.met_vars.rho_H2O
-    print('From snow, meteorology got: density of snow  =', \
+    print('From snow, meteorology got: density of snow  = %s' % \
           met_comp.rho_snow)
           ### met_comp.snow_vars.rho_snow
     

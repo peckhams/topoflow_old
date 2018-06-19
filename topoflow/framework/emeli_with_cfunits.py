@@ -187,11 +187,11 @@ SILENT = False
 if not(SILENT):
 	# print ' '
 	print('Paths for this package:')
-	print('framework_dir =', framework_dir)
-	print('parent_dir    =', parent_dir)
-	print('examples_dir  =', examples_dir)
-	print('__file__      =', __file__)
-	print('__name__      =', __name__)
+	print('framework_dir = %s' % framework_dir)
+	print('parent_dir    = %s' % parent_dir)
+	print('examples_dir  = %s' % examples_dir)
+	print('__file__      = %s' % __file__)
+	print('__name__      = %s' % __name__)
 	print(' ')
 
 #--------------------------------------
@@ -698,7 +698,7 @@ class framework():
         # Final message
         #----------------
         if not(SILENT):
-            print('Instantiated component:', comp_name)
+            print('Instantiated component: %s' % comp_name)
             ## print '        of comp_type:', comp_type
 
     #   instantiate()
@@ -736,7 +736,7 @@ class framework():
         # Final message
         #----------------
         if not(SILENT):
-            print('Removed component:', comp_name)
+            print('Removed component: %s' % comp_name)
             
     #   remove()
     #-------------------------------------------------------------------
@@ -1316,7 +1316,7 @@ class framework():
         #---------------------------------------
         driver = self.comp_set[ driver_comp_name ]
         driver.mode = 'driver'
-        print('Driver component name =', driver_comp_name)
+        print('Driver component name = %s' % driver_comp_name)
         print(' ')
         
         #-----------------------------------
@@ -1535,7 +1535,7 @@ class framework():
             units    = bmi.get_time_units()
             unit_str = '[' + units + ']'
             ## print 'units =', units
-            print('    ' + comp_name + ' = ', dt, unit_str) 
+            print('    %s = %s %s' % (comp_name, dt, unit_str))
             dt_array[ k ] = dt
             dt_units[ k ] = units
             k += 1 
@@ -1560,7 +1560,7 @@ class framework():
         dt_min = dt_array.min()
         self.dt = dt_min        # (framework timestep)
         dt_min_name = self.provider_list[ dt_array.argmin() ]
-        print('Component with smallest time step is:', dt_min_name)
+        print('Component with smallest time step is: %s' % dt_min_name)
         print(' ')
 
         #----------------------------------------------
