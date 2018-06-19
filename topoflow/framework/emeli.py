@@ -192,14 +192,14 @@ examples_dir  = examples_dir  + os.sep
 
 SILENT = False
 if not(SILENT):
-	# print ' '
-	print('Paths for this package:')
-	print('framework_dir = %s' % framework_dir)
-	print('parent_dir    = %s' % parent_dir)
-	print('examples_dir  = %s' % examples_dir)
-	print('__file__      = %s' % __file__)
-	print('__name__      = %s' % __name__)
-	print(' ')
+    # print ' '
+    print('Paths for this package:')
+    print('framework_dir = %s' % framework_dir)
+    print('parent_dir    = %s' % parent_dir)
+    print('examples_dir  = %s' % examples_dir)
+    print('__file__      = %s' % __file__)
+    print('__name__      = %s' % __name__)
+    print(' ')
 
 #--------------------------------------
 # Save the full paths in a dictionary
@@ -267,31 +267,31 @@ class framework():
     secs_per_year  = 365 * secs_per_day
     secs_per_month = secs_per_year / 12    #########
 
-# 	##################################################################
-# 	# NOTE:  "get_package_paths" will not work as intended on Python
-# 	# versions less than 3.4 if os.chddir() is called between two
-# 	# calls to get_package_paths().  This is a known Python issue
-# 	# that has been discussed frequently online.  (9/17/14)
-# 	##################################################################
+#     ##################################################################
+#     # NOTE:  "get_package_paths" will not work as intended on Python
+#     # versions less than 3.4 if os.chddir() is called between two
+#     # calls to get_package_paths().  This is a known Python issue
+#     # that has been discussed frequently online.  (9/17/14)
+#     ##################################################################
 # 
-# 	#------------------------------------------------------
-# 	# Get path to the current file (emeli.py).  (7/29/13)
-# 	# At top need: "#! /usr/bin/env python" ??
-# 	# See: https://docs.python.org/2/library/os.path.html
-# 	#------------------------------------------------------
+#     #------------------------------------------------------
+#     # Get path to the current file (emeli.py).  (7/29/13)
+#     # At top need: "#! /usr/bin/env python" ??
+#     # See: https://docs.python.org/2/library/os.path.html
+#     #------------------------------------------------------
 #     framework_dir = os.path.dirname( __file__ )
 #     parent_dir    = os.path.join( framework_dir, '..' )
 #     # parent_dir    = os.path.join( framework_dir, os.path.pardir )
 #     examples_dir  = os.path.join( parent_dir, 'examples' )
-# 	#-------------------------------------------------------
+#     #-------------------------------------------------------
 #     framework_dir = os.path.abspath( framework_dir )
 #     parent_dir    = os.path.abspath( parent_dir )
 #     examples_dir  = os.path.abspath( examples_dir )
-# 	#-------------------------------------------------------
+#     #-------------------------------------------------------
 # #     framework_dir = os.path.realpath( framework_dir )
 # #     parent_dir    = os.path.realpath( parent_dir )
 # #     examples_dir  = os.path.realpath( examples_dir )
-# 	#-------------------------------------------------------
+#     #-------------------------------------------------------
 #     framework_dir = framework_dir + os.sep
 #     parent_dir    = parent_dir    + os.sep
 #     examples_dir  = examples_dir  + os.sep
@@ -306,15 +306,15 @@ class framework():
 #         print '__file__      =', __file__
 #         print '__name__      =', __name__
 #         print ' '
-# 	
-# 	#--------------------------------------
-# 	# Save the full paths in a dictionary
-# 	#--------------------------------------
+#     
+#     #--------------------------------------
+#     # Save the full paths in a dictionary
+#     #--------------------------------------
 #     paths = dict()
 #     paths['framework']        = framework_dir
 #     paths['examples']         = examples_dir
 #     paths['framework_parent'] = parent_dir
-		
+        
     #-------------------------------------------------------------------
     def read_repository( self, SILENT=True ):
 
@@ -786,13 +786,13 @@ class framework():
 #         p_units = p_bmi.get_var_units( long_var_name )
 #         u_units = u_bmi.get_var_units( long_var_name )     
 #         if (u_units != p_units):
-# # 			print '#### long_var_name = ' + long_var_name
-# # 			print '#### provider_name = ' + provider_name
-# # 			print '#### user_name     = ' + user_name
-# # 			print '#### p_units       = ' + p_units
-# # 			print '#### u_units       = ' + u_units
-# 			#---------------------------------------------- 
-# 			values = Units.conform( values, Units(p_units), Units(u_units) )
+# #             print '#### long_var_name = ' + long_var_name
+# #             print '#### provider_name = ' + provider_name
+# #             print '#### user_name     = ' + user_name
+# #             print '#### p_units       = ' + p_units
+# #             print '#### u_units       = ' + u_units
+#             #---------------------------------------------- 
+#             values = Units.conform( values, Units(p_units), Units(u_units) )
 
         #---------------------------------------------------
         # Embed a reference to long_var_name from the
@@ -938,10 +938,10 @@ class framework():
 #         dtype = str( values.dtype )
 #         rank  = np.ndim( values )
 # 
-# 	    #------------------------------------------
+#         #------------------------------------------
 #         # Use dtype and rank to call appropriate,
 #         # static-type BMI functions.
-# 	    #------------------------------------------
+#         #------------------------------------------
 #         if (dtype == 'float64'):
 #             if (rank == 0):
 #                 bmi.set_0d_double( long_var_name, values )
@@ -951,7 +951,7 @@ class framework():
 #                 bmi.set_2d_double( long_var_name, values )
 #             elif (rank == 3):
 #                 bmi.set_3d_double( long_var_name, values )
-# 	    #------------------------------------------------------
+#         #------------------------------------------------------
 #         elif (dtype == 'int32'):
 #             if (rank == 0):
 #                 bmi.set_0d_int( long_var_name, values )
@@ -975,32 +975,32 @@ class framework():
     def get_values_at_indices( self, long_var_name, indices,
                                comp_name ):
 
-		#-------------------------------------------------------------
-		# Notes:  For the specified variable, get the values at the
-		#         specified indices and return them.  If the wrapped
-		#         model is raster, then each raster cell has a long
-		#         integer, calendar-style index and these are used
-		#         for indices.  If the wrapped model is ugrid, then
-		#         each cell in the grid has a unique, long-integer
-		#         ID and these are used for indices.
-		#-------------------------------------------------------------
+        #-------------------------------------------------------------
+        # Notes:  For the specified variable, get the values at the
+        #         specified indices and return them.  If the wrapped
+        #         model is raster, then each raster cell has a long
+        #         integer, calendar-style index and these are used
+        #         for indices.  If the wrapped model is ugrid, then
+        #         each cell in the grid has a unique, long-integer
+        #         ID and these are used for indices.
+        #-------------------------------------------------------------
 
-		#----------------------------------------------
-		# Get data type and rank for long_var_name.
-		# Assume that NumPy dtype string is returned.
-		#----------------------------------------------
-		bmi   = self.comp_set[ comp_name ]
-		return bmi.get_values_at_indices( long_var_name, indices )
-	
-# 		dtype = bmi.get_var_type( long_var_name )
-# 		rank  = bmi.get_var_rank( long_var_name )
+        #----------------------------------------------
+        # Get data type and rank for long_var_name.
+        # Assume that NumPy dtype string is returned.
+        #----------------------------------------------
+        bmi   = self.comp_set[ comp_name ]
+        return bmi.get_values_at_indices( long_var_name, indices )
+    
+#         dtype = bmi.get_var_type( long_var_name )
+#         rank  = bmi.get_var_rank( long_var_name )
 # 
-# 		if (dtype == 'float64'):
-# 			if (rank == 2):
-# 				return bmi.get_2d_double_at_indices( long_var_name, indices )
-# 		elif (dtype == 'int32'):
-# 			if (rank == 2):
-# 				return bmi.get_2d_int_at_indices( long_var_name, indices )
+#         if (dtype == 'float64'):
+#             if (rank == 2):
+#                 return bmi.get_2d_double_at_indices( long_var_name, indices )
+#         elif (dtype == 'int32'):
+#             if (rank == 2):
+#                 return bmi.get_2d_int_at_indices( long_var_name, indices )
             
     #   get_values_at_indices()
     #-------------------------------------------------------------------
@@ -1906,18 +1906,18 @@ class framework():
             # p_units = p_bmi.get_var_units( long_var_name )
             # values  = self.unit_converter.convert( values, p_units, u_units )
 
-			#---------------------------------------------------
-			# Convert units, if necessary, with cfunits.Units
-			#---------------------------------------------------
+            #---------------------------------------------------
+            # Convert units, if necessary, with cfunits.Units
+            #---------------------------------------------------
             # Storing scale factors and offsets may be faster.
-			#---------------------------------------------------
+            #---------------------------------------------------
 #             p_units = p_bmi.get_var_units( long_var_name )
 #             u_units = u_bmi.get_var_units( long_var_name )
 #             if (u_units != p_units):
-# 			    #---------------------------------------------
+#                 #---------------------------------------------
 #                 # Note: conform fails if units are the same.
-# 			    #---------------------------------------------
-# 				values = Units.conform( values, Units(p_units), Units(u_units) )
+#                 #---------------------------------------------
+#                 values = Units.conform( values, Units(p_units), Units(u_units) )
 
             #-------------------------------------------
             # Call Regridder to regrid values from the
