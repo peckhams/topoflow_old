@@ -659,8 +659,9 @@ class framework():
         #--------------------------------------------
         ## print '### full_module_name = ', full_module_name
         cmd = 'from topoflow.components import ' + module_name
-        exec( cmd )
-        exec( 'comp = ' + module_name + '.' + class_name + '()' )
+        exec( cmd, globals(), globals() )
+        exec( 'comp = ' + module_name + '.' + class_name + '()',
+             globals(), globals())
 
         #--------------------------------------------
         # Import the module (no .py extension) and
