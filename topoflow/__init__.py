@@ -1,15 +1,15 @@
 
 SILENT = False
 if not(SILENT):
-    print 'Importing TopoFlow 3.5 packages:'
-    print '   topoflow.utils'
-    print '   topoflow.utils.tests'
-    print '   topoflow.components'
-    print '   topoflow.components.tests'
-    print '   topoflow.framework'
-    print '   topoflow.framework.tests'
+    print('Importing TopoFlow 3.5 packages:')
+    print('   topoflow.utils')
+    print('   topoflow.utils.tests')
+    print('   topoflow.components')
+    print('   topoflow.components.tests')
+    print('   topoflow.framework')
+    print('   topoflow.framework.tests')
     # print '   topoflow.gui (unfinished)'
-    print ' '
+    print(' ')
 
 import topoflow.utils
 import topoflow.utils.tests

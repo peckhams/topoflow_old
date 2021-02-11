@@ -182,8 +182,8 @@ class time_interpolator():
         self.provider_comp_list   = comp_names
         self.vars_provided        = vars_provided
         self.interpolation_method = method
-        print 'Time interpolation method =', method
-        print ' '
+        print('Time interpolation method = %s' % method)
+        print(' ')
         
     #   __init__()
     #----------------------------------------------------------   
@@ -643,13 +643,13 @@ class time_interpolator():
             #------------------------------------
             bmi_time = bmi.get_current_time()
             if (time > bmi_time):
-                print '=================================================='
-                print ' ERROR:  In time_interpolation.get_values():'
-                print '   Model time > BMI component time'
-                print '     for component =', comp_name
-                print '   Model time, BMI_time =', time, bmi_time
-                print '=================================================='
-                print ' '
+                print('==================================================')
+                print(' ERROR:  In time_interpolation.get_values():')
+                print('   Model time > BMI component time')
+                print('     for component =', comp_name)
+                print('   Model time, BMI_time =', time, bmi_time)
+                print('==================================================')
+                print(' ')
                 
             return bmi.get_values( long_var_name )
 
@@ -666,13 +666,13 @@ class time_interpolator():
             # For testing. Is time in interval?
             #------------------------------------           
             if (time > i_vars.t2):
-                print '=================================================='
-                print ' ERROR:  In time_interpolation.get_values():'
-                print '   Model time is outside interpolation window'
-                print '     for component =', comp_name
-                print '   model_time, t2 =', time, i_vars.t2
-                print '=================================================='
-                print ' '
+                print('==================================================')
+                print(' ERROR:  In time_interpolation.get_values():')
+                print('   Model time is outside interpolation window')
+                print('     for component =', comp_name)
+                print('   model_time, t2 =', time, i_vars.t2)
+                print('==================================================')
+                print(' ')
 
             value = (i_vars.a * time) + i_vars.b
 

@@ -192,14 +192,14 @@ examples_dir  = examples_dir  + os.sep
 
 SILENT = False
 if not(SILENT):
-	# print ' '
-	print 'Paths for this package:'
-	print 'framework_dir =', framework_dir
-	print 'parent_dir    =', parent_dir
-	print 'examples_dir  =', examples_dir
-	print '__file__      =', __file__
-	print '__name__      =', __name__
-	print ' '
+    # print ' '
+    print('Paths for this package:')
+    print('framework_dir = %s' % framework_dir)
+    print('parent_dir    = %s' % parent_dir)
+    print('examples_dir  = %s' % examples_dir)
+    print('__file__      = %s' % __file__)
+    print('__name__      = %s' % __name__)
+    print(' ')
 
 #--------------------------------------
 # Save the full paths in a dictionary
@@ -267,31 +267,31 @@ class framework():
     secs_per_year  = 365 * secs_per_day
     secs_per_month = secs_per_year / 12    #########
 
-# 	##################################################################
-# 	# NOTE:  "get_package_paths" will not work as intended on Python
-# 	# versions less than 3.4 if os.chddir() is called between two
-# 	# calls to get_package_paths().  This is a known Python issue
-# 	# that has been discussed frequently online.  (9/17/14)
-# 	##################################################################
+#     ##################################################################
+#     # NOTE:  "get_package_paths" will not work as intended on Python
+#     # versions less than 3.4 if os.chddir() is called between two
+#     # calls to get_package_paths().  This is a known Python issue
+#     # that has been discussed frequently online.  (9/17/14)
+#     ##################################################################
 # 
-# 	#------------------------------------------------------
-# 	# Get path to the current file (emeli.py).  (7/29/13)
-# 	# At top need: "#! /usr/bin/env python" ??
-# 	# See: https://docs.python.org/2/library/os.path.html
-# 	#------------------------------------------------------
+#     #------------------------------------------------------
+#     # Get path to the current file (emeli.py).  (7/29/13)
+#     # At top need: "#! /usr/bin/env python" ??
+#     # See: https://docs.python.org/2/library/os.path.html
+#     #------------------------------------------------------
 #     framework_dir = os.path.dirname( __file__ )
 #     parent_dir    = os.path.join( framework_dir, '..' )
 #     # parent_dir    = os.path.join( framework_dir, os.path.pardir )
 #     examples_dir  = os.path.join( parent_dir, 'examples' )
-# 	#-------------------------------------------------------
+#     #-------------------------------------------------------
 #     framework_dir = os.path.abspath( framework_dir )
 #     parent_dir    = os.path.abspath( parent_dir )
 #     examples_dir  = os.path.abspath( examples_dir )
-# 	#-------------------------------------------------------
+#     #-------------------------------------------------------
 # #     framework_dir = os.path.realpath( framework_dir )
 # #     parent_dir    = os.path.realpath( parent_dir )
 # #     examples_dir  = os.path.realpath( examples_dir )
-# 	#-------------------------------------------------------
+#     #-------------------------------------------------------
 #     framework_dir = framework_dir + os.sep
 #     parent_dir    = parent_dir    + os.sep
 #     examples_dir  = examples_dir  + os.sep
@@ -306,15 +306,15 @@ class framework():
 #         print '__file__      =', __file__
 #         print '__name__      =', __name__
 #         print ' '
-# 	
-# 	#--------------------------------------
-# 	# Save the full paths in a dictionary
-# 	#--------------------------------------
+#     
+#     #--------------------------------------
+#     # Save the full paths in a dictionary
+#     #--------------------------------------
 #     paths = dict()
 #     paths['framework']        = framework_dir
 #     paths['examples']         = examples_dir
 #     paths['framework_parent'] = parent_dir
-		
+        
     #-------------------------------------------------------------------
     def read_repository( self, SILENT=True ):
 
@@ -351,9 +351,9 @@ class framework():
         ########
     
         if not(SILENT):
-            print 'Reading info from comp_repo_file:'
-            print '    ' + comp_repo_file
-            print ' '
+            print('Reading info from comp_repo_file:')
+            print('     ' + comp_repo_file)
+            print(' ')
         
         #-------------------------------------------
         # Read all component info from an XML file
@@ -369,11 +369,11 @@ class framework():
         C_elements = dom.firstChild.getElementsByTagName("component") 
         n_comps    = len(C_elements)
         if (n_comps == 0):
-            print '########################################'
-            print ' ERROR: Component repository XML file'
-            print '        has no "component" tags.'
-            print '########################################'
-            print ' '
+            print('########################################')
+            print(' ERROR: Component repository XML file')
+            print('        has no "component" tags.')
+            print('########################################')
+            print(' ')
             return
             
         #------------------------------------------------------
@@ -484,8 +484,8 @@ class framework():
         #-----------------------------------------------------
 
         if not(SILENT):
-            print 'Reading info from provider_file:'
-            print '    ' + self.provider_file
+            print('Reading info from provider_file:')
+            print('     ' + self.provider_file)
 
         self.provider_list = []
         self.comp_set_list = []
@@ -517,12 +517,12 @@ class framework():
         # Is comp_name in repo_list ?
         #------------------------------
         if (comp_name not in self.repo_list):
-            print '#########################################'
-            print ' ERROR: There is no component named:'
-            print '    ' + comp_name
-            print ' in the component repository.'
-            print '#########################################'
-            print ' '
+            print('#########################################')
+            print(' ERROR: There is no component named:')
+            print('    ' + comp_name)
+            print(' in the component repository.')
+            print('#########################################')
+            print(' ')
             return False
         else:
             return True
@@ -666,8 +666,9 @@ class framework():
         #--------------------------------------------
         ## print '### full_module_name = ', full_module_name
         cmd = 'from topoflow.components import ' + module_name
-        exec( cmd )
-        exec( 'comp = ' + module_name + '.' + class_name + '()' )
+        exec( cmd, globals(), globals() )
+        exec( 'comp = ' + module_name + '.' + class_name + '()',
+             globals(), globals())
 
         #--------------------------------------------
         # Import the module (no .py extension) and
@@ -705,7 +706,7 @@ class framework():
         # Final message
         #----------------
         if not(SILENT):
-            print 'Instantiated component:', comp_name
+            print('Instantiated component: %s' % comp_name)
             ## print '        of comp_type:', comp_type
 
     #   instantiate()
@@ -743,7 +744,7 @@ class framework():
         # Final message
         #----------------
         if not(SILENT):
-            print 'Removed component:', comp_name
+            print('Removed component: %s' % comp_name)
             
     #   remove()
     #-------------------------------------------------------------------
@@ -751,9 +752,9 @@ class framework():
                  long_var_name, REPORT=False ):
 
         if (REPORT):
-            print 'Connecting user: ' + user_name
-            print '    to provider: ' + provider_name
-            print '    for the variable: ' + long_var_name
+            print('Connecting user: ' + user_name)
+            print('    to provider: ' + provider_name)
+            print('    for the variable: ' + long_var_name)
 
         #---------------------------------------------
         # Get a reference to long_var_name from the
@@ -786,13 +787,13 @@ class framework():
 #         p_units = p_bmi.get_var_units( long_var_name )
 #         u_units = u_bmi.get_var_units( long_var_name )     
 #         if (u_units != p_units):
-# # 			print '#### long_var_name = ' + long_var_name
-# # 			print '#### provider_name = ' + provider_name
-# # 			print '#### user_name     = ' + user_name
-# # 			print '#### p_units       = ' + p_units
-# # 			print '#### u_units       = ' + u_units
-# 			#---------------------------------------------- 
-# 			values = Units.conform( values, Units(p_units), Units(u_units) )
+# #             print '#### long_var_name = ' + long_var_name
+# #             print '#### provider_name = ' + provider_name
+# #             print '#### user_name     = ' + user_name
+# #             print '#### p_units       = ' + p_units
+# #             print '#### u_units       = ' + u_units
+#             #---------------------------------------------- 
+#             values = Units.conform( values, Units(p_units), Units(u_units) )
 
         #---------------------------------------------------
         # Embed a reference to long_var_name from the
@@ -938,10 +939,10 @@ class framework():
 #         dtype = str( values.dtype )
 #         rank  = np.ndim( values )
 # 
-# 	    #------------------------------------------
+#         #------------------------------------------
 #         # Use dtype and rank to call appropriate,
 #         # static-type BMI functions.
-# 	    #------------------------------------------
+#         #------------------------------------------
 #         if (dtype == 'float64'):
 #             if (rank == 0):
 #                 bmi.set_0d_double( long_var_name, values )
@@ -951,7 +952,7 @@ class framework():
 #                 bmi.set_2d_double( long_var_name, values )
 #             elif (rank == 3):
 #                 bmi.set_3d_double( long_var_name, values )
-# 	    #------------------------------------------------------
+#         #------------------------------------------------------
 #         elif (dtype == 'int32'):
 #             if (rank == 0):
 #                 bmi.set_0d_int( long_var_name, values )
@@ -975,32 +976,32 @@ class framework():
     def get_values_at_indices( self, long_var_name, indices,
                                comp_name ):
 
-		#-------------------------------------------------------------
-		# Notes:  For the specified variable, get the values at the
-		#         specified indices and return them.  If the wrapped
-		#         model is raster, then each raster cell has a long
-		#         integer, calendar-style index and these are used
-		#         for indices.  If the wrapped model is ugrid, then
-		#         each cell in the grid has a unique, long-integer
-		#         ID and these are used for indices.
-		#-------------------------------------------------------------
+        #-------------------------------------------------------------
+        # Notes:  For the specified variable, get the values at the
+        #         specified indices and return them.  If the wrapped
+        #         model is raster, then each raster cell has a long
+        #         integer, calendar-style index and these are used
+        #         for indices.  If the wrapped model is ugrid, then
+        #         each cell in the grid has a unique, long-integer
+        #         ID and these are used for indices.
+        #-------------------------------------------------------------
 
-		#----------------------------------------------
-		# Get data type and rank for long_var_name.
-		# Assume that NumPy dtype string is returned.
-		#----------------------------------------------
-		bmi   = self.comp_set[ comp_name ]
-		return bmi.get_values_at_indices( long_var_name, indices )
-	
-# 		dtype = bmi.get_var_type( long_var_name )
-# 		rank  = bmi.get_var_rank( long_var_name )
+        #----------------------------------------------
+        # Get data type and rank for long_var_name.
+        # Assume that NumPy dtype string is returned.
+        #----------------------------------------------
+        bmi   = self.comp_set[ comp_name ]
+        return bmi.get_values_at_indices( long_var_name, indices )
+    
+#         dtype = bmi.get_var_type( long_var_name )
+#         rank  = bmi.get_var_rank( long_var_name )
 # 
-# 		if (dtype == 'float64'):
-# 			if (rank == 2):
-# 				return bmi.get_2d_double_at_indices( long_var_name, indices )
-# 		elif (dtype == 'int32'):
-# 			if (rank == 2):
-# 				return bmi.get_2d_int_at_indices( long_var_name, indices )
+#         if (dtype == 'float64'):
+#             if (rank == 2):
+#                 return bmi.get_2d_double_at_indices( long_var_name, indices )
+#         elif (dtype == 'int32'):
+#             if (rank == 2):
+#                 return bmi.get_2d_int_at_indices( long_var_name, indices )
             
     #   get_values_at_indices()
     #-------------------------------------------------------------------
@@ -1076,11 +1077,11 @@ class framework():
         #---------------------------------------------
         status = bmi.get_status()
         if (status == 'failed'):
-            print '================================================'
-            print 'ERROR: Model run aborted.'
-            print '  Update failed on component: ' + comp_name + '.'
-            print '================================================'
-            print ' '
+            print('================================================')
+            print('ERROR: Model run aborted.')
+            print('  Update failed on component: ' + comp_name + '.')
+            print('================================================')
+            print(' ')
             self.DONE = True
     
     #   update()
@@ -1145,7 +1146,7 @@ class framework():
         #       is an unordered dictionary.
         #--------------------------------------------------
         if not(hasattr(self, 'provider_list')):
-            print 'Providers not yet read from provider_file.'
+            print('Providers not yet read from provider_file.')
             return
         
         for comp_name in self.provider_list:
@@ -1163,7 +1164,7 @@ class framework():
         #       is an unordered dictionary.
         #--------------------------------------------------
         if not(hasattr(self, 'provider_list')):
-            print 'Providers not yet read from provider_file.'
+            print('Providers not yet read from provider_file.')
             return
         
         for comp_name in self.provider_list:
@@ -1180,7 +1181,7 @@ class framework():
         #       is an unordered dictionary.
         #--------------------------------------------------
         if not(hasattr(self, 'provider_list')):
-            print 'Providers not yet read from provider_file.'
+            print('Providers not yet read from provider_file.')
             return
         
         for comp_name in self.provider_list:
@@ -1203,7 +1204,7 @@ class framework():
         #       is an unordered dictionary.
         #--------------------------------------------------
         if not(hasattr(self, 'provider_list')):
-            print 'Providers not yet read from provider_file.'
+            print('Providers not yet read from provider_file.')
             return
         
         for comp_name in self.provider_list:
@@ -1244,10 +1245,10 @@ class framework():
         DEBUG = True
         ## DEBUG = False
         if (cfg_prefix == None):
-            print 'ERROR: The "cfg_prefix" argument is required.'
+            print('ERROR: The "cfg_prefix" argument is required.')
             return
         if (cfg_directory == None):
-            print 'ERROR: The "cfg_directory" argument is required.'
+            print('ERROR: The "cfg_directory" argument is required.')
             return
         
         #--------------------------------------------------
@@ -1329,8 +1330,8 @@ class framework():
         #---------------------------------------
         driver = self.comp_set[ driver_comp_name ]
         driver.mode = 'driver'
-        print 'Driver component name =', driver_comp_name
-        print ' '
+        print('Driver component name = %s' % driver_comp_name)
+        print(' ')
         
         #-----------------------------------
         # Initialize all time-related vars
@@ -1541,14 +1542,14 @@ class framework():
         dt_array = np.zeros( n_comps )
         dt_units = np.zeros( n_comps, dtype='|S30')   ###
         k = 0
-        print 'Original component time step sizes ='
+        print('Original component time step sizes =')
         for comp_name in self.provider_list:    
             bmi      = self.comp_set[ comp_name ]
             dt       = bmi.get_time_step()
             units    = bmi.get_time_units()
             unit_str = '[' + units + ']'
             ## print 'units =', units
-            print '    ' + comp_name + ' = ', dt, unit_str 
+            print('    %s = %s %s' % (comp_name, dt, unit_str))
             dt_array[ k ] = dt
             dt_units[ k ] = units
             k += 1 
@@ -1556,8 +1557,8 @@ class framework():
         #-----------------------------------------
         # Convert all time step units to seconds
         #-----------------------------------------
-        print 'Converting all time step units to seconds...'
-        for k in xrange( n_comps ):
+        print('Converting all time step units to seconds...')
+        for k in range( n_comps ):
             dt    = dt_array[ k ]
             units = dt_units[ k ]
             dt = self.convert_time_units( dt, units )
@@ -1573,8 +1574,8 @@ class framework():
         dt_min = dt_array.min()
         self.dt = dt_min        # (framework timestep)
         dt_min_name = self.provider_list[ dt_array.argmin() ]
-        print 'Component with smallest time step is:', dt_min_name
-        print ' '
+        print('Component with smallest time step is: %s' % dt_min_name)
+        print(' ')
 
         #----------------------------------------------
         # This is not used with new method. (4/13/13)
@@ -1673,14 +1674,14 @@ class framework():
         self.all_input_var_names.sort()
         self.all_output_var_names.sort()
         if (REPORT):
-            print 'Input variables required by this comp_set:'
+            print('Input variables required by this comp_set:')
             for name in self.all_input_var_names:
-                print '    ' + name
-            print ' '
-            print 'Output variables provided by this comp_set:'
+                print('    ' + name)
+            print(' ')
+            print('Output variables provided by this comp_set:')
             for name in self.all_output_var_names:
-                print '    ' + name
-            print ' '
+                print('    ' + name)
+            print(' ')
 
         #--------------------------------------------------- 
         # Make list of output_vars actually used by others
@@ -1715,17 +1716,17 @@ class framework():
                 provider_list = self.var_providers[ long_var_name ]
                 n_providers   = len( provider_list )
                 if (n_providers > 1):
-                    print '========================================'
-                    print ' WARNING: Found multiple providers in'
-                    print '          comp_set for long_var_name:'
-                    print '            ' + long_var_name
-                    print ' Providers are:', provider_list
+                    print('========================================')
+                    print(' WARNING: Found multiple providers in')
+                    print('          comp_set for long_var_name:')
+                    print('            ' + long_var_name)
+                    print(' Providers are:', provider_list)
                     OK = False
             else:
-                print '========================================'
-                print ' WARNING: Found no providers in this'
-                print '          comp_set for long_var_name:'
-                print '            ' + long_var_name
+                print('========================================')
+                print(' WARNING: Found no providers in this')
+                print('          comp_set for long_var_name:')
+                print('            ' + long_var_name)
                 ### print,'          requested by: ' + ??????
                 OK = False
 
@@ -1802,7 +1803,7 @@ class framework():
             #-------------------------------------------
             cfg_file = self.get_cfg_filename( bmi )
             self.initialize( provider_name, cfg_file )
-            print 'Initialized component: ' + provider_name + '.'
+            print('Initialized component: ' + provider_name + '.')
             ## print 'Initialized component of type: ' + provider_name + '.'
             ## print 'Initialized: ' + comp_name + '.'
 
@@ -1906,18 +1907,18 @@ class framework():
             # p_units = p_bmi.get_var_units( long_var_name )
             # values  = self.unit_converter.convert( values, p_units, u_units )
 
-			#---------------------------------------------------
-			# Convert units, if necessary, with cfunits.Units
-			#---------------------------------------------------
+            #---------------------------------------------------
+            # Convert units, if necessary, with cfunits.Units
+            #---------------------------------------------------
             # Storing scale factors and offsets may be faster.
-			#---------------------------------------------------
+            #---------------------------------------------------
 #             p_units = p_bmi.get_var_units( long_var_name )
 #             u_units = u_bmi.get_var_units( long_var_name )
 #             if (u_units != p_units):
-# 			    #---------------------------------------------
+#                 #---------------------------------------------
 #                 # Note: conform fails if units are the same.
-# 			    #---------------------------------------------
-# 				values = Units.conform( values, Units(p_units), Units(u_units) )
+#                 #---------------------------------------------
+#                 values = Units.conform( values, Units(p_units), Units(u_units) )
 
             #-------------------------------------------
             # Call Regridder to regrid values from the
@@ -1937,9 +1938,9 @@ class framework():
             #------------------
             REPORT = False
             if (REPORT):
-                print 'user: ' + user_name
-                print '    just obtained var:  ' + long_var_name
-                print '    from provider: ' + provider_name
+                print('user: ' + user_name)
+                print('    just obtained var:  ' + long_var_name)
+                print('    from provider: ' + provider_name)
            
     #   get_required_vars()
     #-------------------------------------------------------------------
